@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Chapter 1.3 前向传播、反向传播与计算图 – deep-learning</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-8b4baf804e461d9b72633f0de59a0cac.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-60d4398d82fec002ccec76571ed06d15.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">deep-learning</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../zh/"> 
+<span class="menu-text">中文</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../en/"> 
+<span class="menu-text">English</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch1-introduction/ch1.3-computation-graph.html">深度学习简介</a></li><li class="breadcrumb-item"><a href="../../zh/ch1-introduction/ch1.3-computation-graph.html">Chapter 1.3 前向传播、反向传播与计算图</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">深度学习简介</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch1-introduction/ch1.3-computation-graph.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Chapter 1.3 前向传播、反向传播与计算图</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">PyTorch 入门</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Chapter 2.1 PyTorch 中的自动微分</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Chapter 2.2 PyTorch 中的梯度记录与控制</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">FlashAttention：高效的注意力机制实现</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Chapter 10.1 为什么 Attention 是 IO-Bound</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#梯度" id="toc-梯度" class="nav-link active" data-scroll-target="#梯度">1.3.1 梯度</a></li>
+  <li><a href="#计算图" id="toc-计算图" class="nav-link" data-scroll-target="#计算图">1.3.2 计算图</a></li>
+  <li><a href="#前向传播与反向传播" id="toc-前向传播与反向传播" class="nav-link" data-scroll-target="#前向传播与反向传播">1.3.3 前向传播与反向传播</a></li>
+  <li><a href="#本章小结" id="toc-本章小结" class="nav-link" data-scroll-target="#本章小结">1.3.4 本章小结</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch1-introduction/ch1.3-computation-graph.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch1-introduction/ch1.3-computation-graph.html">深度学习简介</a></li><li class="breadcrumb-item"><a href="../../zh/ch1-introduction/ch1.3-computation-graph.html">Chapter 1.3 前向传播、反向传播与计算图</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Chapter 1.3 前向传播、反向传播与计算图</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>计算图（Computational Graph）</strong> 是深度学习中最核心的概念之一。理解了计算图，我们就能理解神经网络是如何计算输出的，以及它是如何根据误差自动调整参数的。</p>
+<p>在前面的章节中，我们已经介绍了损失函数。损失函数衡量了模型的误差，而深度学习的目标，就是通过调整参数，使损失函数尽可能小。但要做到这一点，我们必须回答一个关键问题：每个参数是如何影响损失函数的？</p>
+<p>计算图提供了这个问题的答案。它清晰地记录了从输入到损失函数的整个计算过程，使我们能够系统地分析每个变量的作用。</p>
+<p>但是，计算图的概念对于初学者来说可能有些抽象。因此，在本章中，我们将通过一个简单例子，逐步介绍梯度、计算图、前向传播和反向传播之间的关系。</p>
+<section id="梯度" class="level2">
+<h2 class="anchored" data-anchor-id="梯度">1.3.1 梯度</h2>
+<p>在深度学习里，我们要做的事情很简单：让损失函数 <span class="math inline">\(L\)</span> 尽可能小。但是问题是，神经网络模型有成千上万的参数，我们不可能一个一个去试。这时候就需要有一个工具，来帮忙解决两个问题：</p>
+<ol type="1">
+<li>该调哪个参数？</li>
+<li>每个参数该往哪个方向调？该调多少？</li>
+</ol>
+<p>而 <strong>梯度（gradient）</strong> 就是用来回答这两个问题的。</p>
+<p>相信大家都学过偏导数。如果我们有一个函数 <span class="math inline">\(f(x, y)\)</span>，当我们想知道“只改变 <span class="math inline">\(x\)</span> 会让 <span class="math inline">\(f\)</span> 怎么变”，我们就看 <span class="math inline">\(\frac{\partial f}{\partial x}\)</span>；当我们想知道“只改变 <span class="math inline">\(y\)</span> 会让 <span class="math inline">\(f\)</span> 怎么变”，我们就看 <span class="math inline">\(\frac{\partial f}{\partial y}\)</span>。偏导数的大小可以理解为一种“敏感度”。偏导数的绝对值越大，说明这个参数的轻微变化就会让 <span class="math inline">\(f\)</span> 变化很大；反之，偏导数的绝对值越小，说明这个参数的轻微变化对 <span class="math inline">\(f\)</span> 的影响就越小。</p>
+<p>当参数不止一个时，我们就可以把这些参数的偏导数“打包”，形成一个向量，这个向量就是梯度。对于函数 <span class="math inline">\(f(x, y)\)</span>，它的梯度就是 <span class="math inline">\(\nabla f = \left( \frac{\partial f}{\partial x}, \frac{\partial f}{\partial y} \right)\)</span>。梯度是一个向量，我们可以把它想象成一个箭头。箭头的方向表示函数值增加最快的方向（不是减少！），箭头的长度表示函数值增加的速度。</p>
+<p>更一般地，如果模型参数是一个高维向量：</p>
+<p><span class="math display">\[\theta = (w_1, w_2, ..., w_n)\]</span></p>
+<p>假设损失函数是 <span class="math inline">\(L(\theta)\)</span>，那么对应的梯度就是：</p>
+<p><span class="math display">\[\nabla L = \left( \frac{\partial L}{\partial w_1}, \frac{\partial L}{\partial w_2}, ..., \frac{\partial L}{\partial w_n} \right)\]</span></p>
+<p>梯度的每一个分量都对应一个参数，表示这个参数对当前损失“负有多大责任”。如果某个参数的梯度分量很大，说明这个参数对当前损失的值有很大影响；如果某个参数的梯度分量很小，说明这个参数对当前损失的值影响不大。</p>
+<p>那么，如果梯度为 0 呢？我们是不是到达了一个最优点？</p>
+<p>不一定。梯度为 0 可能是一个局部最小值，也可能是一个局部最大值，还可能是一个鞍点（saddle point）。所以，虽然梯度为 0 是一个重要的条件，但并不代表我们一定找到了全局最小值。</p>
+<p>总结来说，梯度提供了两个关键信息：每个参数对当前损失的影响程度，以及在当前位置，损失函数变化最快的方向。梯度把一个整体的误差，拆解成每个参数的局部影响。但是，到目前为止，我们还没有回答一个关键的问题：我们手里只有损失函数的最终结果，那么如何高效地计算出每一个参数对应的梯度？为了解决这个问题，我们需要一种能够记录完整计算过程的结构，使梯度可以被系统地计算出来。这种结构就是计算图。</p>
+</section>
+<section id="计算图" class="level2">
+<h2 class="anchored" data-anchor-id="计算图">1.3.2 计算图</h2>
+<p>在上一节中，我们介绍了梯度。梯度告诉我们，每个参数对损失函数的影响程度，也就是每个参数“负有多大责任”。但是，这里有一个关键问题：神经网络可能包含成千上万个参数，而损失函数往往是一个由大量加法、乘法、非线性函数层层嵌套形成的复杂函数。我们该如何高效地计算每一个参数对应的梯度？如果直接从最终的损失函数出发，对每一个参数分别求偏导数，不仅过程繁琐，而且计算效率极低。</p>
+<p>为了解决这个问题，我们需要一种方法，能够满足以下几个要求：</p>
+<ol type="1">
+<li>知道损失函数是如何被一步一步计算出来的；</li>
+<li>每一个中间结果是由哪些变量产生的；</li>
+<li>每一个参数是如何影响最终损失的。</li>
+</ol>
+<p>这就是 <strong>计算图（Computational Graph）</strong>。</p>
+<p>计算图就是一个很好的“追责机制”。它告诉我们，损失函数的值是由哪些参数计算出来的，以及这些参数又依赖于哪些参数，以此类推。所以，计算图就好像一个“责任链条”一样，让我们知道每一个参数和输入在损失函数的值中扮演了什么角色。前向传播是沿着这个责任链条，逐步计算每个变量的数值；反向传播则是沿着责任链条的反方向，逐步计算每个变量对损失函数的影响程度，也就是梯度。</p>
+<p>现在我们来正式介绍一下计算图。计算图是一个有向无环图（Directed Acyclic Graph, DAG），它由 <strong>节点（Nodes）</strong> 和 <strong>边（Edges）</strong> 组成。“有向”表示数据流动有明确方向，“无环”表示不存在循环依赖。也就是说，一个变量不能依赖于它自己的计算结果。每个节点表示一个操作（Operation）或一个变量（Variable），每条边表示数据的流动方向。</p>
+<p>假设我们有一个很简单的函数：</p>
+<p><span class="math display">\[ f(x,y) = \sin(x \cdot y) \]</span></p>
+<p>我们可以把这个函数拆解成几个简单的操作：</p>
+<ol type="1">
+<li>乘法操作：计算 <span class="math inline">\(z = x \cdot y\)</span></li>
+<li>正弦操作：计算 <span class="math inline">\(f = \sin(z)\)</span></li>
+</ol>
+<p>我们可以把这个过程表示成一个计算图：</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  x((x)) --&gt; mul[mul]
+  y((y)) --&gt; mul
+  mul --&gt; z((z))
+  z --&gt; sin[sin]
+  sin --&gt; f((f))
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>在这个计算图中，圆圈表示变量，方框表示操作，箭头表示数据流动的方向。输入 <span class="math inline">\(x\)</span> 和 <span class="math inline">\(y\)</span> 通过乘法操作得到中间变量 <span class="math inline">\(z\)</span>，然后 <span class="math inline">\(z\)</span> 通过正弦操作得到输出 <span class="math inline">\(f\)</span>。</p>
+<p>根据变量在图中的位置，我们通常把节点分为三类：</p>
+<ul>
+<li><strong>叶子节点（Leaf Nodes）</strong>：没有输入的节点，例如 <span class="math inline">\(x\)</span> 和 <span class="math inline">\(y\)</span>。</li>
+<li><strong>中间节点（Intermediate Nodes）</strong>：由其他变量计算得到的节点，例如 <span class="math inline">\(z\)</span>。</li>
+<li><strong>根节点（Root Node）</strong>：最终结果节点，例如 <span class="math inline">\(f\)</span>。</li>
+</ul>
+<p>那么，为什么计算图必须是无环的呢？因为如果存在一个节点依赖于它自己的输出，就会形成一个循环。这样的循环会导致计算无法进行，因为我们无法确定哪个节点先计算，哪个节点后计算。</p>
+<p>搭建计算图的方式主要分为两种，一种是静态计算图，另一种是动态计算图。在程序运行前就已经完全定义好，之后就无法进行修改。而动态计算图则是在运行时动态构建的，可以根据需要进行修改。不同的深度学习框架可能采用不同的计算图方式，比如 TensorFlow 1.x 使用静态计算图，而 PyTorch 使用动态计算图。静态计算图的优点是优化空间大，执行效率高，而动态计算图的优点是可以根据不同输入灵活改变结构，更直观，而且易于调试。现代深度学习框架大多采用动态计算图。</p>
+<p>计算图最大的作用，就是把一个复杂的函数拆解成一系列简单操作，并明确记录它们之间的依赖关系。沿着这条依赖链，我们就可以系统地计算梯度。这就是反向传播的基础。在动态计算图框架中，搭建这个计算图本身，靠的就是前向传播。</p>
+</section>
+<section id="前向传播与反向传播" class="level2">
+<h2 class="anchored" data-anchor-id="前向传播与反向传播">1.3.3 前向传播与反向传播</h2>
+<p>有了计算图这个“依赖链条”，我们就可以清楚地描述两个核心过程：前向传播和反向传播。简单来说，前向传播就是计算每个节点的数值，而反向传播就是计算每个节点的梯度。</p>
+<p><strong>前向传播（Forward Propagation）</strong> 是指从输入开始，沿着计算图的方向，逐步计算每个中间节点的数值，直到得到最终输出的过程。同时，计算图会保存必要的中间变量，以便在反向传播时计算对应的梯度。</p>
+<p>例如，对于函数：</p>
+<p><span class="math display">\[ f(x,y) = \sin(x \cdot y) \]</span></p>
+<p>前向传播的计算顺序为：</p>
+<ol type="1">
+<li>计算 <span class="math inline">\(z = x \cdot y\)</span></li>
+<li>计算 <span class="math inline">\(f = \sin(z)\)</span></li>
+</ol>
+<p>也就是说，每一个节点的值，都是由它的输入节点计算得到的。因此，前向传播完成了两件事：</p>
+<ul>
+<li>在计算图上计算每个节点的数值，并最终得到损失函数的值；</li>
+<li>同时记录计算过程（在动态计算图框架中），为反向传播提供必要的信息。</li>
+</ul>
+<p><strong>反向传播（Backward Propagation）</strong> 是指从最终输出开始，沿着计算图的反方向，逐步计算每个变量对损失函数的梯度。反向传播的核心是 <strong>链式法则（Chain Rule）</strong>。一个变量对最终结果的影响，可以分解为多个局部影响的乘积。</p>
+<p>假设损失函数是 <span class="math inline">\(L = L(f)\)</span>，我们想要计算输入变量 <span class="math inline">\(x\)</span> 和 <span class="math inline">\(y\)</span> 对损失函数的梯度 <span class="math inline">\(\frac{\partial L}{\partial x}\)</span> 和 <span class="math inline">\(\frac{\partial L}{\partial y}\)</span>。根据链式法则，我们可以沿着计算图的反方向，逐步计算出每个节点的梯度：</p>
+<p><span class="math display">\[
+\begin{aligned}
+\frac{\partial L}{\partial x} &amp;= \frac{\partial L}{\partial f} \cdot \frac{\partial f}{\partial z} \cdot \frac{\partial z}{\partial x} = \frac{\partial L}{\partial f} \cdot \cos(z) \cdot y \\
+\frac{\partial L}{\partial y} &amp;= \frac{\partial L}{\partial f} \cdot \frac{\partial f}{\partial z} \cdot \frac{\partial z}{\partial y} = \frac{\partial L}{\partial f} \cdot \cos(z) \cdot x
+\end{aligned}
+\]</span></p>
+<p>这里 <span class="math inline">\(\frac{\partial L}{\partial f}\)</span> 是损失函数对输出 <span class="math inline">\(f\)</span> 的梯度，它由具体的损失函数形式决定。</p>
+<p>在反向传播中，我们从输出节点开始，逐步计算每个节点的梯度，并沿着计算图向输入方向传播。每个节点的梯度，都由两个因素决定：</p>
+<ul>
+<li>这个节点对最终输出的影响程度（局部梯度）；</li>
+<li>上游节点传递下来的梯度（链式法则中的乘积）。</li>
+</ul>
+<p>这种“局部梯度 × 上游梯度”的递推过程，使得我们能够高效地计算出所有参数的梯度，而无需重复计算整个函数。</p>
+<p>通过前向传播，我们搭建了计算图，计算了每个节点的数值；通过反向传播，我们沿着计算图的反方向，计算了每个节点的梯度。这样，我们就可以知道每个参数对损失函数的影响程度，从而指导我们如何调整参数来最小化损失函数。这就是深度学习的核心学习机制。</p>
+</section>
+<section id="本章小结" class="level2">
+<h2 class="anchored" data-anchor-id="本章小结">1.3.4 本章小结</h2>
+<p>在本章中，我们介绍了深度学习中最核心的三个概念：</p>
+<ul>
+<li>梯度：描述每个参数对损失函数的影响程度；</li>
+<li>计算图：记录函数的完整计算结构；</li>
+<li>前向传播与反向传播：分别用于计算数值和计算梯度。</li>
+</ul>
+<p>前向传播沿着计算图的方向计算损失函数，而反向传播沿着计算图的反方向计算梯度。正是由于计算图提供了清晰的依赖结构，我们才能高效地计算出神经网络中所有参数的梯度。</p>
+<p>在下一章中，我们将看到，如何利用这些梯度，逐步调整参数，使神经网络学会完成具体任务。</p>
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/jshn9515\.github\.io\/deep-learning-notes\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch1-introduction/ch1.3-computation-graph.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

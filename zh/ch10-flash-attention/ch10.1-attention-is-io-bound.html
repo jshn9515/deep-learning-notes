@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Chapter 10.1 为什么 Attention 是 IO-Bound – deep-learning</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-8b4baf804e461d9b72633f0de59a0cac.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-60d4398d82fec002ccec76571ed06d15.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">deep-learning</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../zh/"> 
+<span class="menu-text">中文</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../en/"> 
+<span class="menu-text">English</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">FlashAttention：高效的注意力机制实现</a></li><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10.1 为什么 Attention 是 IO-Bound</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">深度学习简介</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch1-introduction/ch1.3-computation-graph.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Chapter 1.3 前向传播、反向传播与计算图</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">PyTorch 入门</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Chapter 2.1 PyTorch 中的自动微分</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Chapter 2.2 PyTorch 中的梯度记录与控制</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">FlashAttention：高效的注意力机制实现</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Chapter 10.1 为什么 Attention 是 IO-Bound</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#gpu-性能模型与算术强度" id="toc-gpu-性能模型与算术强度" class="nav-link active" data-scroll-target="#gpu-性能模型与算术强度">10.1.1 GPU 性能模型与算术强度</a></li>
+  <li><a href="#标准-attention-的-io-分析" id="toc-标准-attention-的-io-分析" class="nav-link" data-scroll-target="#标准-attention-的-io-分析">10.1.2 标准 Attention 的 IO 分析</a>
+  <ul class="collapse">
+  <li><a href="#flops-分析" id="toc-flops-分析" class="nav-link" data-scroll-target="#flops-分析">10.1.2.1 FLOPs 分析</a></li>
+  <li><a href="#io-分析" id="toc-io-分析" class="nav-link" data-scroll-target="#io-分析">10.1.2.2 IO 分析</a></li>
+  <li><a href="#算术强度分析" id="toc-算术强度分析" class="nav-link" data-scroll-target="#算术强度分析">10.1.2.3 算术强度分析</a></li>
+  </ul></li>
+  <li><a href="#为什么长序列会放大-io-问题" id="toc-为什么长序列会放大-io-问题" class="nav-link" data-scroll-target="#为什么长序列会放大-io-问题">10.1.3 为什么长序列会放大 IO 问题</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">FlashAttention：高效的注意力机制实现</a></li><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10.1 为什么 Attention 是 IO-Bound</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Chapter 10.1 为什么 Attention 是 IO-Bound</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>在前面的章节里，我们已经从数学结构上理解了 Attention：给定 <span class="math inline">\(Q, K, V\)</span>，我们先计算相似度矩阵 <span class="math inline">\(S = QK^\top\)</span>，再做 softmax，最后得到输出 <span class="math inline">\(O = \text{softmax}(S)V\)</span>。从公式上看，它不过是几次矩阵乘法和一个逐元素的非线性操作。按直觉来说，矩阵乘法是 GPU 最擅长的事情，因此 Attention 理应是一个计算密集型的算子。</p>
+<p>但当我们真正去分析它在 GPU 上的执行过程时，就会发现，Attention 往往不是被算力限制，而是被内存访问限制。也就是说，它更像是一个 IO-bound 问题，而不是 compute-bound 问题。这意味着，即使我们的 GPU 还有大量浮点算力没有被用满，Attention 也可能已经跑不动了，因为瓶颈不在算，而在搬。那么，问题出在哪儿了呢？</p>
+<p>答案就藏在 Attention 的注意力矩阵里。这个矩阵的规模是 <span class="math inline">\(n \times n\)</span> 的，随序列长度平方增长。当序列长度变大时，真正拖慢速度的，往往不是乘法算子本身，而是频繁地在 GPU 的 HBM（高带宽显存）和 SRAM（片上缓存）之间来回读写大块数据。也就是说，Attention 的性能瓶颈，本质上来自数据移动，而不是算术运算。</p>
+<p>接下来，我们就从一个更底层的视角出发，拆解 Attention 在硬件上的真实执行过程，看看它到底把时间花在了哪里。</p>
+<section id="gpu-性能模型与算术强度" class="level2">
+<h2 class="anchored" data-anchor-id="gpu-性能模型与算术强度">10.1.1 GPU 性能模型与算术强度</h2>
+<p>在介绍 Attention 的时候，我们提出了一个看起来有些反直觉的结论：Attention 的瓶颈往往不在算力，而在内存访问。但是，在分析 Attention 为什么是 IO-bound 之前，我们需要先建立一个最基本的 GPU 性能视角。</p>
+<p>当我们说一个算子“快”或者“慢”时，它到底受什么限制？和《计算机组成原理》里讲的一样，只有两类资源会成为瓶颈：</p>
+<ol type="1">
+<li>算术计算能力（Compute Throughput）：每秒能做多少次浮点运算（FLOPs）</li>
+<li>内存带宽（Memory Bandwidth）：每秒能从内存搬运多少字节数据（Bytes/s）</li>
+</ol>
+<p>任何一个算子，在执行时都要做两件事：读取数据，对数据进行计算。如果算力先被耗尽，我们称它是 compute-bound 的；如果内存带宽先被耗尽，我们称它是 IO-bound 的。那么，我们如何判断一个算子更可能受哪种资源限制？</p>
+<p>在高性能计算领域，有一个非常核心的指标，那就是 <strong>算数强度（Arithmetic Intensity）</strong>：</p>
+<p><span class="math display">\[ \text{Arithmetic Intensity} = \frac{\text{FLOPs}}{\text{Bytes Moved}} \]</span></p>
+<p>也就是说，每搬运 1 字节数据，能够做多少次浮点运算。这个指标直接决定了算子更接近 compute-bound 还是 IO-bound。</p>
+<p>从直觉上可以这样理解：</p>
+<ul>
+<li>如果一个算子读一点数据，就反复计算很多次，那么它的算术强度高，就更可能是 compute-bound；</li>
+<li>如果一个算子读一点数据，只算几下就丢掉了，那么它的算术强度低，就更可能是 IO-bound。</li>
+</ul>
+<p>举个简单的例子，矩阵乘法为什么通常是 compute-bound？</p>
+<p>因为在矩阵乘法中，每个输入元素都会被复用多次。例如，在 <span class="math inline">\(C = AB\)</span> 中，矩阵 <span class="math inline">\(A\)</span> 的每个元素会被用来计算 <span class="math inline">\(C\)</span> 中的一整行，而矩阵 <span class="math inline">\(B\)</span> 的每个元素会被用来计算 <span class="math inline">\(C\)</span> 中的一整列。假设矩阵 <span class="math inline">\(A\)</span> 和 <span class="math inline">\(B\)</span> 的大小都是 <span class="math inline">\(n \times n\)</span>，那么每个元素被复用的次数大约是 <span class="math inline">\(n\)</span> 次。因此，矩阵乘法的算术强度大约是 <span class="math inline">\(O(n)\)</span>，也就通常是 compute-bound。</p>
+<p>同时，我们还要考虑一个点，那就是 GPU 的算力增长速度远远快于显存带宽的增长速度。这种现象被称为 <strong>内存墙（Memory Wall）</strong>。也就是说，现代 GPU 的 FLOPs 数字非常惊人，但显存带宽的提升是相对缓慢的。如果一个算子不能有效地复用数据，而是频繁地从 HBM 里读写大块张量，那么即使算术本身不复杂，也会被内存带宽卡住。</p>
+<p>而且，和 CPU 一样，GPU 的内存并不是一个统一空间，而是分层的：</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/gpu-memory.png" class="img-fluid figure-img" style="width:40.0%"></p>
+<figcaption>GPU 内存分层模型</figcaption>
+</figure>
+</div>
+<ul>
+<li>HBM（High Bandwidth Memory）：容量大，但访问延迟高，速度约为 1.5 TB/s</li>
+<li>SRAM / Shared Memory / L2 Cache：容量小，但速度快，访问延迟低，速度约为 19 TB/s</li>
+<li>寄存器（Register）：容量极小，但最快，访问延迟几乎为零</li>
+</ul>
+<p>所以，一个算子真正高效的方式，就尽量把数据留在片上（SRAM 或者寄存器），减少对 HBM 的访问。因为一旦频繁访问 HBM，即使每次访问都“很快”，累积起来仍然会成为性能瓶颈。</p>
+<p>那么，Attention 里的 <span class="math inline">\(QK^\top\)</span>、softmax 和 <span class="math inline">\(V\)</span>，真的像矩阵乘法那样有良好的数据复用吗？还是说，它在结构上就天然缺乏足够高的算术强度？</p>
+</section>
+<section id="标准-attention-的-io-分析" class="level2">
+<h2 class="anchored" data-anchor-id="标准-attention-的-io-分析">10.1.2 标准 Attention 的 IO 分析</h2>
+<p>现在，我们已经有了一些判断工具：</p>
+<ul>
+<li>看 FLOPs</li>
+<li>看数据搬运量</li>
+<li>判断算子的算术强度</li>
+<li>判断 compute-bound 还是 IO-bound</li>
+</ul>
+<p>这一节，我们就把它真正用在标准 Attention 上。</p>
+<p>我们从最常见的形式出发（忽略 batch 和 head 维度，只看单头，忽略缩放）：</p>
+<p><span class="math display">\[ S = QK^\top, \quad P = \text{softmax}(S), \quad O = PV \]</span></p>
+<p>设序列长度为 <span class="math inline">\(n\)</span>，特征维度为 <span class="math inline">\(d\)</span>，那么：</p>
+<ul>
+<li><span class="math inline">\(Q, K, V \in \mathbb{R}^{n \times d}\)</span></li>
+<li><span class="math inline">\(S, P \in \mathbb{R}^{n \times n}\)</span></li>
+<li><span class="math inline">\(O \in \mathbb{R}^{n \times d}\)</span></li>
+</ul>
+<p>我们来分别分析 FLOPs 和 IO。</p>
+<section id="flops-分析" class="level3">
+<h3 class="anchored" data-anchor-id="flops-分析">10.1.2.1 FLOPs 分析</h3>
+<ol type="1">
+<li>第一步：计算 <span class="math inline">\(QK^\top\)</span>。这是一个矩阵乘法，涉及 <span class="math inline">\(n \times d\)</span> 和 <span class="math inline">\(d \times n\)</span> 的乘积，结果是 <span class="math inline">\(n \times n\)</span> 的矩阵。FLOPs 大约是 <span class="math inline">\(2n^2d\)</span>（每个输出元素需要 <span class="math inline">\(d\)</span> 次乘加操作，总共有 <span class="math inline">\(n^2\)</span> 个输出元素，一次乘加算 2 次 FLOPs）。</li>
+<li>第二步，计算 softmax。softmax 的 FLOPs 主要来自于指数运算和归一化。每个元素需要计算一个指数（1 FLOP）和一个除法（1 FLOP），FLOPs 大约是 <span class="math inline">\(2n^2\)</span>（忽略处理数值稳定性的额外 FLOPs）。</li>
+<li>第三步，计算 <span class="math inline">\(PV\)</span>。这是另一个矩阵乘法，涉及 <span class="math inline">\(n \times n\)</span> 和 <span class="math inline">\(n \times d\)</span> 的乘积，结果是 <span class="math inline">\(n \times d\)</span> 的矩阵。FLOPs 大约是 <span class="math inline">\(2n^2d\)</span>。</li>
+</ol>
+<p>把这些加起来，总的 FLOPs 大约是：</p>
+<p><span class="math display">\[ \text{FLOPs} \approx 2n^2d + 2n^2 + 2n^2d = 4n^2d + 2n^2 \approx O(n^2d) \]</span></p>
+</section>
+<section id="io-分析" class="level3">
+<h3 class="anchored" data-anchor-id="io-分析">10.1.2.2 IO 分析</h3>
+<p>我们现在关心的是：需要从 HBM 搬多少数据？</p>
+<p>先看标准 Attention 的计算流程：</p>
+<ol type="1">
+<li>从 HBM 读取 <span class="math inline">\(Q, K\)</span>，计算 <span class="math inline">\(S\)</span></li>
+<li>把 <span class="math inline">\(S\)</span> 写回 HBM</li>
+<li>从 HBM 读取 <span class="math inline">\(S\)</span>，计算 <span class="math inline">\(P\)</span></li>
+<li>把 <span class="math inline">\(P\)</span> 写回 HBM</li>
+<li>从 HBM 读取 <span class="math inline">\(P, V\)</span>，计算 <span class="math inline">\(O\)</span></li>
+<li>把 <span class="math inline">\(O\)</span> 写回 HBM</li>
+</ol>
+<p>从流程里不难发现，中间的 <span class="math inline">\(n \times n\)</span> 矩阵被完整写入、再读回，造成了大量的数据搬运。注意，因为这里的矩阵都很大，SRAM 装不下，所以只能把它们放在 HBM 里，每次读写都要经过内存总线，造成了巨大的 IO 开销。</p>
+<p>我们来具体计算一下。</p>
+<ol type="1">
+<li>输入读取。我们需要从 HBM 里读取 <span class="math inline">\(Q, K, V\)</span>，每个都是 <span class="math inline">\(n \times d\)</span> 的矩阵，所以总共是 <span class="math inline">\(3nd\)</span> 个元素，每个元素 4 字节（假设元素类型是 float32），总共是 <span class="math inline">\(8nd\)</span> 字节。</li>
+<li>中间矩阵 <span class="math inline">\(S\)</span> 的读写。<span class="math inline">\(S\)</span> 是 <span class="math inline">\(n \times n\)</span> 的矩阵，每个元素 4 字节，所以读写一次就是 <span class="math inline">\(8n^2\)</span> 字节。</li>
+<li>中间矩阵 <span class="math inline">\(P\)</span> 的读写。<span class="math inline">\(P\)</span> 也是 <span class="math inline">\(n \times n\)</span> 的矩阵，每个元素 4 字节，所以读写一次也是 <span class="math inline">\(8n^2\)</span> 字节。</li>
+<li>输出写回。输出 <span class="math inline">\(O\)</span> 是 <span class="math inline">\(n \times d\)</span> 的矩阵，每个元素 4 字节，所以写回是 <span class="math inline">\(8nd\)</span> 字节。</li>
+</ol>
+<p>把这些加起来，总的 IO 大约是：</p>
+<p><span class="math display">\[ \text{IO} \approx 8nd + 8n^2 + 8n^2 + 8nd = 16n^2 + 16nd \approx O(n^2) \]</span></p>
+</section>
+<section id="算术强度分析" class="level3">
+<h3 class="anchored" data-anchor-id="算术强度分析">10.1.2.3 算术强度分析</h3>
+<p>现在我们有了 FLOPs 和 IO 的估计，我们就可以计算算术强度：</p>
+<p><span class="math display">\[ \text{Arithmetic Intensity} = \frac{\text{FLOPs}}{\text{Bytes Moved}} \approx \frac{4n^2d}{16n^2} = O(d) \]</span></p>
+<p>计算得到 Attention 的算术强度是 <span class="math inline">\(O(d)\)</span>。这是一个常数，在实际应用中，<span class="math inline">\(d\)</span> 通常为 64、128 或 256，因此算术强度通常在 16~64 FLOPs/byte 的范围内。相比之下，现代 GPU（例如 NVIDIA A100）的峰值计算能力与内存带宽之比约为 200 FLOPs/byte。这意味着，只有当算术强度显著高于这一阈值时，计算才能达到 compute-bound 状态，而 Attention 的算术强度远低于该阈值。因此，其性能受到内存带宽的限制，而不是计算能力的限制。</p>
+<p>所以，Attention 属于典型的 memory-bound，其性能瓶颈在于 HBM 与片上存储之间的数据搬运，而不是浮点运算本身。</p>
+</section>
+</section>
+<section id="为什么长序列会放大-io-问题" class="level2">
+<h2 class="anchored" data-anchor-id="为什么长序列会放大-io-问题">10.1.3 为什么长序列会放大 IO 问题</h2>
+<p>在上一节里，我们已经看到，标准 Attention 的 IO 主导项是那个 <span class="math inline">\(n \times n\)</span> 的中间矩阵 <span class="math inline">\(S\)</span>。现在我们进一步问一个问题：如果序列长度 <span class="math inline">\(n\)</span> 变大，问题会如何演化？</p>
+<p>我们已经知道，<span class="math inline">\(\text{FLOPs} \approx O(n^2d)\)</span>，而 <span class="math inline">\(\text{IO} \approx O(n^2)\)</span>。也就是说，当序列长度翻倍时，IO 增长 4 倍。而 GPU 的带宽是固定的。这不是一个慢慢增长的问题，而是一个爆炸式增长的问题。</p>
+<p>长序列带来的问题有两个。一个是注意力矩阵 <span class="math inline">\(S\)</span> 的大小，当 <span class="math inline">\(n=2048\)</span> 时，<span class="math inline">\(S\)</span> 的大小已经是 16MB（假设 float32），而当 <span class="math inline">\(n=4096\)</span> 时，<span class="math inline">\(S\)</span> 的大小就达到了 64MB，而且这还只是单头。还要加上注意力头数量，批处理大小，显存压力会迅速变得不可接受。另外一个问题是带宽。容量问题还可以通过分布式计算等方式缓解，但带宽问题无法绕开。每次访问 <span class="math inline">\(S\)</span> 都需要从 HBM 里搬运大量数据，这会成为性能的主要瓶颈，导致 Attention 在长序列上的效率急剧下降。</p>
+<p>因此，长序列不仅增加了计算量，更重要的是，它极大地放大了 IO 问题，使得标准 Attention 在处理长序列时变得非常低效。而且，由于内存墙的存在，GPU 算力的提升速度要远远快于内存带宽的提升速度。对于 compute-bound 的算子来说，算力的提升可以直接转化为性能提升；但对于 IO-bound 的算子来说，算力的提升并不能带来性能提升，因为瓶颈在内存访问上。因此，随着序列长度的增加，Attention 的性能问题会变得越来越严重。</p>
+<p>如果我们真正理解了这一点，那么一个自然的问题就会出现：我们是否真的需要把整个 <span class="math inline">\(S\)</span> 存下来？</p>
+<p>如果答案是“不需要”，那么我们就可以把 IO 的复杂度从 <span class="math inline">\(O(n^2)\)</span> 降到接近 <span class="math inline">\(O(nd)\)</span>，从而把 Attention 推向 compute-bound，使其不再受内存带宽的限制。这就是 FlashAttention 想做的事情。</p>
+<p>下一节，我们将正式进入 FlashAttention 的核心思想，利用矩阵分块、在线更新和 kernel 融合来消灭 IO。</p>
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/jshn9515\.github\.io\/deep-learning-notes\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
