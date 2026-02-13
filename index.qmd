@@ -1,0 +1,19 @@
+---
+title: Redirect
+format: html
+---
+
+<script>
+var lang = navigator.language || navigator.userLanguage;
+
+if (lang.startsWith('zh')) {
+  window.location.href = "zh/index.html";
+} else {
+  window.location.href = "en/index.html";
+}
+</script>
+
+Choose language:
+
+- [中文](zh/index.html)
+- [English](en/index.html)
