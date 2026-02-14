@@ -144,7 +144,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">Chapter 2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">Chapter 2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -159,7 +159,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
- <span class="menu-text">深度学习简介</span></a>
+ <span class="menu-text">Chapter 1: 深度学习简介</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -176,7 +176,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
- <span class="menu-text">PyTorch 入门</span></a>
+ <span class="menu-text">Chapter 2: PyTorch 入门</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -199,7 +199,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
- <span class="menu-text">FlashAttention：高效的注意力机制实现</span></a>
+ <span class="menu-text">Chapter 10: FlashAttention：高效的注意力机制实现</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -228,12 +228,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#torch.inference_mode干脆以后都别记账了" id="toc-torch.inference_mode干脆以后都别记账了" class="nav-link" data-scroll-target="#torch.inference_mode干脆以后都别记账了">2.2.3 <code>torch.inference_mode()</code>：干脆以后都别记账了</a></li>
   <li><a href="#不同梯度模式下的行为对比" id="toc-不同梯度模式下的行为对比" class="nav-link" data-scroll-target="#不同梯度模式下的行为对比">2.2.4 不同梯度模式下的行为对比</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">Chapter 2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">Chapter 2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">Chapter 2.2 PyTorch 中的梯度记录与控制</h1>
 </div>
@@ -849,4 +849,4 @@ z.requires_grad in enable_grad(): True</code></pre>
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></div></div></footer></body></html>
