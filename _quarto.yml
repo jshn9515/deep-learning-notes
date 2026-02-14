@@ -30,6 +30,12 @@ website:
         - section: FlashAttention：高效的注意力机制实现
           contents:
             - zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb
+    - id: en
+      style: floating
+      contents:
+        - section: "Chapter 2: Introduction to PyTorch"
+          contents:
+            - en/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb
 
 format:
   html:
