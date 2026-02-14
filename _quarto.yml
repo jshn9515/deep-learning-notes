@@ -9,7 +9,7 @@ website:
   title: deep-learning
   back-to-top-navigation: false
   repo-url: https://github.com/jshn9515/deep-learning-notes
-  repo-actions: [source, issue]
+  repo-actions: [source, issue, edit]
   navbar:
     right:
       - text: 中文
@@ -20,14 +20,14 @@ website:
     - id: zh
       style: floating
       contents:
-        - section: 深度学习简介
+        - section: "Chapter 1: 深度学习简介"
           contents:
             - zh/ch1-introduction/ch1.3-computation-graph.ipynb
-        - section: PyTorch 入门
+        - section: "Chapter 2: PyTorch 入门"
           contents:
             - zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb
             - zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb
-        - section: FlashAttention：高效的注意力机制实现
+        - section: "Chapter 10: FlashAttention：高效的注意力机制实现"
           contents:
             - zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb
     - id: en
