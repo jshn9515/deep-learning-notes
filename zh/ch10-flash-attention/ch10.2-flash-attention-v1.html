@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-Hans" xml:lang="zh-Hans"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>10.2 FlashAttention-1：消除 IO – deep-learning</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-8b4baf804e461d9b72633f0de59a0cac.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-11430f55dfe4085c4a492823cb6ff128.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "没有结果",
+    "search-matching-documents-text": "匹配的文档",
+    "search-copy-link-title": "复制搜索链接",
+    "search-hide-matches-text": "隐藏其它匹配结果",
+    "search-more-match-text": "更多匹配结果",
+    "search-more-matches-text": "更多匹配结果",
+    "search-clear-button-title": "清除",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "取消",
+    "search-submit-button-title": "提交",
+    "search-label": "搜索"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">deep-learning</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="搜索"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="展开或折叠导航栏" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../zh/"> 
+<span class="menu-text">中文</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../en/"> 
+<span class="menu-text">English</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">10.2 FlashAttention-1：消除 IO</li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Chapter 1: 深度学习简介</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch1-introduction/ch1.3-computation-graph.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1.3 前向传播、反向传播与计算图</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Chapter 2: PyTorch 入门</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2.1 PyTorch 中的自动微分</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2.2 PyTorch 中的梯度记录与控制</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Chapter 10: FlashAttention：高效的注意力机制实现</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10.1 为什么 Attention 是 IO-Bound</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">该页面内容</h2>
+   
+  <ul>
+  <li><a href="#从标准-attention-到-online-softmax" id="toc-从标准-attention-到-online-softmax" class="nav-link active" data-scroll-target="#从标准-attention-到-online-softmax">10.2.1 从标准 Attention 到 Online Softmax</a></li>
+  <li><a href="#online-softmax-的重标定" id="toc-online-softmax-的重标定" class="nav-link" data-scroll-target="#online-softmax-的重标定">10.2.2 Online Softmax 的重标定</a></li>
+  <li><a href="#flashattention-1-的前向传播实现" id="toc-flashattention-1-的前向传播实现" class="nav-link" data-scroll-target="#flashattention-1-的前向传播实现">10.2.3 FlashAttention-1 的前向传播实现</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.2-flash-attention-v1.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.2-flash-attention-v1.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">10.2 FlashAttention-1：消除 IO</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>在 10.1 里，我们介绍了标准 Attention 其实是一个 IO-bound 的算法。它的慢并不在算，而是慢在把中间的 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span> 这两个 <span class="math inline">\(N \times N\)</span> 的大矩阵写到 HBM 上，再读回来。真正的瓶颈是搬运一整个注意力矩阵，而不是两次 GEMM 本身。</p>
+<p>FlashAttention-1 的前向传播，本质上就做一件事：不再向 HBM 存入中间矩阵 <span class="math inline">\(S=QK^\top\)</span> 和 <span class="math inline">\(P=\text{softmax}(S)\)</span>，而是在一个 fused kernel 里边算边 softmax 边乘 <span class="math inline">\(V\)</span>，并且只在片上（SRAM / Register）维护 softmax 需要的少量统计量，从而消除 IO。</p>
+<p>简单理解就是，标准 Attention 需要先把整张试卷写出来（<span class="math inline">\(S\)</span>），再统一批改（softmax 得到 <span class="math inline">\(P\)</span>），最后再拿 <span class="math inline">\(P\)</span> 计算总得分。而 FlashAttention-1 则是一边写卷子一边算分一边汇总，最终只交卷（<span class="math inline">\(O\)</span>），而中间的草稿不出片上。</p>
+<p>那么，它是怎么做到的呢？</p>
+<div id="1d6f9074" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> math</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="从标准-attention-到-online-softmax" class="level2">
+<h2 class="anchored" data-anchor-id="从标准-attention-到-online-softmax">10.2.1 从标准 Attention 到 Online Softmax</h2>
+<p>我们先把单头 Attention 的公式写出来（这里忽略缩放）：</p>
+<p><span class="math display">\[ S = QK^\top, \quad P = \mathrm{softmax}(S), \quad O = PV \]</span></p>
+<p>它们的形状分别是：</p>
+<p><span class="math display">\[ Q, K, V \in \mathbb{R}^{N \times d}, \quad S \in \mathbb{R}^{N \times N}, \quad P \in \mathbb{R}^{N \times N}, \quad O \in \mathbb{R}^{N \times d} \]</span></p>
+<p>对第 <span class="math inline">\(i\)</span> 个 query 和第 <span class="math inline">\(j\)</span> 个 key 和 value，标准 softmax 是：</p>
+<p><span class="math display">\[ S_{ij} = Q_i K_j^\top, \quad P_{ij} = \frac{\exp(S_{i})}{\sum_j \exp(S_{ij})}, \quad O_i = P_{ij} V_j \]</span></p>
+<p>实际上，为了数值稳定，我们总是用“减去最大值”的稳定版本。这个版本可以保证在计算 softmax 的时候不会因为指数函数的存在而导致数值溢出：</p>
+<p><span class="math display">\[ P_i = \frac{\exp(S_i - m_i)}{\sum_j \exp(S_{ij} - m_i)}, \quad m_i = \max_j S_{ij} \]</span></p>
+<p>这里的难点在于，如果我们想得到 <span class="math inline">\(O_i\)</span>，就似乎得先得到整行 <span class="math inline">\(P_i\)</span>；而要得到 <span class="math inline">\(P_i\)</span>，又似乎得先有整行 <span class="math inline">\(S_i\)</span>。也就是说，我们必须先把整行 <span class="math inline">\(S\)</span> 写出来，才能算出整行 <span class="math inline">\(P\)</span>，进而算出整行 <span class="math inline">\(O\)</span>。这就导致我们不得不把 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span> 写到 HBM。</p>
+<p>那么，既然我们没办法完整存下 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span>，我们能不能也像矩阵乘法那样，按行分块计算呢？也就是说，我们能不能在扫描 <span class="math inline">\(S\)</span> 的时候，边计算 <span class="math inline">\(m_i\)</span> 和 <span class="math inline">\(l_i = \sum_j \exp(S_{ij} - m_i)\)</span>，边计算 <span class="math inline">\(O_i\)</span> 呢？</p>
+<p>如果我们这样做的话，我们就会遇到一个问题：</p>
+<ul>
+<li>当我们在扫描 <span class="math inline">\(S\)</span> 的时候，我们需要维护一个当前行的最大值 <span class="math inline">\(m_i\)</span>，但是这个 <span class="math inline">\(m_i\)</span> 是随着我们的扫描不断更新的；</li>
+<li>同样地，我们需要维护一个当前行的归一化累积量 <span class="math inline">\(l_i\)</span>，但是这个 <span class="math inline">\(l_i\)</span> 也是随着 <span class="math inline">\(m_i\)</span> 的更新而不断变化的；</li>
+<li>当我们在扫描 <span class="math inline">\(S\)</span> 的时候，我们需要维护一个当前行的输出向量 <span class="math inline">\(O_i\)</span>，但是这个 <span class="math inline">\(O_i\)</span> 是基于之前的 <span class="math inline">\(m_i\)</span> 和 <span class="math inline">\(l_i\)</span> 计算的，而现在 <span class="math inline">\(m_i\)</span> 和 <span class="math inline">\(l_i\)</span> 都变了，所以我们需要想一个办法来修正之前累积的 <span class="math inline">\(O_i\)</span>。</li>
+</ul>
+<p>如果我们解决了这个问题，那么我们需要的只是每一行的两个标量统计量 <span class="math inline">\(m_i\)</span> 和 <span class="math inline">\(l_i\)</span>，它们的大小是 <span class="math inline">\(O(1)\)</span>；输出向量 <span class="math inline">\(O_i\)</span>，它的大小是 <span class="math inline">\(O(d)\)</span>。它们所需要的空间远小于 <span class="math inline">\(O(N^2)\)</span> 的 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span>。</p>
+<p>这就是 FlashAttention-1 的核心贡献之一：作者给出了数值稳定的 online softmax 重标定公式，使得我们可以在按块扫描 <span class="math inline">\(S\)</span> 时，正确维护每行的 <span class="math inline">\(m_i, l_i\)</span> 以及 <span class="math inline">\(O_i\)</span>，从而无需显式存下 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span>。</p>
+</section>
+<section id="online-softmax-的重标定" class="level2">
+<h2 class="anchored" data-anchor-id="online-softmax-的重标定">10.2.2 Online Softmax 的重标定</h2>
+<p>现在我们把 online softmax 写得更具体一点。首先我们对 <span class="math inline">\(Q\)</span> 按行分成 <span class="math inline">\(T_r\)</span> 个块，每个块的大小是 <span class="math inline">\(B_r \times d\)</span>；对 <span class="math inline">\(K\)</span> 和 <span class="math inline">\(V\)</span> 按列分成 <span class="math inline">\(T_c\)</span> 个块，每个块的大小是 <span class="math inline">\(B_c \times d\)</span>。对于第 <span class="math inline">\(i\)</span> 个 query 块和第 <span class="math inline">\(j\)</span> 个 key 和 value 块，我们有：</p>
+<ul>
+<li><span class="math inline">\(m_i \in \mathbb{R}^{B_r \times 1}\)</span>：到目前为止的行最大值</li>
+<li><span class="math inline">\(l_i \in \mathbb{R}^{B_r \times 1}\)</span>：到目前为止的归一化累积量</li>
+<li><span class="math inline">\(O_i \in \mathbb{R}^{B_r \times d}\)</span>：到目前为止的输出向量</li>
+<li>新块里计算出的 attention 分数：<span class="math inline">\(S_{ij} \in \mathbb{R}^{B_r \times B_c}\)</span></li>
+<li>新块里计算出的局部最大值：<span class="math inline">\(\tilde{m}_{ij} = \mathrm{rowmax}(S_{ij}) \in \mathbb{R}^{B_r \times 1}\)</span></li>
+<li>新块里计算出的 softmax：<span class="math inline">\(P_{ij} = \exp(S_{ij} - \tilde{m}_{ij}) \in \mathbb{R}^{B_r \times B_c}\)</span></li>
+<li>新块里的局部归一化累积量：<span class="math inline">\(\tilde{l}_{ij} = \mathrm{rowsum}(P_{ij}) \in \mathbb{R}^{B_r \times 1}\)</span></li>
+</ul>
+<p>但问题是，旧的 <span class="math inline">\(O_i\)</span> 是在旧的 <span class="math inline">\(m_i\)</span> 下计算的，而新的 <span class="math inline">\(\tilde{O}_i\)</span> 是在新的 <span class="math inline">\(\tilde{m}_i\)</span> 下计算的。要把它们加起来，必须把它们搬到同一个标尺，否则就无法正确地累积。</p>
+<p>令新的全局最大值：</p>
+<p><span class="math display">\[ m_i' = \max(m_i, \tilde{m}_{ij}) \]</span></p>
+<p>旧的部分需要乘一个缩放因子 <span class="math inline">\(\alpha = \exp(m_i - m_i')\)</span>，新的部分需要乘一个缩放因子 <span class="math inline">\(\beta = \exp(\tilde{m}_{ij} - m_i')\)</span>。于是我们可以更新：</p>
+<p><span class="math display">\[ l_i' = \alpha l_i + \beta \tilde{l}_{ij} \]</span> <span class="math display">\[ P_{ij} = \exp(S_{ij} - \tilde{m}_{ij}) \]</span></p>
+<p>最后，在这一行所有块都扫描完后，输出就是：</p>
+<p><span class="math display">\[ O_i = \frac{\alpha O_i + \beta P_{ij} V_j}{l_i'} \]</span></p>
+<p>这就是 FlashAttention-1 前向传播里最关键的一步：每处理一个块，就做一次“最大值更新 + 重标定 + 累积”。通过流式处理，我们就不需要把整个 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span> 写到 HBM 上了，而只需要在片上维护 <span class="math inline">\(m_i\)</span>、<span class="math inline">\(l_i\)</span> 和 <span class="math inline">\(o_i\)</span> 这几个统计量，最终输出 <span class="math inline">\(O\)</span>。这样就减少了不必要的 IO，达到了加速的目的。</p>
+</section>
+<section id="flashattention-1-的前向传播实现" class="level2">
+<h2 class="anchored" data-anchor-id="flashattention-1-的前向传播实现">10.2.3 FlashAttention-1 的前向传播实现</h2>
+<p>下面是 FlashAttention-1 前向传播的伪代码，流程和我们上面描述的一样：</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/FA1-forward.png" class="img-fluid figure-img"></p>
+<figcaption>图 1：FlashAttention-1 前向传播伪代码</figcaption>
+</figure>
+</div>
+<p>接下来我们来实现一下：</p>
+<div id="65e2bb14" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> flash_attention_forward(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    Q: torch.Tensor,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    K: torch.Tensor,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    V: torch.Tensor,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    Br: <span class="bu">int</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    Bc: <span class="bu">int</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    causal: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    scale: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    dropout: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.0</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    upcast: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> torch.Tensor:</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">    Educational FlashAttention-1 forward that matches Algorithm 1 (tiled, online softmax).</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">    Args:</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">        Q, K, V: [N, d] (single head). (Batch/head dims can be folded outside.)</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">        Br: row block size (Q/O block)</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">        Bc: col block size (K/V block)</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">        causal: whether to apply causal mask (i attends to &lt;= i)</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">        scale: optional scale factor (e.g., 1/sqrt(d)). If None, defaults to 1/sqrt(d).</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co">        upcast: if True, do accumulations in float32 for numerical stability.</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">        O: [N, d]</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    N, d <span class="op">=</span> Q.shape</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    original_dtype <span class="op">=</span> Q.dtype</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> Q.ndim <span class="op">==</span> K.ndim <span class="op">==</span> V.ndim <span class="op">==</span> <span class="dv">2</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> K.shape <span class="op">==</span> (N, d) <span class="kw">and</span> V.shape <span class="op">==</span> (N, d)</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    dtype <span class="op">=</span> (</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>        torch.float32</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (upcast <span class="kw">and</span> Q.dtype <span class="kw">in</span> (torch.float16, torch.bfloat16))</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span> Q.dtype</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    Q <span class="op">=</span> Q.to(dtype<span class="op">=</span>dtype)</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> K.to(dtype<span class="op">=</span>dtype)</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    V <span class="op">=</span> V.to(dtype<span class="op">=</span>dtype)</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> scale <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>        scale <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> math.sqrt(d)</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># line 3: initialize O, l, m in HBM</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>    O <span class="op">=</span> torch.zeros(N, d, dtype<span class="op">=</span>dtype, device<span class="op">=</span>Q.device)</span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>    l <span class="op">=</span> torch.zeros(N, dtype<span class="op">=</span>dtype, device<span class="op">=</span>Q.device)</span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> torch.full((N,), <span class="op">-</span>math.inf, dtype<span class="op">=</span>dtype, device<span class="op">=</span>Q.device)</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Split counts</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>    Tr <span class="op">=</span> math.ceil(N <span class="op">/</span> Br)</span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>    Tc <span class="op">=</span> math.ceil(N <span class="op">/</span> Bc)</span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># line 6: for j in [1..Tc]</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(Tc):</span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>        k_start <span class="op">=</span> j <span class="op">*</span> Bc</span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>        k_end <span class="op">=</span> <span class="bu">min</span>((j <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> Bc, N)</span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>        <span class="co"># line 7: read K_j, V_j from HBM</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>        Kj <span class="op">=</span> K[k_start:k_end]</span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>        Vj <span class="op">=</span> V[k_start:k_end]</span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>        <span class="co"># line 8: for i in [1..Tr]</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(Tr):</span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>            q_start <span class="op">=</span> i <span class="op">*</span> Br</span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>            q_end <span class="op">=</span> <span class="bu">min</span>((i <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> Br, N)</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>            <span class="co"># line 9: read Q_i, O_i, l_i, m_i from HBM</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>            Qi <span class="op">=</span> Q[q_start:q_end]</span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>            Oi <span class="op">=</span> O[q_start:q_end]</span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>            li <span class="op">=</span> l[q_start:q_end]</span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>            mi <span class="op">=</span> m[q_start:q_end]</span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>            <span class="co"># line 10: S_ij = tau * Q_i K_j^T</span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a>            Sij <span class="op">=</span> (Qi <span class="op">@</span> Kj.T) <span class="op">*</span> scale</span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Optional causal mask: positions in Qi correspond to global indices [q_start..q_end)</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>            <span class="co"># keys correspond to [k_start..k_end)</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> causal:</span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a>                q_idx <span class="op">=</span> torch.arange(q_start, q_end, device<span class="op">=</span>Q.device)</span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>                q_idx <span class="op">=</span> q_idx.unsqueeze(<span class="dv">1</span>)</span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a>                k_idx <span class="op">=</span> torch.arange(k_start, k_end, device<span class="op">=</span>Q.device)</span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>                k_idx <span class="op">=</span> k_idx.unsqueeze(<span class="dv">0</span>)</span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>                <span class="co"># line 11: mask where key position &gt; query position</span></span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>                Sij <span class="op">=</span> Sij.masked_fill(k_idx <span class="op">&gt;</span> q_idx, <span class="op">-</span>math.inf)</span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>            <span class="co"># line 12: m̃_ij = rowmax(S_ij), P̃_ij = exp(S_ij - m̃_ij), l̃_ij = rowsum(P̃_ij)</span></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>            mij_tilde <span class="op">=</span> Sij.<span class="bu">max</span>(<span class="dv">1</span>).values</span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>            Pij_tilde <span class="op">=</span> (Sij <span class="op">-</span> mij_tilde.unsqueeze(<span class="dv">1</span>)).exp()</span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>            lij_tilde <span class="op">=</span> Pij_tilde.<span class="bu">sum</span>(<span class="dv">1</span>)</span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a>            <span class="co"># line 13: m_new = max(m_i, m̃_ij)</span></span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a>            mi_new <span class="op">=</span> mi.maximum(mij_tilde)</span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a>            <span class="co"># l_new = exp(m_i - m_new)*l_i + exp(m̃_ij - m_new)*l̃_ij</span></span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a>            alpha <span class="op">=</span> (mi <span class="op">-</span> mi_new).exp()</span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a>            beta <span class="op">=</span> (mij_tilde <span class="op">-</span> mi_new).exp()</span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a>            li_new <span class="op">=</span> alpha <span class="op">*</span> li <span class="op">+</span> beta <span class="op">*</span> lij_tilde</span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> dropout <span class="op">&gt;</span> <span class="fl">0.0</span>:</span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a>                <span class="co"># line 14: (optional) dropout on P̃_ij before using it in O_i update</span></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a>                mask <span class="op">=</span> torch.rand_like(Pij_tilde) <span class="op">&gt;</span> dropout</span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a>                Pij_tilde <span class="op">=</span> Pij_tilde <span class="op">*</span> mask <span class="op">/</span> (<span class="fl">1.0</span> <span class="op">-</span> dropout)</span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>            <span class="co"># line 15:</span></span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a>            <span class="co"># O_i &lt;- diag(l_new)^(-1) * ( diag(l_i)*exp(m_i-m_new)*O_i + exp(m̃_ij-m_new) * P̃_ij V_j )</span></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Note: diag(...) is just per-row scaling -&gt; broadcasting.</span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a>            Oi_new <span class="op">=</span> (</span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>                (alpha.unsqueeze(<span class="dv">1</span>) <span class="op">*</span> li.unsqueeze(<span class="dv">1</span>) <span class="op">*</span> Oi)</span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a>                <span class="op">+</span> beta.unsqueeze(<span class="dv">1</span>) <span class="op">*</span> (Pij_tilde <span class="op">@</span> Vj)</span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a>            ) <span class="op">/</span> li_new.unsqueeze(<span class="dv">1</span>)</span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a>            <span class="co"># line 16: write O_i, l_i, m_i back to HBM</span></span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>            O[q_start:q_end] <span class="op">=</span> Oi_new</span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a>            l[q_start:q_end] <span class="op">=</span> li_new</span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a>            m[q_start:q_end] <span class="op">=</span> mi_new</span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Cast back to input dtype</span></span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> O.to(dtype<span class="op">=</span>original_dtype)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="fe8ed39a" class="cell" data-execution_count="26">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>N, d <span class="op">=</span> <span class="dv">128</span>, <span class="dv">64</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>Q <span class="op">=</span> torch.randn(N, d)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> torch.randn(N, d)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>V <span class="op">=</span> torch.randn(N, d)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>Br, Bc <span class="op">=</span> <span class="dv">32</span>, <span class="dv">32</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>O_flash <span class="op">=</span> flash_attention_forward(Q, K, V, Br, Bc)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># reference</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>scale <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> math.sqrt(d)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>S <span class="op">=</span> (Q <span class="op">@</span> K.T) <span class="op">*</span> scale</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> S.softmax(dim<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>O_ref <span class="op">=</span> P <span class="op">@</span> V</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>max_err <span class="op">=</span> (O_flash <span class="op">-</span> O_ref).<span class="bu">abs</span>().<span class="bu">max</span>()</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Max absolute error:'</span>, max_err.item())</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Max absolute error: 2.384185791015625e-07</code></pre>
+</div>
+</div>
+<p>可以看到，FlashAttention-1 的前向传播实现非常直接地对应了我们上面描述的流程。它的核心就是在每个块的循环里，维护 <span class="math inline">\(m_i\)</span>、<span class="math inline">\(l_i\)</span> 和 <span class="math inline">\(O_i\)</span> 这几个统计量，并且在每个块处理完后更新它们。最终输出 <span class="math inline">\(O\)</span> 就是正确的注意力输出，而中间的 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span> 从来没有被写到 HBM 上。这极大的减少了 IO，达到了加速的目的。</p>
+<p>那么，既然没有保存任何中间变量，FlashAttention-1 是如何实现反向传播的呢？答案是重计算！我们在反向传播的时候，重新执行一遍前向传播的流程，利用保存的行统计量 <span class="math inline">\(m\)</span> 和 <span class="math inline">\(l\)</span>，重新计算 <span class="math inline">\(S\)</span> 和 <span class="math inline">\(P\)</span>，从而得到梯度。这就是 FlashAttention-1 的反向传播实现的核心思想：牺牲一些计算来换取更少的 IO，从而在整体上实现加速。</p>
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">二次使用</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "已复制");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "已复制");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/jshn9515\.github\.io\/deep-learning-notes\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.2-flash-attention-v1.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.2-flash-attention-v1.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></div></div></footer></body></html>

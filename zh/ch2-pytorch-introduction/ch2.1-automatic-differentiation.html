@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-Hans" xml:lang="zh-Hans"><head>
 
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.8.27">
@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Chapter 2.1 PyTorch 中的自动微分 – deep-learning</title>
+<title>2.1 PyTorch 中的自动微分 – deep-learning</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -90,17 +90,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   ],
   "show-item-context": false,
   "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
+    "search-no-results-text": "没有结果",
+    "search-matching-documents-text": "匹配的文档",
+    "search-copy-link-title": "复制搜索链接",
+    "search-hide-matches-text": "隐藏其它匹配结果",
+    "search-more-match-text": "更多匹配结果",
+    "search-more-matches-text": "更多匹配结果",
+    "search-clear-button-title": "清除",
     "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
+    "search-detached-cancel-button-title": "取消",
+    "search-submit-button-title": "提交",
+    "search-label": "搜索"
   }
 }</script>
 
@@ -148,8 +148,8 @@ window.Quarto = {
     <span class="navbar-title">deep-learning</span>
     </a>
   </div>
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+            <div id="quarto-search" class="" title="搜索"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="展开或折叠导航栏" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -170,11 +170,11 @@ window.Quarto = {
     </nav>
   <nav class="quarto-secondary-nav">
     <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2.1 PyTorch 中的自动微分</a></li></ol></nav>
-        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">2.1 PyTorch 中的自动微分</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
   </nav>
@@ -189,7 +189,7 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 1: 深度学习简介</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -197,7 +197,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch1-introduction/ch1.3-computation-graph.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 1.3 前向传播、反向传播与计算图</span></a>
+ <span class="menu-text">1.3 前向传播、反向传播与计算图</span></a>
   </div>
 </li>
       </ul>
@@ -206,7 +206,7 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 2: PyTorch 入门</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -214,13 +214,13 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Chapter 2.1 PyTorch 中的自动微分</span></a>
+ <span class="menu-text">2.1 PyTorch 中的自动微分</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 2.2 PyTorch 中的梯度记录与控制</span></a>
+ <span class="menu-text">2.2 PyTorch 中的梯度记录与控制</span></a>
   </div>
 </li>
       </ul>
@@ -229,7 +229,7 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 10: FlashAttention：高效的注意力机制实现</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -237,7 +237,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 10.1 为什么 Attention 是 IO-Bound</span></a>
+ <span class="menu-text">10.1 为什么 Attention 是 IO-Bound</span></a>
   </div>
 </li>
       </ul>
@@ -249,7 +249,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
+    <h2 id="toc-title">该页面内容</h2>
    
   <ul>
   <li><a href="#计算图不是画出来的是跑出来的" id="toc-计算图不是画出来的是跑出来的" class="nav-link active" data-scroll-target="#计算图不是画出来的是跑出来的">2.1.1 计算图不是画出来的，是跑出来的</a></li>
@@ -264,14 +264,14 @@ window.Quarto = {
   </ul></li>
   <li><a href="#反向传播中的常见错误" id="toc-反向传播中的常见错误" class="nav-link" data-scroll-target="#反向传播中的常见错误">2.1.6 反向传播中的常见错误</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2.1 PyTorch 中的自动微分</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">2.1 PyTorch 中的自动微分</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Chapter 2.1 PyTorch 中的自动微分</h1>
+<h1 class="title">2.1 PyTorch 中的自动微分</h1>
 </div>
 
 
@@ -298,7 +298,7 @@ window.Quarto = {
 <p>理解这套机制很关键。它不仅解释了“梯度是怎么来的”，还会直接影响我们后面遇到的许多现象：比如梯度为什么会累积？为什么中间变量默认没有 <code>.grad</code> 属性？为什么有些操作会切断梯度链条？以及显存与计算之间为什么总要做权衡。</p>
 <div id="341d5119" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.autograd.functional <span class="im">as</span> AF</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.autograd.functional <span class="im">as</span> AF</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="计算图不是画出来的是跑出来的" class="level2">
 <h2 class="anchored" data-anchor-id="计算图不是画出来的是跑出来的">2.1.1 计算图不是画出来的，是跑出来的</h2>
@@ -313,14 +313,14 @@ window.Quarto = {
 <p>然后，我们告诉 PyTorch，在接下来的计算中，我们希望得到 <code>z</code> 关于 <code>x</code> 和 <code>y</code> 的梯度。</p>
 <div id="0b8c612f" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.arange(<span class="fl">1.0</span>, <span class="fl">5.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.arange(<span class="fl">5.0</span>, <span class="fl">9.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.arange(<span class="fl">5.0</span>, <span class="fl">9.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>这里的 <code>requires_grad=True</code> 可以理解成一种声明：这些变量需要被“追责”。之后只要某个结果是由它们参与计算得到的，它就会自动带上可导属性，并在背后记录“我是谁算出来的，依赖了谁”。</p>
 <p>现在做两步普通的前向计算：先算点积，再取正弦。</p>
 <div id="e937b0be" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>q <span class="op">=</span> torch.dot(x, y)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> torch.sin(q)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'z.requires_grad:'</span>, z.requires_grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'z.requires_grad:'</span>, z.requires_grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>z.requires_grad: True</code></pre>
 </div>
@@ -333,7 +333,7 @@ window.Quarto = {
 <p>先别急着管计算图长什么样。我们先看一个更直观的现象：在你调用反向传播之前，梯度并不会凭空出现。</p>
 <div id="2eda64eb" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.grad:'</span>, x.grad)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>x.grad: None
 y.grad: None</code></pre>
@@ -353,7 +353,7 @@ y.grad: None</code></pre>
 <div id="62cbabcd" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>z.backward()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.grad:'</span>, x.grad)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>x.grad: tensor([3.1666, 3.7999, 4.4332, 5.0666])
 y.grad: tensor([0.6333, 1.2666, 1.9000, 2.5333])</code></pre>
@@ -368,7 +368,7 @@ y.grad: tensor([0.6333, 1.2666, 1.9000, 2.5333])</code></pre>
 <p>我们可以把它和手算结果对齐。比如：</p>
 <div id="757e46b1" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> torch.allclose(x.grad, y <span class="op">*</span> x.dot(y).cos())</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> torch.allclose(y.grad, x <span class="op">*</span> x.dot(y).cos())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> torch.allclose(y.grad, x <span class="op">*</span> x.dot(y).cos())</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>到这里，自动微分的核心逻辑其实已经很清楚了。深度学习框架并不需要推导一个巨大的全局导数公式，它只需要知道每一步怎么求导，然后把这些局部规则按计算图的结构串起来。</p>
 <p>如果再深入一点，其实 PyTorch 也把这条回溯链暴露了一部分给我们。比如：</p>
@@ -376,7 +376,7 @@ y.grad: tensor([0.6333, 1.2666, 1.9000, 2.5333])</code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'z.grad_fn:'</span>, z.grad_fn.name())</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'q.grad_fn:'</span>, q.grad_fn.name())</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.grad_fn:'</span>, x.grad_fn)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad_fn:'</span>, y.grad_fn)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad_fn:'</span>, y.grad_fn)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>z.grad_fn: SinBackward0
 q.grad_fn: DotBackward0
@@ -397,7 +397,7 @@ y.grad_fn: None</code></pre>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>node_y <span class="op">=</span> node_q.next_functions[<span class="dv">1</span>][<span class="dv">0</span>]</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'grad_fn of z.child -&gt; q:'</span>, node_q.name())</span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'grad_fn of q.child -&gt; x:'</span>, node_x.name())</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'grad_fn of q.child -&gt; y:'</span>, node_y.name())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'grad_fn of q.child -&gt; y:'</span>, node_y.name())</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>grad_fn of z.child -&gt; q: DotBackward0
 grad_fn of q.child -&gt; x: struct torch::autograd::AccumulateGrad
@@ -416,7 +416,7 @@ grad_fn of q.child -&gt; y: struct torch::autograd::AccumulateGrad</code></pre>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    Z.backward()  <span class="co"># This will raise an error because z is not a scalar</span></span>
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">RuntimeError</span> <span class="im">as</span> err:</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>RuntimeError: grad can be implicitly created only for scalar outputs</code></pre>
 </div>
@@ -442,7 +442,7 @@ grad_fn of q.child -&gt; y: struct torch::autograd::AccumulateGrad</code></pre>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>Z <span class="op">=</span> torch.outer(x, y)</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>Z.backward(gradient<span class="op">=</span>torch.ones_like(Z))</span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.grad:'</span>, x.grad)</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>x.grad: tensor([26., 26., 26., 26.])
 y.grad: tensor([10., 10., 10., 10.])</code></pre>
@@ -459,7 +459,7 @@ y.grad: tensor([10., 10., 10., 10.])</code></pre>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>Z <span class="op">=</span> torch.<span class="bu">sum</span>(Z)</span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>Z.backward()</span>
 <span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.grad:'</span>, x.grad)</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y.grad:'</span>, y.grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>x.grad: tensor([26., 26., 26., 26.])
 y.grad: tensor([10., 10., 10., 10.])</code></pre>
@@ -485,7 +485,7 @@ y.grad: tensor([10., 10., 10., 10.])</code></pre>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>dzdx, dzdy <span class="op">=</span> torch.autograd.grad(z, (x, y), create_graph<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'dz/dx:'</span>, dzdx)</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'dz/dy:'</span>, dzdy)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'dz/dy:'</span>, dzdy)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>dz/dx: tensor(-0.5820, grad_fn=&lt;MulBackward0&gt;)
 dz/dy: tensor(-0.2910, grad_fn=&lt;MulBackward0&gt;)</code></pre>
@@ -505,7 +505,7 @@ dz/dy: tensor(-0.2910, grad_fn=&lt;MulBackward0&gt;)</code></pre>
 <span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>(d2zdx2,) <span class="op">=</span> torch.autograd.grad(dzdx, x, retain_graph<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>(d2zdy2,) <span class="op">=</span> torch.autograd.grad(dzdy, y)</span>
 <span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'d2z/dx2:'</span>, d2zdx2)</span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'d2z/dy2:'</span>, d2zdy2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'d2z/dy2:'</span>, d2zdy2)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>dz/dx: tensor(-0.5820, grad_fn=&lt;MulBackward0&gt;)
 dz/dy: tensor(-0.2910, grad_fn=&lt;MulBackward0&gt;)
@@ -543,7 +543,7 @@ d2z/dy2: tensor(-3.9574)</code></pre>
 <span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.arange(<span class="fl">5.0</span>, <span class="fl">9.0</span>)</span>
 <span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> AF.vjp(vjp_func, (x, y))</span>
 <span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'func(x,y):'</span>, out[<span class="dv">0</span>])</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'VJP output:'</span>, out[<span class="dv">1</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'VJP output:'</span>, out[<span class="dv">1</span>])</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>func(x,y): tensor(0.7739)
 VJP output: (tensor([3.1666, 3.7999, 4.4332, 5.0666]), tensor([0.6333, 1.2666, 1.9000, 2.5333]))</code></pre>
@@ -566,7 +566,7 @@ VJP output: (tensor([3.1666, 3.7999, 4.4332, 5.0666]), tensor([0.6333, 1.2666, 1
 <span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>v_y <span class="op">=</span> torch.full_like(y, <span class="fl">0.2</span>)</span>
 <span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>out <span class="op">=</span> AF.jvp(jvp_func, (x, y), (v_x, v_y))</span>
 <span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'func(x,y):'</span>, out[<span class="dv">0</span>])</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'JVP output:'</span>, out[<span class="dv">1</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'JVP output:'</span>, out[<span class="dv">1</span>])</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>func(x,y): tensor(0.7739)
 JVP output: tensor(2.9133)</code></pre>
@@ -587,7 +587,7 @@ JVP output: tensor(2.9133)</code></pre>
 <h2 class="anchored" data-anchor-id="反向传播中的常见错误">2.1.6 反向传播中的常见错误</h2>
 <div id="578f62d0" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.arange(<span class="fl">1.0</span>, <span class="fl">5.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.arange(<span class="fl">5.0</span>, <span class="fl">9.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.arange(<span class="fl">5.0</span>, <span class="fl">9.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <ol type="1">
 <li>重复调用 <code>backward()</code>：在同一个计算图上多次调用 <code>backward()</code> 会导致错误。PyTorch 在第一次反向传播结束后，会把这张图里“只为反向传播服务的中间变量”释放掉，以节省显存。所以当我们第二次再沿着同一张图回溯，就会发现“路标”已经被清理了。如果需要多次计算梯度，可以在第一次调用时设置 <code>retain_graph=True</code>。</li>
@@ -598,7 +598,7 @@ JVP output: tensor(2.9133)</code></pre>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
 <span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    z.backward()  <span class="co"># This will raise an error because gradients are already computed</span></span>
 <span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">RuntimeError</span> <span class="im">as</span> err:</span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>RuntimeError: Trying to backward through the graph a second time (or directly access saved tensors after they have already been freed). Saved intermediate values of the graph are freed when you call .backward() or autograd.grad(). Specify retain_graph=True if you need to backward through the graph a second time or if you need to access saved tensors after calling backward.</code></pre>
 </div>
@@ -606,7 +606,7 @@ JVP output: tensor(2.9133)</code></pre>
 <div id="f0d93e2b" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> torch.sin(torch.dot(x, y))</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>z.backward(retain_graph<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>z.backward()  <span class="co"># This works because we retained the graph</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>z.backward()  <span class="co"># This works because we retained the graph</span></span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <ol start="2" type="1">
 <li>尝试访问中间节点的梯度：只有叶子节点（即最初创建的变量）会存储梯度信息。中间节点的梯度不会被存储，因为如果每个中间变量都存梯度，显存会直接爆炸，而且训练真正需要的是参数梯度，而不是所有中间量的梯度。因此尝试访问它们的 <code>.grad</code> 属性会返回 <code>None</code>，并引发 <code>UserWarning</code>。如果需要保留中间节点的梯度，可以在创建这些节点时设置 <code>q.retain_grad()</code>。</li>
@@ -622,7 +622,7 @@ JVP output: tensor(2.9133)</code></pre>
 <span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'q.grad:'</span>, q.grad)</span>
 <span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(w) <span class="op">&gt;</span> <span class="dv">0</span>:</span>
 <span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> warn <span class="kw">in</span> w:</span>
-<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="st">'UserWarning:'</span>, warn.message)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="st">'UserWarning:'</span>, warn.message)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>q.grad: None
 UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being accessed. Its .grad attribute won't be populated during autograd.backward(). If you indeed want the .grad field to be populated for a non-leaf Tensor, use .retain_grad() on the non-leaf Tensor. If you access the non-leaf Tensor by mistake, make sure you access the leaf Tensor instead. See github.com/pytorch/pytorch/pull/30531 for more information. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\build\aten\src\ATen/core/TensorBody.h:497.)</code></pre>
@@ -633,7 +633,7 @@ UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being 
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>q.retain_grad()</span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> torch.sin(q)</span>
 <span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>z.backward()</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'q.grad after retain_grad:'</span>, q.grad)  <span class="co"># Now q.grad is available</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'q.grad after retain_grad:'</span>, q.grad)  <span class="co"># Now q.grad is available</span></span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>q.grad after retain_grad: tensor(0.6333)</code></pre>
 </div>
@@ -646,7 +646,7 @@ UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being 
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    x.relu_()</span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">RuntimeError</span> <span class="im">as</span> err:</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>RuntimeError: a leaf Variable that requires grad is being used in an in-place operation.</code></pre>
 </div>
@@ -654,13 +654,13 @@ UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being 
 <div id="9571ed90" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> torch.dot(x, y)</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.relu(x)</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>z.backward()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>z.backward()</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">二次使用</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
@@ -686,12 +686,12 @@ UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being 
       // flash "checked"
       button.classList.add('code-copy-button-checked');
       var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
+      button.setAttribute("title", "已复制");
       let tooltip;
       if (window.bootstrap) {
         button.setAttribute("data-bs-toggle", "tooltip");
         button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
+        button.setAttribute("data-bs-title", "已复制");
         tooltip = new bootstrap.Tooltip(button, 
           { trigger: "manual", 
             customClass: "code-copy-button-tooltip",
@@ -1066,4 +1066,4 @@ UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being 
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></div></div></footer></body></html>

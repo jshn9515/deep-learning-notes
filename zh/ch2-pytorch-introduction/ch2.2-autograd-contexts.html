@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-Hans" xml:lang="zh-Hans"><head>
 
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.8.27">
@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Chapter 2.2 PyTorch 中的梯度记录与控制 – deep-learning</title>
+<title>2.2 PyTorch 中的梯度记录与控制 – deep-learning</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -90,17 +90,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   ],
   "show-item-context": false,
   "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
+    "search-no-results-text": "没有结果",
+    "search-matching-documents-text": "匹配的文档",
+    "search-copy-link-title": "复制搜索链接",
+    "search-hide-matches-text": "隐藏其它匹配结果",
+    "search-more-match-text": "更多匹配结果",
+    "search-more-matches-text": "更多匹配结果",
+    "search-clear-button-title": "清除",
     "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
+    "search-detached-cancel-button-title": "取消",
+    "search-submit-button-title": "提交",
+    "search-label": "搜索"
   }
 }</script>
 
@@ -119,8 +119,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <span class="navbar-title">deep-learning</span>
     </a>
   </div>
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+            <div id="quarto-search" class="" title="搜索"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="展开或折叠导航栏" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -141,11 +141,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </nav>
   <nav class="quarto-secondary-nav">
     <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">Chapter 2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
-        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
   </nav>
@@ -160,7 +160,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 1: 深度学习简介</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -168,7 +168,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch1-introduction/ch1.3-computation-graph.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 1.3 前向传播、反向传播与计算图</span></a>
+ <span class="menu-text">1.3 前向传播、反向传播与计算图</span></a>
   </div>
 </li>
       </ul>
@@ -177,7 +177,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 2: PyTorch 入门</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -185,13 +185,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 2.1 PyTorch 中的自动微分</span></a>
+ <span class="menu-text">2.1 PyTorch 中的自动微分</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Chapter 2.2 PyTorch 中的梯度记录与控制</span></a>
+ <span class="menu-text">2.2 PyTorch 中的梯度记录与控制</span></a>
   </div>
 </li>
       </ul>
@@ -200,7 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 10: FlashAttention：高效的注意力机制实现</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -208,7 +208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 10.1 为什么 Attention 是 IO-Bound</span></a>
+ <span class="menu-text">10.1 为什么 Attention 是 IO-Bound</span></a>
   </div>
 </li>
       </ul>
@@ -220,7 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
+    <h2 id="toc-title">该页面内容</h2>
    
   <ul>
   <li><a href="#torch.no_grad暂停记账" id="toc-torch.no_grad暂停记账" class="nav-link active" data-scroll-target="#torch.no_grad暂停记账">2.2.1 <code>torch.no_grad()</code>：暂停记账</a></li>
@@ -228,14 +228,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#torch.inference_mode干脆以后都别记账了" id="toc-torch.inference_mode干脆以后都别记账了" class="nav-link" data-scroll-target="#torch.inference_mode干脆以后都别记账了">2.2.3 <code>torch.inference_mode()</code>：干脆以后都别记账了</a></li>
   <li><a href="#不同梯度模式下的行为对比" id="toc-不同梯度模式下的行为对比" class="nav-link" data-scroll-target="#不同梯度模式下的行为对比">2.2.4 不同梯度模式下的行为对比</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">Chapter 2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html">Chapter 2: PyTorch 入门</a></li><li class="breadcrumb-item"><a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html">2.2 PyTorch 中的梯度记录与控制</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Chapter 2.2 PyTorch 中的梯度记录与控制</h1>
+<h1 class="title">2.2 PyTorch 中的梯度记录与控制</h1>
 </div>
 
 
@@ -260,7 +260,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="9210c578" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="torch.no_grad暂停记账" class="level2">
 <h2 class="anchored" data-anchor-id="torch.no_grad暂停记账">2.2.1 <code>torch.no_grad()</code>：暂停记账</h2>
@@ -274,7 +274,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.randn(<span class="dv">10</span>, <span class="dv">4</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>y_pred <span class="op">=</span> model(x)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y_pred.requires_grad before no_grad():'</span>, y_pred.requires_grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y_pred.requires_grad before no_grad():'</span>, y_pred.requires_grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>y_pred.requires_grad before no_grad(): True</code></pre>
 </div>
@@ -285,7 +285,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    y_pred <span class="op">=</span> model(x)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y_pred.requires_grad inside no_grad():'</span>, y_pred.requires_grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'y_pred.requires_grad inside no_grad():'</span>, y_pred.requires_grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>y_pred.requires_grad inside no_grad(): False</code></pre>
 </div>
@@ -297,7 +297,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    loss.backward()</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">RuntimeError</span> <span class="im">as</span> err:</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn</code></pre>
 </div>
@@ -310,7 +310,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'x.requires_grad inside no_grad():'</span>, x.requires_grad)</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    y_pred <span class="op">=</span> model(x)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'y_pred.requires_grad inside no_grad():'</span>, y_pred.requires_grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'y_pred.requires_grad inside no_grad():'</span>, y_pred.requires_grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>x.requires_grad inside no_grad(): True
 y_pred.requires_grad inside no_grad(): False</code></pre>
@@ -324,7 +324,7 @@ y_pred.requires_grad inside no_grad(): False</code></pre>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'x.requires_grad inside no_grad():'</span>, x.requires_grad)</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>x.requires_grad_()</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.requires_grad after requires_grad_():'</span>, x.requires_grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.requires_grad after requires_grad_():'</span>, x.requires_grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>x.requires_grad inside no_grad(): False
 x.requires_grad after requires_grad_(): True</code></pre>
@@ -352,7 +352,7 @@ x.requires_grad after requires_grad_(): True</code></pre>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">'z.requires_grad in enable_grad():'</span>, z.requires_grad)</span>
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Only z will have gradients tracked</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>z.backward(gradient<span class="op">=</span>torch.ones_like(z))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>z.backward(gradient<span class="op">=</span>torch.ones_like(z))</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>y.requires_grad in no_grad(): False
 z.requires_grad in enable_grad(): True</code></pre>
@@ -367,7 +367,7 @@ z.requires_grad in enable_grad(): True</code></pre>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>is_training <span class="op">=</span> <span class="va">False</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.set_grad_enabled(is_training):</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    y_pred <span class="op">=</span> model(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    y_pred <span class="op">=</span> model(x)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>当 <code>is_training=True</code> 时，等价于 <code>enable_grad()</code>；当 <code>is_training=False</code> 时，等价于 <code>no_grad()</code>。这使得代码逻辑更加统一，写条件控制也更方便。</p>
 <p>到目前为止，我们已经介绍了两种常用的梯度控制上下文：<code>no_grad()</code> 和 <code>enable_grad()</code>。它们分别用于关闭和开启梯度记录，并且可以嵌套使用，形成一个灵活的栈式管理系统。接下来，我们还会介绍一个更专门针对推理优化的上下文：<code>torch.inference_mode()</code>，它在性能和内存效率上比 <code>no_grad()</code> 更进一步。</p>
@@ -392,7 +392,7 @@ z.requires_grad in enable_grad(): True</code></pre>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> torch.randn(<span class="dv">10</span>, <span class="dv">6</span>)</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>x.requires_grad_()  <span class="co"># we can still enable gradients for x</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.requires_grad after enabling:'</span>, x.requires_grad)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'x.requires_grad after enabling:'</span>, x.requires_grad)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>x.requires_grad after enabling: True</code></pre>
 </div>
@@ -405,7 +405,7 @@ z.requires_grad in enable_grad(): True</code></pre>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
 <span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    x.requires_grad_()</span>
 <span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">RuntimeError</span> <span class="im">as</span> err:</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">'RuntimeError:'</span>, err)</span></code></pre></div><button title="复制到剪贴板" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>RuntimeError: Setting requires_grad=True on inference tensor outside InferenceMode is not allowed.</code></pre>
 </div>
@@ -443,7 +443,7 @@ z.requires_grad in enable_grad(): True</code></pre>
 
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">二次使用</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
@@ -469,12 +469,12 @@ z.requires_grad in enable_grad(): True</code></pre>
       // flash "checked"
       button.classList.add('code-copy-button-checked');
       var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
+      button.setAttribute("title", "已复制");
       let tooltip;
       if (window.bootstrap) {
         button.setAttribute("data-bs-toggle", "tooltip");
         button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
+        button.setAttribute("data-bs-title", "已复制");
         tooltip = new bootstrap.Tooltip(button, 
           { trigger: "manual", 
             customClass: "code-copy-button-tooltip",
@@ -849,4 +849,4 @@ z.requires_grad in enable_grad(): True</code></pre>
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></div></div></footer></body></html>

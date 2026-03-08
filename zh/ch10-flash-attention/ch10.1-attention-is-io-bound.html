@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-Hans" xml:lang="zh-Hans"><head>
 
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.8.27">
@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Chapter 10.1 为什么 Attention 是 IO-Bound – deep-learning</title>
+<title>10.1 为什么 Attention 是 IO-Bound – deep-learning</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -55,17 +55,17 @@ ul.task-list li input[type="checkbox"] {
   ],
   "show-item-context": false,
   "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
+    "search-no-results-text": "没有结果",
+    "search-matching-documents-text": "匹配的文档",
+    "search-copy-link-title": "复制搜索链接",
+    "search-hide-matches-text": "隐藏其它匹配结果",
+    "search-more-match-text": "更多匹配结果",
+    "search-more-matches-text": "更多匹配结果",
+    "search-clear-button-title": "清除",
     "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
+    "search-detached-cancel-button-title": "取消",
+    "search-submit-button-title": "提交",
+    "search-label": "搜索"
   }
 }</script>
 
@@ -113,8 +113,8 @@ window.Quarto = {
     <span class="navbar-title">deep-learning</span>
     </a>
   </div>
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+            <div id="quarto-search" class="" title="搜索"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="展开或折叠导航栏" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -135,11 +135,11 @@ window.Quarto = {
     </nav>
   <nav class="quarto-secondary-nav">
     <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10: FlashAttention：高效的注意力机制实现</a></li><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10.1 为什么 Attention 是 IO-Bound</a></li></ol></nav>
-        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10: FlashAttention：高效的注意力机制实现</a></li><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">10.1 为什么 Attention 是 IO-Bound</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="展开或折叠侧边栏导航" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
   </nav>
@@ -154,7 +154,7 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 1: 深度学习简介</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -162,7 +162,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch1-introduction/ch1.3-computation-graph.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 1.3 前向传播、反向传播与计算图</span></a>
+ <span class="menu-text">1.3 前向传播、反向传播与计算图</span></a>
   </div>
 </li>
       </ul>
@@ -171,7 +171,7 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 2: PyTorch 入门</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -179,13 +179,13 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 2.1 PyTorch 中的自动微分</span></a>
+ <span class="menu-text">2.1 PyTorch 中的自动微分</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Chapter 2.2 PyTorch 中的梯度记录与控制</span></a>
+ <span class="menu-text">2.2 PyTorch 中的梯度记录与控制</span></a>
   </div>
 </li>
       </ul>
@@ -194,7 +194,7 @@ window.Quarto = {
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
  <span class="menu-text">Chapter 10: FlashAttention：高效的注意力机制实现</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="展开或折叠此栏">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
@@ -202,7 +202,7 @@ window.Quarto = {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Chapter 10.1 为什么 Attention 是 IO-Bound</span></a>
+ <span class="menu-text">10.1 为什么 Attention 是 IO-Bound</span></a>
   </div>
 </li>
       </ul>
@@ -214,7 +214,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
+    <h2 id="toc-title">该页面内容</h2>
    
   <ul>
   <li><a href="#gpu-性能模型与算术强度" id="toc-gpu-性能模型与算术强度" class="nav-link active" data-scroll-target="#gpu-性能模型与算术强度">10.1.1 GPU 性能模型与算术强度</a></li>
@@ -226,14 +226,14 @@ window.Quarto = {
   </ul></li>
   <li><a href="#为什么长序列会放大-io-问题" id="toc-为什么长序列会放大-io-问题" class="nav-link" data-scroll-target="#为什么长序列会放大-io-问题">10.1.3 为什么长序列会放大 IO 问题</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10: FlashAttention：高效的注意力机制实现</a></li><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10.1 为什么 Attention 是 IO-Bound</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">Chapter 10: FlashAttention：高效的注意力机制实现</a></li><li class="breadcrumb-item"><a href="../../zh/ch10-flash-attention/ch10.1-attention-is-io-bound.html">10.1 为什么 Attention 是 IO-Bound</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Chapter 10.1 为什么 Attention 是 IO-Bound</h1>
+<h1 class="title">10.1 为什么 Attention 是 IO-Bound</h1>
 </div>
 
 
@@ -250,14 +250,14 @@ window.Quarto = {
 </header>
 
 
-<p>在前面的章节里，我们已经从数学结构上理解了 Attention：给定 <span class="math inline">\(Q, K, V\)</span>，我们先计算相似度矩阵 <span class="math inline">\(S = QK^\top\)</span>，再做 softmax，最后得到输出 <span class="math inline">\(O = \text{softmax}(S)V\)</span>。从公式上看，它不过是几次矩阵乘法和一个逐元素的非线性操作。按直觉来说，矩阵乘法是 GPU 最擅长的事情，因此 Attention 理应是一个计算密集型的算子。</p>
+<p>在前面的章节里，我们已经从数学结构上理解了 Attention：给定 <span class="math inline">\(Q, K, V\)</span>，我们先计算相似度矩阵 <span class="math inline">\(S = QK^\top\)</span>，再做 <span class="math inline">\(P = \text{softmax}(S)\)</span>，最后得到输出 <span class="math inline">\(O = PV\)</span>。从公式上看，它不过是几次矩阵乘法和一个逐元素的非线性操作。按直觉来说，矩阵乘法是 GPU 最擅长的事情，因此 Attention 理应是一个计算密集型的算子。</p>
 <p>但当我们真正去分析它在 GPU 上的执行过程时，就会发现，Attention 往往不是被算力限制，而是被内存访问限制。也就是说，它更像是一个 IO-bound 问题，而不是 compute-bound 问题。这意味着，即使我们的 GPU 还有大量浮点算力没有被用满，Attention 也可能已经跑不动了，因为瓶颈不在算，而在搬。那么，问题出在哪儿了呢？</p>
-<p>答案就藏在 Attention 的注意力矩阵里。这个矩阵的规模是 <span class="math inline">\(n \times n\)</span> 的，随序列长度平方增长。当序列长度变大时，真正拖慢速度的，往往不是乘法算子本身，而是频繁地在 GPU 的 HBM（高带宽显存）和 SRAM（片上缓存）之间来回读写大块数据。也就是说，Attention 的性能瓶颈，本质上来自数据移动，而不是算术运算。</p>
+<p>答案就藏在 Attention 的注意力矩阵里。这个矩阵的规模是 <span class="math inline">\(N \times N\)</span> 的，随序列长度平方增长。当序列长度变大时，真正拖慢速度的，往往不是乘法算子本身，而是频繁地在 GPU 的 HBM（高带宽显存）和 SRAM（片上缓存）之间来回读写大块数据。也就是说，Attention 的性能瓶颈，本质上来自数据移动，而不是算术运算。</p>
 <p>接下来，我们就从一个更底层的视角出发，拆解 Attention 在硬件上的真实执行过程，看看它到底把时间花在了哪里。</p>
 <section id="gpu-性能模型与算术强度" class="level2">
 <h2 class="anchored" data-anchor-id="gpu-性能模型与算术强度">10.1.1 GPU 性能模型与算术强度</h2>
 <p>在介绍 Attention 的时候，我们提出了一个看起来有些反直觉的结论：Attention 的瓶颈往往不在算力，而在内存访问。但是，在分析 Attention 为什么是 IO-bound 之前，我们需要先建立一个最基本的 GPU 性能视角。</p>
-<p>当我们说一个算子“快”或者“慢”时，它到底受什么限制？和《计算机组成原理》里讲的一样，只有两类资源会成为瓶颈：</p>
+<p>当我们说一个算子“快”或者“慢”时，它到底受什么限制？对于一个算子而言，只有两类资源会成为瓶颈：</p>
 <ol type="1">
 <li>算术计算能力（Compute Throughput）：每秒能做多少次浮点运算（FLOPs）</li>
 <li>内存带宽（Memory Bandwidth）：每秒能从内存搬运多少字节数据（Bytes/s）</li>
@@ -272,13 +272,13 @@ window.Quarto = {
 <li>如果一个算子读一点数据，只算几下就丢掉了，那么它的算术强度低，就更可能是 IO-bound。</li>
 </ul>
 <p>举个简单的例子，矩阵乘法为什么通常是 compute-bound？</p>
-<p>因为在矩阵乘法中，每个输入元素都会被复用多次。例如，在 <span class="math inline">\(C = AB\)</span> 中，矩阵 <span class="math inline">\(A\)</span> 的每个元素会被用来计算 <span class="math inline">\(C\)</span> 中的一整行，而矩阵 <span class="math inline">\(B\)</span> 的每个元素会被用来计算 <span class="math inline">\(C\)</span> 中的一整列。假设矩阵 <span class="math inline">\(A\)</span> 和 <span class="math inline">\(B\)</span> 的大小都是 <span class="math inline">\(n \times n\)</span>，那么每个元素被复用的次数大约是 <span class="math inline">\(n\)</span> 次。因此，矩阵乘法的算术强度大约是 <span class="math inline">\(O(n)\)</span>，也就通常是 compute-bound。</p>
+<p>因为在矩阵乘法中，每个输入元素都会被复用多次。例如，在 <span class="math inline">\(C = AB\)</span> 中，矩阵 <span class="math inline">\(A\)</span> 的每个元素会被用来计算 <span class="math inline">\(C\)</span> 中的一整行，而矩阵 <span class="math inline">\(B\)</span> 的每个元素会被用来计算 <span class="math inline">\(C\)</span> 中的一整列。假设矩阵 <span class="math inline">\(A\)</span> 和 <span class="math inline">\(B\)</span> 的大小都是 <span class="math inline">\(N \times N\)</span>，那么每个元素被复用的次数大约是 <span class="math inline">\(N\)</span> 次。因此，矩阵乘法的算术强度大约是 <span class="math inline">\(O(N)\)</span>，也就通常是 compute-bound。</p>
 <p>同时，我们还要考虑一个点，那就是 GPU 的算力增长速度远远快于显存带宽的增长速度。这种现象被称为 <strong>内存墙（Memory Wall）</strong>。也就是说，现代 GPU 的 FLOPs 数字非常惊人，但显存带宽的提升是相对缓慢的。如果一个算子不能有效地复用数据，而是频繁地从 HBM 里读写大块张量，那么即使算术本身不复杂，也会被内存带宽卡住。</p>
 <p>而且，和 CPU 一样，GPU 的内存并不是一个统一空间，而是分层的：</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="figures/gpu-memory.png" class="img-fluid figure-img" style="width:40.0%"></p>
-<figcaption>GPU 内存分层模型</figcaption>
+<figcaption>图 1：GPU 内存分层模型</figcaption>
 </figure>
 </div>
 <ul>
@@ -287,7 +287,7 @@ window.Quarto = {
 <li>寄存器（Register）：容量极小，但最快，访问延迟几乎为零</li>
 </ul>
 <p>所以，一个算子真正高效的方式，就尽量把数据留在片上（SRAM 或者寄存器），减少对 HBM 的访问。因为一旦频繁访问 HBM，即使每次访问都“很快”，累积起来仍然会成为性能瓶颈。</p>
-<p>那么，Attention 里的 <span class="math inline">\(QK^\top\)</span>、softmax 和 <span class="math inline">\(V\)</span>，真的像矩阵乘法那样有良好的数据复用吗？还是说，它在结构上就天然缺乏足够高的算术强度？</p>
+<p>那么，Attention 里的 <span class="math inline">\(S\)</span>、<span class="math inline">\(P\)</span> 和 <span class="math inline">\(V\)</span>，真的像矩阵乘法那样有良好的数据复用吗？还是说，它在结构上就天然缺乏足够高的算术强度？</p>
 </section>
 <section id="标准-attention-的-io-分析" class="level2">
 <h2 class="anchored" data-anchor-id="标准-attention-的-io-分析">10.1.2 标准 Attention 的 IO 分析</h2>
@@ -301,22 +301,22 @@ window.Quarto = {
 <p>这一节，我们就把它真正用在标准 Attention 上。</p>
 <p>我们从最常见的形式出发（忽略 batch 和 head 维度，只看单头，忽略缩放）：</p>
 <p><span class="math display">\[ S = QK^\top, \quad P = \text{softmax}(S), \quad O = PV \]</span></p>
-<p>设序列长度为 <span class="math inline">\(n\)</span>，特征维度为 <span class="math inline">\(d\)</span>，那么：</p>
+<p>设序列长度为 <span class="math inline">\(N\)</span>，特征维度为 <span class="math inline">\(d\)</span>，那么：</p>
 <ul>
-<li><span class="math inline">\(Q, K, V \in \mathbb{R}^{n \times d}\)</span></li>
-<li><span class="math inline">\(S, P \in \mathbb{R}^{n \times n}\)</span></li>
-<li><span class="math inline">\(O \in \mathbb{R}^{n \times d}\)</span></li>
+<li><span class="math inline">\(Q, K, V \in \mathbb{R}^{N \times d}\)</span></li>
+<li><span class="math inline">\(S, P \in \mathbb{R}^{N \times n}\)</span></li>
+<li><span class="math inline">\(O \in \mathbb{R}^{N \times d}\)</span></li>
 </ul>
 <p>我们来分别分析 FLOPs 和 IO。</p>
 <section id="flops-分析" class="level3">
 <h3 class="anchored" data-anchor-id="flops-分析">10.1.2.1 FLOPs 分析</h3>
 <ol type="1">
-<li>第一步：计算 <span class="math inline">\(QK^\top\)</span>。这是一个矩阵乘法，涉及 <span class="math inline">\(n \times d\)</span> 和 <span class="math inline">\(d \times n\)</span> 的乘积，结果是 <span class="math inline">\(n \times n\)</span> 的矩阵。FLOPs 大约是 <span class="math inline">\(2n^2d\)</span>（每个输出元素需要 <span class="math inline">\(d\)</span> 次乘加操作，总共有 <span class="math inline">\(n^2\)</span> 个输出元素，一次乘加算 2 次 FLOPs）。</li>
-<li>第二步，计算 softmax。softmax 的 FLOPs 主要来自于指数运算和归一化。每个元素需要计算一个指数（1 FLOP）和一个除法（1 FLOP），FLOPs 大约是 <span class="math inline">\(2n^2\)</span>（忽略处理数值稳定性的额外 FLOPs）。</li>
-<li>第三步，计算 <span class="math inline">\(PV\)</span>。这是另一个矩阵乘法，涉及 <span class="math inline">\(n \times n\)</span> 和 <span class="math inline">\(n \times d\)</span> 的乘积，结果是 <span class="math inline">\(n \times d\)</span> 的矩阵。FLOPs 大约是 <span class="math inline">\(2n^2d\)</span>。</li>
+<li>第一步：计算 <span class="math inline">\(QK^\top\)</span>。这是一个矩阵乘法，涉及 <span class="math inline">\(N \times d\)</span> 和 <span class="math inline">\(d \times N\)</span> 的乘积，结果是 <span class="math inline">\(N \times N\)</span> 的矩阵。FLOPs 大约是 <span class="math inline">\(2N^2d\)</span>（每个输出元素需要 <span class="math inline">\(d\)</span> 次乘加操作，总共有 <span class="math inline">\(N^2\)</span> 个输出元素，一次乘加算 2 次 FLOPs）。</li>
+<li>第二步，计算 softmax。softmax 的 FLOPs 主要来自于指数运算和归一化。每个元素需要计算一个指数（1 FLOP）和一个除法（1 FLOP），FLOPs 大约是 <span class="math inline">\(2N^2\)</span>（忽略处理数值稳定性引入的额外 FLOPs）。</li>
+<li>第三步，计算 <span class="math inline">\(PV\)</span>。这是另一个矩阵乘法，涉及 <span class="math inline">\(N \times N\)</span> 和 <span class="math inline">\(N \times d\)</span> 的乘积，结果是 <span class="math inline">\(N \times d\)</span> 的矩阵。FLOPs 大约是 <span class="math inline">\(2N^2d\)</span>。</li>
 </ol>
 <p>把这些加起来，总的 FLOPs 大约是：</p>
-<p><span class="math display">\[ \text{FLOPs} \approx 2n^2d + 2n^2 + 2n^2d = 4n^2d + 2n^2 \approx O(n^2d) \]</span></p>
+<p><span class="math display">\[ \text{FLOPs} \approx 2N^2d + 2N^2 + 2N^2d = 4N^2d + 2N^2 \approx O(N^2d) \]</span></p>
 </section>
 <section id="io-分析" class="level3">
 <h3 class="anchored" data-anchor-id="io-分析">10.1.2.2 IO 分析</h3>
@@ -330,39 +330,39 @@ window.Quarto = {
 <li>从 HBM 读取 <span class="math inline">\(P, V\)</span>，计算 <span class="math inline">\(O\)</span></li>
 <li>把 <span class="math inline">\(O\)</span> 写回 HBM</li>
 </ol>
-<p>从流程里不难发现，中间的 <span class="math inline">\(n \times n\)</span> 矩阵被完整写入、再读回，造成了大量的数据搬运。注意，因为这里的矩阵都很大，SRAM 装不下，所以只能把它们放在 HBM 里，每次读写都要经过内存总线，造成了巨大的 IO 开销。</p>
+<p>从流程里不难发现，中间的 <span class="math inline">\(N \times N\)</span> 矩阵被完整写入、再读回，造成了大量的数据搬运。注意，因为这里的矩阵都很大，SRAM 装不下，所以只能把它们放在 HBM 里，每次读写都要经过内存总线，造成了巨大的 IO 开销。</p>
 <p>我们来具体计算一下。</p>
 <ol type="1">
-<li>输入读取。我们需要从 HBM 里读取 <span class="math inline">\(Q, K, V\)</span>，每个都是 <span class="math inline">\(n \times d\)</span> 的矩阵，所以总共是 <span class="math inline">\(3nd\)</span> 个元素，每个元素 4 字节（假设元素类型是 float32），总共是 <span class="math inline">\(8nd\)</span> 字节。</li>
-<li>中间矩阵 <span class="math inline">\(S\)</span> 的读写。<span class="math inline">\(S\)</span> 是 <span class="math inline">\(n \times n\)</span> 的矩阵，每个元素 4 字节，所以读写一次就是 <span class="math inline">\(8n^2\)</span> 字节。</li>
-<li>中间矩阵 <span class="math inline">\(P\)</span> 的读写。<span class="math inline">\(P\)</span> 也是 <span class="math inline">\(n \times n\)</span> 的矩阵，每个元素 4 字节，所以读写一次也是 <span class="math inline">\(8n^2\)</span> 字节。</li>
-<li>输出写回。输出 <span class="math inline">\(O\)</span> 是 <span class="math inline">\(n \times d\)</span> 的矩阵，每个元素 4 字节，所以写回是 <span class="math inline">\(8nd\)</span> 字节。</li>
+<li>输入读取。我们需要从 HBM 里读取 <span class="math inline">\(Q, K, V\)</span>，每个都是 <span class="math inline">\(N \times d\)</span> 的矩阵，所以总共是 <span class="math inline">\(3Nd\)</span> 个元素，每个元素 4 字节（假设元素类型是 <code>float32</code>），总共是 <span class="math inline">\(8Nd\)</span> 字节。</li>
+<li>中间矩阵 <span class="math inline">\(S\)</span> 的读写。<span class="math inline">\(S\)</span> 是 <span class="math inline">\(N \times N\)</span> 的矩阵，每个元素 4 字节，所以读写一次就是 <span class="math inline">\(8N^2\)</span> 字节。</li>
+<li>中间矩阵 <span class="math inline">\(P\)</span> 的读写。<span class="math inline">\(P\)</span> 也是 <span class="math inline">\(N \times N\)</span> 的矩阵，每个元素 4 字节，所以读写一次也是 <span class="math inline">\(8N^2\)</span> 字节。</li>
+<li>输出写回。输出 <span class="math inline">\(O\)</span> 是 <span class="math inline">\(N \times d\)</span> 的矩阵，每个元素 4 字节，所以写回是 <span class="math inline">\(8Nd\)</span> 字节。</li>
 </ol>
 <p>把这些加起来，总的 IO 大约是：</p>
-<p><span class="math display">\[ \text{IO} \approx 8nd + 8n^2 + 8n^2 + 8nd = 16n^2 + 16nd \approx O(n^2) \]</span></p>
+<p><span class="math display">\[ \text{IO} \approx 8Nd + 8N^2 + 8N^2 + 8Nd = 16N^2 + 16Nd \approx O(N^2 + Nd) \]</span></p>
 </section>
 <section id="算术强度分析" class="level3">
 <h3 class="anchored" data-anchor-id="算术强度分析">10.1.2.3 算术强度分析</h3>
 <p>现在我们有了 FLOPs 和 IO 的估计，我们就可以计算算术强度：</p>
-<p><span class="math display">\[ \text{Arithmetic Intensity} = \frac{\text{FLOPs}}{\text{Bytes Moved}} \approx \frac{4n^2d}{16n^2} = O(d) \]</span></p>
-<p>计算得到 Attention 的算术强度是 <span class="math inline">\(O(d)\)</span>。这是一个常数，在实际应用中，<span class="math inline">\(d\)</span> 通常为 64、128 或 256，因此算术强度通常在 16~64 FLOPs/byte 的范围内。相比之下，现代 GPU（例如 NVIDIA A100）的峰值计算能力与内存带宽之比约为 200 FLOPs/byte。这意味着，只有当算术强度显著高于这一阈值时，计算才能达到 compute-bound 状态，而 Attention 的算术强度远低于该阈值。因此，其性能受到内存带宽的限制，而不是计算能力的限制。</p>
+<p><span class="math display">\[ \text{Arithmetic Intensity} = \frac{\text{FLOPs}}{\text{Bytes Moved}} \approx \frac{N^2d}{N^2+Nd} = O(d) \]</span></p>
+<p>计算得到 Attention 的算术强度是 <span class="math inline">\(O(d)\)</span>。这是一个常数，并不随着序列长度 <span class="math inline">\(N\)</span> 的增长而增长。也就是说，Attention 的算术强度主要由特征维度 <span class="math inline">\(d\)</span> 决定，而与序列长度 <span class="math inline">\(N\)</span> 的增长无关。在实际模型中，<span class="math inline">\(d\)</span> 往往是预先设定的固定超参数，通常只取 64、128 或 256 等有限值；相比之下，长上下文窗口主要体现为序列长度 <span class="math inline">\(N\)</span> 的增长。随着 <span class="math inline">\(N\)</span> 的增大，Attention 的计算量与数据访问开销都会显著增加，但由于 <span class="math inline">\(d\)</span> 基本不变，其算术强度并不会随 <span class="math inline">\(N\)</span> 提升。因此，在长序列场景下，Attention 往往不会因问题规模增大而变得更接近 compute-bound，反而更容易首先受到显存容量和内存带宽的限制。</p>
 <p>所以，Attention 属于典型的 memory-bound，其性能瓶颈在于 HBM 与片上存储之间的数据搬运，而不是浮点运算本身。</p>
 </section>
 </section>
 <section id="为什么长序列会放大-io-问题" class="level2">
 <h2 class="anchored" data-anchor-id="为什么长序列会放大-io-问题">10.1.3 为什么长序列会放大 IO 问题</h2>
-<p>在上一节里，我们已经看到，标准 Attention 的 IO 主导项是那个 <span class="math inline">\(n \times n\)</span> 的中间矩阵 <span class="math inline">\(S\)</span>。现在我们进一步问一个问题：如果序列长度 <span class="math inline">\(n\)</span> 变大，问题会如何演化？</p>
-<p>我们已经知道，<span class="math inline">\(\text{FLOPs} \approx O(n^2d)\)</span>，而 <span class="math inline">\(\text{IO} \approx O(n^2)\)</span>。也就是说，当序列长度翻倍时，IO 增长 4 倍。而 GPU 的带宽是固定的。这不是一个慢慢增长的问题，而是一个爆炸式增长的问题。</p>
-<p>长序列带来的问题有两个。一个是注意力矩阵 <span class="math inline">\(S\)</span> 的大小，当 <span class="math inline">\(n=2048\)</span> 时，<span class="math inline">\(S\)</span> 的大小已经是 16MB（假设 float32），而当 <span class="math inline">\(n=4096\)</span> 时，<span class="math inline">\(S\)</span> 的大小就达到了 64MB，而且这还只是单头。还要加上注意力头数量，批处理大小，显存压力会迅速变得不可接受。另外一个问题是带宽。容量问题还可以通过分布式计算等方式缓解，但带宽问题无法绕开。每次访问 <span class="math inline">\(S\)</span> 都需要从 HBM 里搬运大量数据，这会成为性能的主要瓶颈，导致 Attention 在长序列上的效率急剧下降。</p>
+<p>在上一节里，我们已经看到，标准 Attention 的 IO 主导项是那个 <span class="math inline">\(N \times N\)</span> 的中间矩阵 <span class="math inline">\(S\)</span>。现在我们进一步问一个问题：如果序列长度 <span class="math inline">\(N\)</span> 变大，问题会如何演化？</p>
+<p>我们已经知道，<span class="math inline">\(\text{IO} \approx O(N^2 + Nd)\)</span>。也就是说，当序列长度翻倍时，IO 增长 4 倍，而 GPU 的带宽是固定的。这不是一个线性增长的问题，而是一个爆炸式增长的问题。</p>
+<p>长序列带来的问题有两个。一个是注意力矩阵 <span class="math inline">\(S\)</span> 的大小，当 <span class="math inline">\(N = 2048\)</span> 时，<span class="math inline">\(S\)</span> 的大小已经是 16MB（假设 <code>float32</code>），而当 <span class="math inline">\(N = 4096\)</span> 时，<span class="math inline">\(S\)</span> 的大小就达到了 64MB，这还只是单头注意力。如果加上注意力头数量，批处理大小，显存压力会迅速变得不可接受。另外一个问题是带宽。容量问题还可以通过分布式计算等方式缓解，但带宽问题无法绕开。每次访问 <span class="math inline">\(S\)</span> 都需要从 HBM 里搬运大量数据，这会成为性能的主要瓶颈，导致 Attention 在长序列上的效率急剧下降。</p>
 <p>因此，长序列不仅增加了计算量，更重要的是，它极大地放大了 IO 问题，使得标准 Attention 在处理长序列时变得非常低效。而且，由于内存墙的存在，GPU 算力的提升速度要远远快于内存带宽的提升速度。对于 compute-bound 的算子来说，算力的提升可以直接转化为性能提升；但对于 IO-bound 的算子来说，算力的提升并不能带来性能提升，因为瓶颈在内存访问上。因此，随着序列长度的增加，Attention 的性能问题会变得越来越严重。</p>
 <p>如果我们真正理解了这一点，那么一个自然的问题就会出现：我们是否真的需要把整个 <span class="math inline">\(S\)</span> 存下来？</p>
-<p>如果答案是“不需要”，那么我们就可以把 IO 的复杂度从 <span class="math inline">\(O(n^2)\)</span> 降到接近 <span class="math inline">\(O(nd)\)</span>，从而把 Attention 推向 compute-bound，使其不再受内存带宽的限制。这就是 FlashAttention 想做的事情。</p>
+<p>如果答案是“不需要”，那么我们就可以把 IO 的复杂度从 <span class="math inline">\(O(N^2 + Nd)\)</span> 降到接近 <span class="math inline">\(O(Nd)\)</span>，从而把 Attention 推向 compute-bound，使其不再受内存带宽的限制。这就是 FlashAttention 想做的事情。</p>
 <p>下一节，我们将正式进入 FlashAttention 的核心思想，利用矩阵分块、在线更新和 kernel 融合来消灭 IO。</p>
 
 
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">二次使用</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/deed.zh">CC BY-NC 4.0</a></div></div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
@@ -388,12 +388,12 @@ window.Quarto = {
       // flash "checked"
       button.classList.add('code-copy-button-checked');
       var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
+      button.setAttribute("title", "已复制");
       let tooltip;
       if (window.bootstrap) {
         button.setAttribute("data-bs-toggle", "tooltip");
         button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
+        button.setAttribute("data-bs-title", "已复制");
         tooltip = new bootstrap.Tooltip(button, 
           { trigger: "manual", 
             customClass: "code-copy-button-tooltip",
@@ -768,4 +768,4 @@ window.Quarto = {
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi empty"></i>Edit this page</a></li></ul></div></div></div></footer></body></html>
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi bi-github"></i>查看代码</a></li><li><a href="https://github.com/jshn9515/deep-learning-notes/issues/new" class="toc-action"><i class="bi empty"></i>反馈问题</a></li><li><a href="https://github.dev/jshn9515/deep-learning-notes/blob/main/zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb" class="toc-action"><i class="bi empty"></i>编辑该页面</a></li></ul></div></div></div></footer></body></html>
