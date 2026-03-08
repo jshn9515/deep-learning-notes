@@ -224,3 +224,4 @@ _site.zip
 _extensions/
 /.quarto/
 **/*.quarto_ipynb
+docs/
