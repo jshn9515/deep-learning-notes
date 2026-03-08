@@ -30,6 +30,7 @@ website:
         - section: "Chapter 10: FlashAttention：高效的注意力机制实现"
           contents:
             - zh/ch10-flash-attention/ch10.1-attention-is-io-bound.ipynb
+            - zh/ch10-flash-attention/ch10.2-flash-attention-v1.ipynb
     - id: en
       style: floating
       contents:
