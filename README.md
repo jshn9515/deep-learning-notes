@@ -48,7 +48,7 @@ See `requirements.txt` for the full list of dependencies.
 Before running the related content, please first enter the `dnnl` directory and install the `dnnl` library according to the instructions in `dnnl/README.md`. This library contains some custom implementations and utility functions used throughout the notes, and many examples will not run properly without it.
 
 > [!NOTE]
-> This project uses Transformers v5. If you are following other repositories or tutorials based on v4, there may be significant API differences (such as tokenizers and quantization configurations). Please refer to the [official migration guide](https://github.com/huggingface/transformers/blob/main/MIGRATION_GUIDE_V5.md) for adjustments.
+> This project uses **Transformers v5**. If you are following other repositories or tutorials based on v4, there may be significant API differences (such as tokenizers and quantization configurations). Please refer to the [official migration guide](https://github.com/huggingface/transformers/blob/main/MIGRATION_GUIDE_V5.md) for adjustments.
 
 ## 🤝 Contributions
 
@@ -73,5 +73,5 @@ This project website is built with [Quarto](https://quarto.org/).
 
 ## 📄 License
 
-- The notes in this repository are licensed under **CC BY-NC 4.0**
-- The `dnnl` library is licensed under **MIT**
+- The notes in this repository are licensed under **CC BY-NC 4.0**.
+- The `dnnl` library is licensed under **MIT**.

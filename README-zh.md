@@ -48,7 +48,7 @@ quarto convert path/to/file.qmd
 在运行相关内容之前，请先进入 `dnnl` 文件夹，按照 `dnnl/README.md` 的说明安装 `dnnl` 库。这个库包含了笔记中使用的一些自定义实现和工具函数，安装完成后才能正常运行相关代码。
 
 > [!NOTE]
-> 本项目使用 Transformers v5。如果你参考的其他仓库或教程基于 v4，API 会有较大差异（如分词器、量化配置等），请参考 [官方迁移指南](https://github.com/huggingface/transformers/blob/main/MIGRATION_GUIDE_V5.md) 进行调整。
+> 本项目使用 **Transformers v5**。如果你参考的其他仓库或教程基于 v4，API 会有较大差异（如分词器、量化配置等），请参考 [官方迁移指南](https://github.com/huggingface/transformers/blob/main/MIGRATION_GUIDE_V5.md) 进行调整。
 
 ## 🤝 贡献
 
@@ -73,5 +73,5 @@ quarto convert path/to/file.qmd
 
 ## 📄 许可证
 
-- 本仓库中的笔记内容采用 **CC BY-NC 4.0 协议**
-- `dnnl` 库采用 **MIT 协议**
+- 本仓库中的笔记内容采用 **CC BY-NC 4.0 协议**。
+- `dnnl` 库采用 **MIT 协议**。
