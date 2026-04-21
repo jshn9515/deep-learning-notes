@@ -2,6 +2,8 @@
 
 **English** | [简体中文](./README-zh.md)
 
+![dnnl-title](dnnl-title.png)
+
 For a long time, I struggled with how to learn deep learning effectively.
 
 _Dive into Deep Learning_ is an excellent introductory book, but its update pace has gradually fallen behind the speed of progress in this field. Since the rise of Transformers, topics like CLIP, Diffusion, and vLLM have become increasingly important. Although there is no shortage of online material, most of it is scattered. One day you study Attention, the next day LoRA, and the day after that diffusion models. In the end, what often remains are only fragments, and it is hard to build a truly coherent understanding.
