@@ -1,7 +1,7 @@
 ---
 author: jshn9515
-date: '2026-03-19'
-date-modified: '2026-04-04'
+date: 2026-03-19
+date-modified: 2026-04-04
 open-graph:
   title: ch2.1-automatic-differentiation
   description: "Automatic Differentiation in PyTorch"
