@@ -1,0 +1,115 @@
+name: Convert and Package Notebooks
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+      timezone: "America/New_York"
+  push:
+    branches: [main]
+    paths:
+      - "zh/**/*.qmd"
+      - "en/**/*.qmd"
+      - ".github/workflows/package-notebooks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-notebooks
+  cancel-in-progress: true
+
+jobs:
+  package-zh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Convert zh qmd to ipynb
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OUT_DIR="dnnl/zh"
+          mkdir -p "$OUT_DIR"
+
+          if [ -d "zh" ]; then
+            while IFS= read -r -d '' qmd; do
+              rel="${qmd#zh/}"
+              rel_dir="$(dirname "$rel")"
+              stem="$(basename "$qmd" .qmd)"
+
+              out_subdir="$OUT_DIR/$rel_dir"
+              mkdir -p "$out_subdir"
+
+              quarto convert "$qmd" --output "$out_subdir/$stem.ipynb"
+            done < <(find zh -type f -name '*.qmd' -print0)
+          fi
+
+      - name: Package zh notebooks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d "dnnl/zh" ] && [ "$(find dnnl/zh -type f | wc -l)" -gt 0 ]; then
+            tar -czf dnnl-zh.tar.gz -C dnnl zh
+          fi
+
+      - name: Upload zh artifact
+        if: ${{ hashFiles('dnnl/zh/**/*.ipynb') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dnnl-zh
+          path: |
+            dnnl-zh.tar.gz
+
+  package-en:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Convert en qmd to ipynb
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OUT_DIR="dnnl/en"
+          mkdir -p "$OUT_DIR"
+
+          if [ -d "en" ]; then
+            while IFS= read -r -d '' qmd; do
+              rel="${qmd#en/}"
+              rel_dir="$(dirname "$rel")"
+              stem="$(basename "$qmd" .qmd)"
+
+              out_subdir="$OUT_DIR/$rel_dir"
+              mkdir -p "$out_subdir"
+
+              quarto convert "$qmd" --output "$out_subdir/$stem.ipynb"
+            done < <(find en -type f -name '*.qmd' -print0)
+          fi
+
+      - name: Package en notebooks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d "dnnl/en" ] && [ "$(find dnnl/en -type f | wc -l)" -gt 0 ]; then
+            tar -czf dnnl-en.tar.gz -C dnnl en
+          fi
+
+      - name: Upload en artifact
+        if: ${{ hashFiles('dnnl/en/**/*.ipynb') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dnnl-en
+          path: |
+            dnnl-en.tar.gz
