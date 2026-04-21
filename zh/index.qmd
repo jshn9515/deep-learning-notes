@@ -1,0 +1,19 @@
+---
+title: 深度学习笔记
+author: jshn9515
+date: 2026-03-19
+date-modified: today
+comments: false
+
+listing:
+  contents:
+    - ./**/*.qmd
+  sort: title asc
+  type: table
+  fields: [title, author, date]
+  date-format: iso
+
+open-graph:
+  title: deep-learning-notes
+  description: "Deep Learning Notes: Table of Contents"
+---

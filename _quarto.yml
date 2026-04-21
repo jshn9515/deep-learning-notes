@@ -1,0 +1,92 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - "*.qmd"
+
+author: jshn9515
+date: today
+date-format: iso
+bibliography: references.bib
+
+execute:
+  jupyter: python3
+  freeze: auto
+  cache: true
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+    css: styles.css
+    toc: true
+    syntax-highlighting: github
+    license: CC BY-NC
+
+website:
+  title: deep-learning-notes
+  search: true
+  back-to-top-navigation: false
+  repo-url: https://github.com/jshn9515/deep-learning-notes
+  repo-actions: [source, issue, edit]
+  open-graph:
+    locale: en_US
+    site-name: deep-learning-notes
+  comments:
+    giscus:
+      repo: jshn9515/deep-learning-notes
+      repo-id: R_kgDORrvzlA
+      category: Announcements
+      category-id: DIC_kwDORrvzlM4C5bEa
+      mapping: og:title
+      loading: lazy
+      input-position: top
+      language: en
+  navbar:
+    right:
+      - text: 中文
+        href: zh/
+      - text: English
+        href: en/
+  sidebar:
+    - id: zh
+      style: floating
+      contents:
+        - section: "Part 1: 深度学习基础"
+          contents:
+            - section: "Chapter 1: 深度学习简介"
+              contents: "zh/ch1-introduction/*.qmd"
+            - section: "Chapter 2: PyTorch 入门"
+              contents: "zh/ch2-pytorch-introduction/*.qmd"
+        - section: "Part 4: Attention 机制与 Transformer"
+          contents:
+            - section: "Chapter 8: Attention 与 Transformer：从固定长度编码到动态上下文建模"
+              contents: "zh/ch8-attention-and-transformer/*.qmd"
+            - section: "Chapter 10: FlashAttention: 高效的注意力机制实现"
+              contents: "zh/ch10-flash-attention/*.qmd"
+        - section: "Part 6: 生成模型"
+          contents:
+            - section: "Chapter 12: GAN: 生成对抗网络"
+              contents: "zh/ch12-generative-adversarial-networks/*.qmd"
+            - section: "Chapter 13: VAE: 变分自编码器"
+              contents: "zh/ch13-autoencoders-and-vaes/*.qmd"
+            - section: "Chapter 14: Diffusion Models: 从去噪到生成"
+              contents: "zh/ch14-diffusion-models/*.qmd"
+        - section: "Part 7: 多模态学习"
+          contents:
+            - section: "Chapter 15: CLIP: 融合视觉和语言的多模态模型"
+              contents: "zh/ch15-multimodal-learning/*.qmd"
+    - id: en
+      style: floating
+      contents:
+        - section: "Part 1: Deep Learning Fundamentals"
+          contents:
+            - section: "Chapter 1: Introduction to Deep Learning"
+              contents: "en/ch1-introduction/*.qmd"
+            - section: "Chapter 2: Getting Started with PyTorch"
+              contents: "en/ch2-pytorch-introduction/*.qmd"
+        - section: "Part 4: Attention Mechanism and Transformer"
+          contents:
+            - section: "Chapter 10: FlashAttention: An Efficient Implementation of Attention Mechanism"
+              contents: "en/ch10-flash-attention/*.qmd"

@@ -1,0 +1,86 @@
+/* make quarto title metadata in the same line */
+.quarto-title-meta {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  column-gap: 1.5rem;
+  row-gap: 0.75rem;
+}
+
+.quarto-title-meta > div {
+  display: flex !important;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: auto !important;
+  max-width: none !important;
+  flex: none !important;
+  margin: 0 !important;
+}
+
+.quarto-title-meta-heading,
+.quarto-title-meta-contents,
+.quarto-title-meta-contents p {
+  display: inline !important;
+  margin: 0 !important;
+}
+
+.quarto-title-block .quarto-title-banner,
+.quarto-title-block .quarto-title {
+  margin-bottom: 0.8rem;
+}
+
+/* make images responsive and fit within the container */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* make stdout output wrap and break long lines */
+.cell-output.cell-output-stdout {
+  overflow-x: visible !important;
+  max-width: 100%;
+}
+
+.cell-output.cell-output-stdout pre {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  overflow-x: visible !important;
+  max-width: 100%;
+}
+
+.cell-output.cell-output-stdout pre code {
+  white-space: inherit !important;
+}
+
+/* style for blockquotes */
+blockquote {
+  margin: 1rem 0;
+  padding: 0.7rem 1.2rem;
+  background-color: #eef5f2;
+  border-left: 6px solid #35c27c;
+  border-radius: 0;
+  color: #616161;
+  font-size: 1.5rem;
+  line-height: 1.7;
+}
+
+blockquote,
+blockquote p,
+blockquote strong {
+  color: #616161;
+}
+
+blockquote p {
+  margin: 0;
+}
+
+blockquote strong {
+  font-weight: 700;
+}
+
+/* center table content */
+table th,
+table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
