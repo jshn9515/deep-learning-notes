@@ -1,0 +1,400 @@
+---
+author: jshn9515
+date: '2026-03-19'
+date-modified: '2026-04-04'
+open-graph:
+  title: ch2.1-automatic-differentiation
+  description: "Automatic Differentiation in PyTorch"
+title: "2.1 Automatic Differentiation in PyTorch"
+---
+
+In Section 1.3, we treated the computation graph as a “chain of responsibility”: if we trace backward from the loss value, we can see exactly how much responsibility each parameter bears. In this section, we switch to a more engineering-oriented perspective: how does a framework automatically build this responsibility chain, and how does it compute gradients when needed?
+
+Let us put the question even more directly. During training, what we want is the gradient, but what we actually have is just a pile of code: addition, multiplication, convolution, activation functions, and so on. These operations are executed one by one during forward propagation and finally produce a `loss`. So where do the gradients come from? Does the framework really derive one gigantic symbolic expression?
+
+Of course not. What a deep learning framework does is more like this:
+
+- During forward propagation, it keeps a ledger along the way: what operations did you perform, what did each step depend on, and what were the intermediate results?
+- During backpropagation, it retraces that ledger: starting from `loss`, it walks backward, and each time it encounters an operation, it applies that operation's own local differentiation rule and continues passing the gradient along.
+
+Understanding this mechanism is crucial. It not only explains where gradients come from, but also directly affects many phenomena we will encounter later: for example, why gradients accumulate, why intermediate variables do not have a `.grad` attribute by default, why some operations cut off the gradient chain, and why memory and computation always involve trade-offs.
+
+```{python}
+import torch
+import torch.autograd.functional as AF
+
+print('PyTorch version:', torch.__version__)
+```
+
+## 2.1.1 A Computation Graph Is Not Drawn by Hand, It Is Executed into Existence
+
+The best way to understand automatic differentiation in PyTorch is not to memorize definitions first, but to observe one fact: you are only performing forward computation, yet the computation graph is automatically built during execution.
+
+Suppose we have the following simple function:
+
+$$ z = \sin(x \cdot y) $$
+
+We can decompose it into a few basic steps:
+
+1. Compute the vector dot product: $q = x \cdot y$
+2. Compute the sine: $z = \sin(q)$
+
+Then we tell PyTorch that in the following computation, we want the gradients of `z` with respect to `x` and `y`.
+
+```{python}
+x = torch.arange(1.0, 5.0, requires_grad=True)
+y = torch.arange(5.0, 9.0, requires_grad=True)
+```
+
+Here, `requires_grad=True` can be understood as a declaration: these variables need to be “held accountable.” From this point on, as long as some result is computed using them, that result will automatically become differentiable and, behind the scenes, record who computed it and what it depends on.
+
+Now let us perform two ordinary forward-computation steps: first compute the dot product, then take the sine.
+
+```{python}
+q = x.dot(y)
+z = q.sin()
+print('z.requires_grad:', z.requires_grad)
+```
+
+Up to this point, what you see is still only numerical computation, but PyTorch has already done two things:
+
+1. `z` automatically becomes a result that requires gradients, because it depends on `x` and `y`, which require gradients.
+2. The process that produced `q` and `z` is recorded: `z` comes from `sin`, `q` comes from `dot`, and `q` in turn depends on `x` and `y`.
+
+Do not worry yet about what the computation graph looks like. First, let us look at a more intuitive phenomenon: before you call backpropagation, gradients do not appear out of thin air.
+
+```{python}
+print('x.grad:', x.grad)
+print('y.grad:', y.grad)
+```
+
+Here the value is `None`, not 0. The reason is simple: a gradient is the product of backward tracing. Only when you explicitly start a backward pass, for example by calling `backward()`, does PyTorch follow the recorded dependency relationships, compute the gradients, and write them back to the leaf nodes. If you never call it, PyTorch never computes the gradients, so naturally there is nothing to fill in.
+
+Next, let us do exactly that: start backpropagation from `z` and see how `.grad` appears, and whether it matches the result we would obtain by hand.
+
+## 2.1.2 What `backward()` Actually Does: Tracing the Ledger Backward from the Output
+
+In the previous section, we only performed forward computation, but PyTorch had already recorded the dependencies quietly in the background. What we really care about now is: when you call `backward()`, what exactly does the framework do? And can we trust the gradient it computes?
+
+We continue using the same example:
+
+$$ q = x \cdot y, \quad z = \sin(q) $$
+
+If we compute the gradient by hand, we get:
+
+$$ \frac{\partial z}{\partial x} = \frac{\partial z}{\partial q} \cdot \frac{\partial q}{\partial x} = \cos(q) \cdot y $$
+$$ \frac{\partial z}{\partial y} = \frac{\partial z}{\partial q} \cdot \frac{\partial q}{\partial y} = \cos(q) \cdot x $$
+
+Good. Now let PyTorch compute it. We directly launch backpropagation from the output `z`:
+
+```{python}
+z.backward()
+print('x.grad:', x.grad)
+print('y.grad:', y.grad)
+```
+
+At this point, `.grad` is no longer `None`. The gradients have already been written back to the two leaf nodes `x` and `y`. Intuitively, you can understand `backward()` like this:
+
+1. It starts from `z` and, by default, assumes that $\frac{\partial z}{\partial z} = 1$;
+2. Then it walks backward along the dependency chain recorded during forward propagation;
+3. Each time it passes through an operator node, it applies that operator's local differentiation rule and continues propagating the gradient upstream.
+
+We can align this with the hand-derived result. For example:
+
+```{python}
+# pyright: reportArgumentType=false
+assert torch.allclose(x.grad, y * x.dot(y).cos())
+assert torch.allclose(y.grad, x * x.dot(y).cos())
+```
+
+At this point, the core logic of automatic differentiation should already be quite clear. A deep learning framework does not need to derive one enormous global derivative formula. It only needs to know how to differentiate each step locally, and then connect these local rules according to the structure of the computation graph.
+
+If we look a little deeper, PyTorch even exposes part of this backward chain to us. For example:
+
+```{python}
+# pyright: reportOptionalMemberAccess=false
+print('z.grad_fn:', z.grad_fn.name())
+print('q.grad_fn:', q.grad_fn.name())
+print('x.grad_fn:', x.grad_fn)
+print('y.grad_fn:', y.grad_fn)
+```
+
+We usually see names like `SinBackward0`, which contain the word `Backward`. Roughly speaking, their meaning is:
+
+- `z` did not appear out of nowhere; it is the result produced by some operator, in this case `sin`;
+- `grad_fn` is the gradient-function object corresponding to that operator during backpropagation.
+
+During backpropagation, PyTorch starts from the root node and calls each node's derivative operator in turn until it reaches the input nodes. For example, when we call `z.backward()`, PyTorch first invokes the derivative operator `SinBackward0` for the `z` node to compute $\frac{\partial z}{\partial q}$, then passes that value to the derivative operator `DotBackward0` for the `q` node, which computes $\frac{\partial q}{\partial x}$ and $\frac{\partial q}{\partial y}$, and finally obtains $\frac{\partial z}{\partial x}$ and $\frac{\partial z}{\partial y}$. Leaf nodes such as `x` and `y` do not have derivative operators, because they are the starting points of the computation graph and do not need to propagate gradients any further.
+
+More importantly, `grad_fn.next_functions` points to its upstream dependencies:
+
+```{python}
+# pyright: reportOptionalMemberAccess=false
+node_q = z.grad_fn.next_functions[0][0]
+node_x = node_q.next_functions[0][0]
+node_y = node_q.next_functions[1][0]
+print('grad_fn of z.child -> q:', node_q.name())
+print('grad_fn of q.child -> x:', node_x.name())
+print('grad_fn of q.child -> y:', node_y.name())
+```
+
+These describe whom backpropagation should visit next, and along which inputs it should continue tracing, in order to compute the gradient of `z`. For example, in the `SinBackward0` node, `next_functions` points to `DotBackward0`, because the input to `SinBackward0` is `q`, and `q` was computed by `DotBackward0`. Likewise, in the `DotBackward0` node, `next_functions` points to the input nodes `x` and `y`. `AccumulateGrad` is a special node type: every leaf node that requires gradients has a corresponding `AccumulateGrad` node in front of it, whose job is to accumulate the computed gradient into the leaf node's `.grad` attribute. That is why `x.grad` and `y.grad` finally appear after calling `backward()`.
+
+## 2.1.3 Why Can Non-Scalars Not Call `backward()` Directly?
+
+In the example above, `z` is a scalar, so we can confidently write `z.backward()`. Many people run into a PyTorch restriction that initially feels unreasonable the first time they replace the output with a vector or a matrix:
+
+```{python}
+x = torch.arange(1.0, 5.0, requires_grad=True)
+y = torch.arange(5.0, 9.0, requires_grad=True)
+Z = x.outer(y)
+try:
+    Z.backward()  # This will raise an error because z is not a scalar
+except RuntimeError as err:
+    print('RuntimeError:', err)
+```
+
+This is not PyTorch being stingy. The reason is that for a non-scalar output, the starting point of backpropagation is no longer unique.
+
+For a scalar `z`, we usually care about $\frac{\partial z}{\partial x}$ and $\frac{\partial z}{\partial y}$. Backpropagation starts from the output, and the very first step is to set $\frac{\partial z}{\partial z} = 1$. This is reasonable because for a scalar output, the unit gradient is unambiguous: we simply propagate backward along the direction of `z`.
+
+But what if the output is a vector or matrix `Z`? What exactly do we want?
+
+- Do we want the gradient of every element of `Z` with respect to `x` and `y`? That would produce a higher-order tensor.
+- Or do we want the gradient of some scalar function of `Z`, such as the sum, mean, or a weighted sum of `Z`, with respect to `x` and `y`?
+
+In other words, for a non-scalar output, backpropagation must first answer a question: from which “direction” do we want to propagate the gradient backward?
+
+Mathematically, this “direction” is a tensor `v` with the same shape as the output, representing the upstream gradient:
+
+$$ v = \frac{\partial L}{\partial Z} $$
+
+What PyTorch actually computes is then a vector-Jacobian product (VJP):
+
+$$ \frac{\partial L}{\partial x} = v^\top \left(\frac{\partial Z}{\partial x}\right) $$
+
+For a scalar output, `v` is automatically 1, equivalent to calling `Z.backward()` and taking $L = Z$. For a non-scalar output, we must provide `v` ourselves.
+
+There are two common ways to do that.
+
+One way is to explicitly pass `gradient`, indicating from which direction we want to propagate backward:
+
+```{python}
+x = torch.arange(1.0, 5.0, requires_grad=True)
+y = torch.arange(5.0, 9.0, requires_grad=True)
+Z = x.outer(y)
+Z.backward(gradient=torch.ones_like(Z))
+print('x.grad:', x.grad)
+print('y.grad:', y.grad)
+```
+
+Here, `torch.ones_like(Z)` tells PyTorch that we want
+
+$$ L = \sum_{i,j} Z_{i,j} $$
+
+because
+
+$$ \frac{\partial L}{\partial Z_{i,j}} = 1 $$
+
+So passing an all-ones gradient is equivalent to “sum all elements and then call `backward()`.”
+
+There is another way: first convert `Z` into a scalar, and then call `backward()` on that scalar:
+
+```{python}
+x = torch.arange(1.0, 5.0, requires_grad=True)
+y = torch.arange(5.0, 9.0, requires_grad=True)
+Z = x.outer(y)
+Z = Z.sum()  # Now Z is a scalar
+Z.backward()
+print('x.grad:', x.grad)
+print('y.grad:', y.grad)
+```
+
+In many cases, these two approaches are equivalent. Either we explicitly tell PyTorch along which direction to propagate gradients backward, or we first turn the output into a scalar, for example by summing, and let PyTorch propagate backward from that scalar direction by default.
+
+## 2.1.4 Higher-Order Derivatives: Making the Differentiation Process Itself Part of the Computation
+
+So far, everything we have done has involved first-order gradients: given a scalar output, or something that can be converted into a scalar output, $L$, compute $\nabla_x L$ and $\nabla_y L$. But sometimes we need higher-order information, such as second derivatives, certain directions of the Hessian, curvature, or terms used in some regularizers.
+
+The key point is this: if you want to differentiate a gradient again, then the act of “computing the gradient” must itself be differentiable. That is exactly what `create_graph=True` means. When computing the first derivative, we do not just compute its numerical value; we also record the process that produced that derivative as a new computation graph.
+
+At this point, many people naturally ask: why not just use `backward()`? Because `backward()` is designed primarily for training models. It accumulates gradients into the `.grad` attributes of leaf tensors, and by default it frees the computation graph to save memory. But when computing higher-order derivatives, what we usually want instead is:
+
+- The gradient returned as a tensor, so that we can continue computing with it;
+- The graph retained or constructed when necessary, so that we can differentiate again.
+
+That is why `torch.autograd.grad` is more commonly used here.
+
+Let us continue with the same example: $z = \sin(x \cdot y)$. First we compute the first derivatives $dz/dx$ and $dz/dy$, then we differentiate them again and see what the second derivatives $d^2 z/dx^2$ and $d^2 z/dy^2$ look like.
+
+```{python}
+x = torch.tensor(2.0, requires_grad=True)
+y = torch.tensor(4.0, requires_grad=True)
+z = torch.sin(x * y)
+
+dzdx, dzdy = torch.autograd.grad(z, (x, y), create_graph=True)
+print('dz/dx:', dzdx)
+print('dz/dy:', dzdy)
+```
+
+The most important line here is `create_graph=True`. Without it, `dz/dx` and `dz/dy` would be treated as plain numerical results, and the record of how they were obtained would not be kept, so we would be unable to differentiate them again. The outputs `dz/dx` and `dz/dy` both contain a `grad_fn`, which indicates that they themselves are differentiable.
+
+When computing higher-order derivatives, we sometimes want to differentiate with respect to different variables successively on the same computation graph. But after one call to `backward()`, PyTorch frees the graph by default to save memory, which means we cannot continue differentiating on the same graph. If we really need to perform multiple backward passes on the same forward result, we can preserve the graph by setting `retain_graph=True`:
+
+```{python}
+x = torch.tensor(2.0, requires_grad=True)
+y = torch.tensor(4.0, requires_grad=True)
+z = torch.sin(x * y)
+
+dzdx, dzdy = torch.autograd.grad(z, (x, y), create_graph=True)
+print('dz/dx:', dzdx)
+print('dz/dy:', dzdy)
+
+(d2zdx2,) = torch.autograd.grad(dzdx, x, retain_graph=True)
+(d2zdy2,) = torch.autograd.grad(dzdy, y)
+print('d2z/dx2:', d2zdx2)
+print('d2z/dy2:', d2zdy2)
+```
+
+However, the more common approach is simply to run forward propagation again and obtain a fresh computation graph. `retain_graph=True` is usually used only when we genuinely need multiple gradient computations on the same graph, such as in higher-order derivative experiments or the computation of certain regularization terms.
+
+## 2.1.5 VJP and JVP: What Are Reverse Mode and Forward Mode Actually Computing?
+
+Up to now, we have kept saying “compute gradients.” But strictly speaking, most functions in deep learning are not scalar-to-scalar mappings. Instead, they are usually of the form
+
+$$ f: \mathbb{R}^n \to \mathbb{R}^m $$
+
+whose derivative is a Jacobian matrix:
+
+$$ J = \frac{\partial f}{\partial x} \in \mathbb{R}^{m \times n} $$
+
+The real issue is that when both $m$ and $n$ are large, we almost never explicitly construct $J$. What we truly want, and what the framework actually computes, is a product involving the Jacobian, either multiplied on the left or on the right.
+
+### 2.1.5.1 VJP: Vector-Jacobian Product, Reverse Mode
+
+Given an upstream gradient vector $v \in \mathbb{R}^m$, which can be understood as $\frac{\partial L}{\partial f}$, reverse mode computes
+
+$$ v^\top J \in \mathbb{R}^n $$
+
+This is the **VJP**, or vector-Jacobian product.
+
+If we translate this into the language of training, it becomes very familiar:
+
+- We have a scalar `loss`: $L = \mathcal{L}(f(x))$
+- We have an upstream gradient: $v = \frac{\partial L}{\partial f}$
+- We perform backpropagation: $\frac{\partial L}{\partial x} = v^\top \frac{\partial f}{\partial x}$
+
+So when we ordinarily call `backward()`, what we are actually computing is a special case of a VJP.
+
+```{python}
+def vjp_func(x: torch.Tensor, y: torch.Tensor):
+    return x.dot(y).sin()
+
+
+x = torch.arange(1.0, 5.0)
+y = torch.arange(5.0, 9.0)
+out = AF.vjp(vjp_func, (x, y))
+print('func(x,y):', out[0])
+print('VJP output:', out[1])
+```
+
+### 2.1.5.2 JVP: Jacobian-Vector Product, Forward Mode
+
+Forward mode is the opposite. Given an input direction $u \in \mathbb{R}^n$, it computes
+
+$$ Ju \in \mathbb{R}^m $$
+
+This is the **JVP**, or Jacobian-vector product. Intuitively, it answers the question: if we apply a tiny perturbation in the input space along some direction $u$, in which direction will the output change? This is very common in sensitivity analysis, implicit layers, certain second-order methods, and some physical or scientific computations.
+
+```{python}
+def jvp_func(a: torch.Tensor, b: torch.Tensor):
+    return a.dot(b).sin()
+
+
+x = torch.arange(1.0, 5.0)
+y = torch.arange(5.0, 9.0)
+v_x = torch.full_like(x, 0.1)
+v_y = torch.full_like(y, 0.2)
+out = AF.jvp(jvp_func, (x, y), (v_x, v_y))
+print('func(x,y):', out[0])
+print('JVP output:', out[1])
+```
+
+### 2.1.5.3 Why VJP Is More Common in Deep Learning
+
+This is not a matter of one being “more advanced” than the other. It is a matter of matching the scale of the problem.
+
+- In deep learning training, $n$ is usually the parameter dimension, often on the scale of millions or even billions, while $m$ is the output dimension, often just a scalar.
+- What we truly want is $\nabla L \in \mathbb{R}^n$.
+
+The complexity of a VJP is roughly on the same order as one backward pass, which makes it well suited for settings where $n$ is huge but the output is scalar or low-dimensional. JVP is more suitable when the input dimension is relatively small but we care about how the output changes along particular directions. So we often see the following rule of thumb: if the output is a scalar or a low-dimensional vector and the input dimension is very large, reverse mode, meaning VJP, is more appropriate; if the input dimension is relatively small and the output dimension is large, forward mode, meaning JVP, may be more appropriate.
+
+## 2.1.6 Common Errors in Backpropagation
+
+```{python}
+x = torch.arange(1.0, 5.0, requires_grad=True)
+y = torch.arange(5.0, 9.0, requires_grad=True)
+```
+
+**1. Calling `backward()` repeatedly**
+
+Calling `backward()` multiple times on the same computation graph will lead to an error. After the first backward pass, PyTorch frees the intermediate variables in the graph that were only needed for backpropagation, in order to save memory. So when we try to trace backward along the same graph a second time, we discover that the “signposts” along the path have already been cleaned up. If multiple gradient computations are really needed, we can set `retain_graph=True` in the first call.
+
+```{python}
+z = x.dot(y).sin()
+z.backward()
+try:
+    z.backward()  # This will raise an error because gradients are already computed
+except RuntimeError as err:
+    print('RuntimeError:', err)
+```
+
+```{python}
+z = x.dot(y).sin()
+z.backward(retain_graph=True)
+z.backward()  # This works because we retained the graph
+```
+
+**2. Trying to access the gradient of an intermediate node**
+
+Only leaf nodes, that is, the variables created originally, store gradient information. The gradients of intermediate nodes are not stored, because if every intermediate variable stored gradients, memory usage would explode, and what training actually needs are parameter gradients rather than gradients for every intermediate quantity. Therefore, trying to access their `.grad` attribute returns `None` and triggers a `UserWarning`. If you really need to keep the gradient of an intermediate node, you can call `q.retain_grad()` on it.
+
+```{python}
+import warnings
+
+q = x.dot(y)
+z = q.sin()
+z.backward()
+
+with warnings.catch_warnings(record=True) as warns:
+    print('q.grad:', q.grad)
+    if len(warns) > 0:
+        for warn in warns:
+            print('UserWarning:', warn.message)
+```
+
+```{python}
+q = x.dot(y)
+q.retain_grad()
+z = q.sin()
+z.backward()
+print('q.grad after `retain_grad`:', q.grad)  # Now q.grad is available
+```
+
+**3. Using in-place operations**
+
+In PyTorch, operations like `x.add_(1)` and `x.relu_()` with a trailing underscore modify the tensor in place. They do not create a new tensor; instead, they directly overwrite the memory of `x`. Intuitively this seems convenient, but backpropagation often needs certain intermediate values from the forward pass. If those values are modified in place after the forward pass, backpropagation may lose the information required to compute gradients. Therefore, during backpropagation, we should avoid in-place operations whenever possible, or at least make sure they do not alter intermediate variables needed by the backward pass.
+
+```{python}
+z = x.dot(y)
+try:
+    x.relu_()
+except RuntimeError as err:
+    print('RuntimeError:', err)
+```
+
+```{python}
+z = x.dot(y)
+x = x.relu()
+z.backward()
+```
