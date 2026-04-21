@@ -36,9 +36,9 @@ website:
   comments:
     giscus:
       repo: jshn9515/deep-learning-notes
-      repo-id: R_kgDORrvzlA
+      repo-id: R_kgDOSIPXtQ
       category: Announcements
-      category-id: DIC_kwDORrvzlM4C5bEa
+      category-id: DIC_kwDOSIPXtc4C7Uuj
       mapping: og:title
       loading: lazy
       input-position: top
