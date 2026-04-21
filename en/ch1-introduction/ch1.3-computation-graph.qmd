@@ -1,0 +1,150 @@
+---
+author: jshn9515
+date: '2026-03-19'
+date-modified: '2026-04-04'
+open-graph:
+  title: ch1.3-computation-graphs
+  description: "Forward Propagation, Backpropagation, and Computation Graphs"
+title: "1.3 Forward Propagation, Backpropagation, and Computation Graphs"
+---
+
+A **computation graph** is one of the most fundamental concepts in deep learning. Once we understand computation graphs, we can understand how a neural network computes its output and how it automatically adjusts its parameters based on the error.
+
+In the previous sections, we introduced the loss function. The loss function measures the model's error, and the goal of deep learning is to adjust the parameters so that the loss becomes as small as possible. But to do that, we must answer one key question: how does each parameter affect the loss function?
+
+A computation graph provides the answer. It clearly records the entire computation process from the input all the way to the loss function, allowing us to analyze the role of each variable systematically.
+
+However, the idea of a computation graph may feel somewhat abstract to beginners. So in this section, we will use a simple example to gradually introduce the relationship among gradients, computation graphs, forward propagation, and backpropagation.
+
+## 1.3.1 Gradient
+
+In deep learning, what we want to do is simple: make the loss function $L$ as small as possible. But the problem is that a neural network may have thousands or even millions of parameters, and we cannot try them one by one. So we need a tool to answer two questions:
+
+1. Which parameter should be adjusted?
+2. In which direction should each parameter be adjusted, and by how much?
+
+The **gradient** is the tool that answers these two questions.
+
+Most readers have learned about partial derivatives. If we have a function $f(x, y)$ and want to know how changing only $x$ affects $f$, we look at $\frac{\partial f}{\partial x}$; if we want to know how changing only $y$ affects $f$, we look at $\frac{\partial f}{\partial y}$. The magnitude of a partial derivative can be understood as a kind of “sensitivity.” The larger its absolute value, the more a small change in that parameter will affect $f$; the smaller its absolute value, the less influence that parameter has on $f$.
+
+When there is more than one parameter, we can “package” all of these partial derivatives into a vector. That vector is the gradient. For the function $f(x, y)$, its gradient is $\nabla f = \left(\frac{\partial f}{\partial x}, \frac{\partial f}{\partial y} \right)$. We can imagine the gradient as an arrow: its direction indicates the direction in which the function value increases fastest, and its length indicates how fast the function value increases.
+
+More generally, if the model parameters form a high-dimensional vector,
+
+$$\theta = (w_1, w_2, ..., w_n)$$
+
+and the loss function is $L(\theta)$, then the corresponding gradient is:
+
+$$ \nabla L = \left( \frac{\partial L}{\partial w_1}, \frac{\partial L}{\partial w_2}, ..., \frac{\partial L}{\partial w_n} \right) $$
+
+Each component of the gradient corresponds to one parameter and tells us how much responsibility that parameter bears for the current loss. If a parameter's gradient component is large, then that parameter has a strong influence on the current loss value. If its gradient component is small, then its influence is weak.
+
+Then what if the gradient is 0? Does that mean we have reached an optimum?
+
+Not necessarily. A zero gradient may correspond to a local minimum, a local maximum, or a saddle point. So although a zero gradient is an important condition, it does not mean that we have definitely found the global minimum.
+
+Overall, the gradient provides two key pieces of information: how strongly each parameter affects the current loss, and in which direction the loss changes fastest at the current position. It breaks a global error signal into the local influence of each parameter. But so far, we still have not answered a crucial question: if all we have is the final value of the loss function, how can we efficiently compute the gradient for every parameter? To solve this problem, we need a structure that records the full computation process so that gradients can be computed systematically. That structure is the computation graph.
+
+## 1.3.2 Computation Graph
+
+In the previous section, we introduced gradients. A gradient tells us how much each parameter affects the loss function, or in other words, how much responsibility each parameter bears. But here is a key problem: a neural network may contain thousands or millions of parameters, and the loss function is often a complicated function formed by many nested additions, multiplications, and nonlinear functions. How can we efficiently compute the gradient with respect to every parameter? If we start directly from the final loss function and compute a partial derivative for each parameter separately, the process is not only tedious but also extremely inefficient.
+
+To solve this problem, we need a method that satisfies the following requirements:
+
+1. It should tell us how the loss function is computed step by step;
+2. It should show which variables produce each intermediate result;
+3. It should show how each parameter influences the final loss.
+
+This is exactly what a **computation graph** does.
+
+A computation graph is an excellent mechanism for tracing responsibility. It tells us which parameters are used to compute the loss, and which parameters those parameters depend on, and so on. In that sense, a computation graph is like a chain of responsibility: it tells us what role each parameter and each input plays in the value of the loss function. Forward propagation moves along this chain to compute the numerical value of each variable step by step, while backpropagation moves in the opposite direction to compute how much each variable affects the loss function, namely its gradient.
+
+Now let us formally introduce the computation graph. A computation graph is a Directed Acyclic Graph (DAG), made up of **nodes** and **edges**. “Directed” means that the data flow has a clear direction, and “acyclic” means that there are no circular dependencies. In other words, a variable cannot depend on the result of its own computation. Each node represents either an operation or a variable, and each edge represents the direction of data flow.
+
+Suppose we have a very simple function:
+
+$$ f(x,y) = \sin(x \cdot y) $$
+
+We can decompose this function into several simple operations:
+
+1. Multiplication: compute $z = x \cdot y$
+2. Sine: compute $f = \sin(z)$
+
+We can represent this process as a computation graph:
+
+```{mermaid}
+flowchart LR
+  x((x)) --> mul[mul]
+  y((y)) --> mul
+  mul --> z((z))
+  z --> sin[sin]
+  sin --> f((f))
+```
+
+In this computation graph, circles represent variables, rectangles represent operations, and arrows represent the direction of data flow. The inputs $x$ and $y$ go through the multiplication operation to produce the intermediate variable $z$, and then $z$ goes through the sine operation to produce the output $f$.
+
+According to their position in the graph, we usually divide nodes into three categories:
+
+- **Leaf nodes**: nodes with no inputs, such as $x$ and $y$.
+- **Intermediate nodes**: nodes computed from other variables, such as $z$.
+- **Root node**: the final output node, such as $f$.
+
+Then why must a computation graph be acyclic? Because if a node depends on its own output, a cycle is formed. Such a cycle makes computation impossible, because we cannot determine which node should be computed first and which should come later.
+
+There are two main ways to build computation graphs: static computation graphs and dynamic computation graphs. A static computation graph is fully defined before the program runs and cannot be modified afterward. A dynamic computation graph is constructed at runtime and can be modified as needed. Different deep learning frameworks may use different styles. For example, TensorFlow 1.x uses static computation graphs, while PyTorch uses dynamic computation graphs. The advantage of static graphs is that they offer more room for optimization and can execute efficiently, while dynamic graphs are more flexible, more intuitive, and easier to debug because they can change structure depending on the input. Most modern deep learning frameworks use dynamic computation graphs.
+
+The greatest value of a computation graph is that it decomposes a complicated function into a sequence of simple operations and explicitly records the dependencies among them. Following this dependency chain, we can compute gradients systematically. This is the foundation of backpropagation. In dynamic graph frameworks, the computation graph itself is built during forward propagation.
+
+## 1.3.3 Forward Propagation and Backpropagation
+
+Once we have the computation graph as a dependency chain, we can clearly describe two core processes: forward propagation and backpropagation. Simply put, forward propagation computes the numerical value of each node, while backpropagation computes the gradient of each node.
+
+**Forward propagation** refers to the process of starting from the input, moving along the direction of the computation graph, and step by step computing the value of each intermediate node until the final output is obtained. At the same time, the computation graph stores the necessary intermediate variables so that the corresponding gradients can be computed during backpropagation.
+
+For example, for the function:
+
+$$ f(x,y) = \sin(x \cdot y) $$
+
+the order of computation in forward propagation is:
+
+1. Compute $z = x \cdot y$
+2. Compute $f = \sin(z)$
+
+That is, the value of each node is computed from the values of its input nodes. Therefore, forward propagation accomplishes two things:
+
+- It computes the value of each node on the computation graph and ultimately obtains the value of the loss function;
+- At the same time, it records the computation process, in dynamic graph frameworks, to provide the necessary information for backpropagation.
+
+**Backpropagation** refers to the process of starting from the final output, moving in the reverse direction of the computation graph, and step by step computing the gradient of each variable with respect to the loss function. The core of backpropagation is the **chain rule**. The influence of a variable on the final result can be decomposed into the product of multiple local influences.
+
+Suppose the loss function is $L = L(f)$, and we want to compute the gradients of the input variables $x$ and $y$ with respect to the loss function, namely $\frac{\partial L}{\partial x}$ and $\frac{\partial L}{\partial y}$. By the chain rule, we can move backward along the computation graph and compute the gradient of each node step by step:
+
+$$
+\begin{aligned}
+\frac{\partial L}{\partial x} &= \frac{\partial L}{\partial f} \cdot \frac{\partial f}{\partial z} \cdot \frac{\partial z}{\partial x} = \frac{\partial L}{\partial f} \cdot \cos(z) \cdot y \\
+\frac{\partial L}{\partial y} &= \frac{\partial L}{\partial f} \cdot \frac{\partial f}{\partial z} \cdot \frac{\partial z}{\partial y} = \frac{\partial L}{\partial f} \cdot \cos(z) \cdot x
+\end{aligned}
+$$
+
+Here, $\frac{\partial L}{\partial f}$ is the gradient of the loss function with respect to the output $f$, and its exact value depends on the specific form of the loss function.
+
+In backpropagation, we start from the output node, compute the gradient of each node step by step, and propagate it toward the inputs along the computation graph. The gradient of each node is determined by two factors:
+
+- How strongly that node affects the final output, that is, the local gradient;
+- The gradient passed down from upstream nodes, giving the product required by the chain rule.
+
+This recursive process of “local gradient times upstream gradient” allows us to compute the gradients of all parameters efficiently, without recomputing the entire function again and again.
+
+Through forward propagation, we build the computation graph and compute the value of each node. Through backpropagation, we move backward through the computation graph and compute the gradient of each node. In this way, we can determine how much each parameter affects the loss function, which in turn tells us how to adjust the parameters to minimize the loss. This is the core learning mechanism of deep learning.
+
+## 1.3.4 Chapter Summary
+
+In this section, we introduced three of the most fundamental concepts in deep learning:
+
+- Gradient: describes how strongly each parameter affects the loss function;
+- Computation graph: records the full computational structure of a function;
+- Forward propagation and backpropagation: used to compute values and gradients, respectively.
+
+Forward propagation computes the loss function along the direction of the computation graph, while backpropagation computes gradients in the reverse direction. It is precisely because the computation graph provides a clear dependency structure that we can efficiently compute the gradients of all parameters in a neural network.
+
+In the next chapter, we will see how to use these gradients to gradually adjust the parameters so that a neural network can learn to perform a concrete task.
