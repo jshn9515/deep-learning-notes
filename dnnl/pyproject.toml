@@ -1,0 +1,23 @@
+[project]
+name = "dnnl"
+version = "2026.04.12"
+keywords = ["deep learning", "jupyter notebook", "tutorial"]
+description = "Deep Learning Notes Library"
+authors = [{ name = "jshn9515", email = "jshn9510@gmail.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Jupyter :: JupyterLab :: 4",
+    "Intended Audience :: Education",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = ['torch>=2.10.0']
+
+[project.urls]
+Homepage = "https://github.com/jshn9515/deep-learning-notes"
