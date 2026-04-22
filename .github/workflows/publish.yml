@@ -6,6 +6,7 @@ on:
     paths:
       - "zh/**/*.qmd"
       - "en/**/*.qmd"
+      - "_freeze/**"
       - "index.qmd"
       - "_quarto.yml"
       - "styles.css"
