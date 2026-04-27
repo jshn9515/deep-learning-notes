@@ -75,13 +75,3 @@ docstring-code-format = true
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
-
-[lint.isort]
-section-order = [
-  "future",
-  "standard-library",
-  "third-party",
-  "first-party",
-  "local-folder",
-  "local-typing",
-]
