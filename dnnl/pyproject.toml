@@ -19,5 +19,8 @@ classifiers = [
 ]
 dependencies = ['torch>=2.10.0']
 
+[project.optional-dependencies]
+test = ['pytest>=9.0.0']
+
 [project.urls]
 Homepage = "https://github.com/jshn9515/deep-learning-notes"
