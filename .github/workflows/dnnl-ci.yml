@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Format check with ruff
-        uses: astral-sh/ruff-action@v3
+        uses: astral-sh/ruff-action@v4.0.0
         with:
           args: format --check --diff
           src: >-
@@ -36,7 +36,7 @@ jobs:
             dnnl/tests
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
           cache-dependency-glob: dnnl/pyproject.toml
