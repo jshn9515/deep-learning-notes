@@ -1,0 +1,61 @@
+name: Test and Build DNNL Package
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dnnl/**"
+      - ".github/workflows/dnnl-ci.yml"
+  pull_request:
+    paths:
+      - "dnnl/**"
+      - ".github/workflows/dnnl-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dnnl-ci-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Format check with ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: format --check --diff
+          src: >-
+            dnnl/dnnl
+            dnnl/tests
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: dnnl/pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          uv python install 3.14
+          uv venv --python 3.14
+          uv pip install "./dnnl[test]"
+
+      - name: Test dnnl package
+        run: uv run python -m pytest dnnl/tests
+
+      - name: Build dnnl package
+        run: uv build --python 3.14 --out-dir dist --clear ./dnnl
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dnnl-package-py314
+          path: dist/*
+          if-no-files-found: error
