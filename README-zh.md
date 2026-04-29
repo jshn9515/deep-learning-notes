@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-![dnnl-title](asserts/dnnl-title.png)
+![dnnl-title](assets/dnnl-title.png)
 
 关于怎么学深度学习，我困扰了很久。
 

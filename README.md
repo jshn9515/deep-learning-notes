@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README-zh.md)
 
-![dnnl-title](asserts/dnnl-title.png)
+![dnnl-title](assets/dnnl-title.png)
 
 For a long time, I struggled with how to learn deep learning effectively.
 
