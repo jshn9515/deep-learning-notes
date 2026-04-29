@@ -1,8 +1,8 @@
 # Deep Learning Notes
 
-**English** | [简体中文](./README-zh.md)
+**English** | [简体中文](README-zh.md)
 
-![dnnl-title](dnnl-title.png)
+![dnnl-title](asserts/dnnl-title.png)
 
 For a long time, I struggled with how to learn deep learning effectively.
 

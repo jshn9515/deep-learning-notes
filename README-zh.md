@@ -1,8 +1,8 @@
 # 深度学习笔记
 
-[English](./README.md) | **简体中文**
+[English](README.md) | **简体中文**
 
-![dnnl-title](dnnl-title.png)
+![dnnl-title](asserts/dnnl-title.png)
 
 关于怎么学深度学习，我困扰了很久。
 
