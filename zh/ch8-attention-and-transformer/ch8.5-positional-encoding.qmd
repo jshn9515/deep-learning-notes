@@ -1,7 +1,7 @@
 ---
 author: jshn9515
 date: 2026-04-09
-date-modified: 2026-05-02
+date-modified: 2026-05-04
 open-graph:
   title: ch8.5-positional-encoding
   description: "8.5 Positional Encoding：Adding Sequential Information to Attention"
@@ -14,8 +14,10 @@ title: "8.5 位置编码：给 Attention 补上位置信息"
 
 比如下面两个句子：
 
-> 1. dog bites man  
-> 2. man bites dog
+```text
+1. dog bites man  
+2. man bites dog
+```
 
 这两个句子包含的词完全一样，但顺序不同，意思也完全不同。如果模型只知道有哪些词，而不知道它们出现的顺序，就很难判断这两句话的真正含义。
 
@@ -158,13 +160,16 @@ $$
 
 ```{python}
 class SinusoidalPositionalEncoding(nn.Module):
-    def __init__(self, d_model: int, max_len: int = 5000):
+    def __init__(self, embed_dim: int, max_len: int = 5000):
         super().__init__()
+        self.embed_dim = embed_dim
+        self.max_len = max_len
+
         position = torch.arange(max_len).unsqueeze(1)
-        exp_term = torch.arange(0, d_model, 2) / d_model
+        exp_term = torch.arange(0, embed_dim, 2) / embed_dim
         div_term = torch.pow(10000.0, exp_term)
 
-        pe = torch.zeros(max_len, d_model)
+        pe = torch.zeros(max_len, embed_dim)
         pe[:, 0::2] = torch.sin(position / div_term)
         pe[:, 1::2] = torch.cos(position / div_term)
 
@@ -177,7 +182,7 @@ class SinusoidalPositionalEncoding(nn.Module):
 
 
 x = torch.zeros(1, 10, 16)  # batch_size=1, seq_len=10, d_model=16
-pos_encoder = SinusoidalPositionalEncoding(d_model=16)
+pos_encoder = SinusoidalPositionalEncoding(embed_dim=16)
 output = pos_encoder(x)
 print('Output shape:', output.shape)  # Should be (1, 10, 16)
 ```
@@ -218,19 +223,21 @@ $$
 
 ```{python}
 class LearnedPositionalEmbedding(nn.Module):
-    def __init__(self, d_model: int, max_len: int = 5000):
+    def __init__(self, embed_dim: int, max_len: int = 5000):
         super().__init__()
-        self.position_embedding = nn.Embedding(max_len, d_model)
+        self.embed_dim = embed_dim
+        self.max_len = max_len
+        self.pe = nn.Embedding(max_len, embed_dim)
 
-    def forward(self, x: Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         batch_size, seq_len, _ = x.size()
         positions = torch.arange(seq_len, device=x.device)
-        pos_emb = self.position_embedding(positions)
+        pos_emb = self.pe(positions)
         return x + pos_emb.unsqueeze(0)
 
 
 x = torch.zeros(1, 10, 16)  # batch_size=1, seq_len=10, d_model=16
-pos_encoder = LearnedPositionalEmbedding(d_model=16)
+pos_encoder = LearnedPositionalEmbedding(embed_dim=16)
 output = pos_encoder(x)
 print('Output shape:', output.shape)  # Should be (1, 10, 16)
 ```
@@ -279,4 +286,4 @@ $$
 
 这样，同一个 token 出现在不同位置时，会得到不同的输入表示。后续生成 $Q$、$K$、$V$ 时，位置信息也会被带入 attention 的计算中。
 
-到这里，Transformer 的几个关键组件已经逐渐拼起来了：self-attention 负责让 token 之间交换信息，multi-head attention 让模型从多个表示空间并行建模关系，而 positional encoding 则补上了序列顺序。下一节，我们就可以继续看 Transformer block 中另一个重要组件：前馈神经网络，也就是 position-wise feed-forward network。
+到这里，Transformer 的几个关键组件已经逐渐拼起来了：self-attention 负责让 token 之间交换信息，multi-head attention 让模型从多个表示空间并行建模关系，而 positional encoding 则补上了序列顺序。下一节，我们就把这些组件组合起来，看看完整的 Transformer Encoder 是什么样子的。
