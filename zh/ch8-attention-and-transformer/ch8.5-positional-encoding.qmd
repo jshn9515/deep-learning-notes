@@ -181,10 +181,10 @@ class SinusoidalPositionalEncoding(nn.Module):
         return x + self.pe[:, :seq_len]
 
 
-x = torch.zeros(1, 10, 16)  # batch_size=1, seq_len=10, d_model=16
-pos_encoder = SinusoidalPositionalEncoding(embed_dim=16)
+x = torch.zeros(2, 32, 512)  # (batch_size, seq_len, d_model)
+pos_encoder = SinusoidalPositionalEncoding(embed_dim=512)
 output = pos_encoder(x)
-print('Output shape:', output.shape)  # Should be (1, 10, 16)
+print('Output shape:', output.shape)
 ```
 
 这里有一个细节是：
@@ -236,10 +236,10 @@ class LearnedPositionalEmbedding(nn.Module):
         return x + pos_emb.unsqueeze(0)
 
 
-x = torch.zeros(1, 10, 16)  # batch_size=1, seq_len=10, d_model=16
-pos_encoder = LearnedPositionalEmbedding(embed_dim=16)
+x = torch.zeros(2, 32, 512)  # (batch_size, seq_len, d_model)
+pos_encoder = LearnedPositionalEmbedding(embed_dim=512)
 output = pos_encoder(x)
-print('Output shape:', output.shape)  # Should be (1, 10, 16)
+print('Output shape:', output.shape)
 ```
 
 与正弦位置编码不同的是，这里的位置向量是模型参数，会随着训练一起更新。
