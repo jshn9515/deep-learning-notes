@@ -84,3 +84,11 @@ table td {
   text-align: center !important;
   vertical-align: middle !important;
 }
+
+/* style for plaintext blocks */
+pre.text {
+  background-color: #f1f3f5;
+  padding: 12px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
