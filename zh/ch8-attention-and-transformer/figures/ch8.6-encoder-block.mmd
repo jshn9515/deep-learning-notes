@@ -11,7 +11,7 @@ config:
 ---
 
 flowchart TD
-  X[X]
+  X[Input]
 
   X --> MHA[Multi-Head Self-Attention]
   X --> Skip1[Identity]
@@ -28,4 +28,4 @@ flowchart TD
   Skip2 --> Add2
 
   Add2 --> LN2[LayerNorm]
-  LN2 --> Y[Y]
+  LN2 --> Y[Output]

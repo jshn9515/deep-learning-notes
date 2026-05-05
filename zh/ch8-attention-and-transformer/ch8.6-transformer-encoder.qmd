@@ -12,20 +12,20 @@ title: "8.6 Transformer Encoder：把 Self-Attention 堆起来"
 
 Self-attention 让序列中的每个 token 都可以直接和其他 token 交换信息；multi-head attention 让模型可以从多个表示空间并行地观察序列；positional encoding 则补上了 self-attention 本身缺少的顺序信息。
 
-但到目前为止，我们看到的还只是一些单独的组件。真正的 Transformer Encoder 并不是只做一次 self-attention，而是把这些组件组织成一个可以反复堆叠的模块。这个模块通常叫做 **Transformer Encoder Block**，或者简称 **Encoder Layer**。
+但到目前为止，我们看到的还只是一些单独的组件。真正的 Transformer Encoder 并不是只做一次 self-attention，而是把这些组件组织成一个可以反复堆叠的模块。这个模块通常叫做 **Transformer Encoder Block**，或者简称 **Encoder Block** 或 **Encoder Layer**。
 
-从整体上看，一个 Transformer Encoder 就是多个 Encoder 层堆起来：
+从整体上看，一个 Transformer Encoder 就是多个 Encoder Block 堆起来：
 
 $$
 X
 \rightarrow
 \text{Embedding} + \text{Positional Encoding}
 \rightarrow
-\text{Encoder Layer}_1
+\text{Encoder Block}_1
 \rightarrow
 \cdots
 \rightarrow
-\text{Encoder Layer}_N
+\text{Encoder Block}_N
 $$
 
 这一节我们就来看看，Transformer Encoder 是怎么把 self-attention 变成一个完整网络结构的。
@@ -62,9 +62,9 @@ print('PyTorch version:', torch.__version__)
 
 当然，这只是一个直观解释，不代表每一层都有固定的人类可以理解和解释的功能。但从网络结构上看，堆叠多层确实给了模型反复加工信息的能力。这其实和堆叠 CNN 或 RNN 是同一个道理。
 
-## 8.6.2 Encoder 层的整体结构
+## 8.6.2 Encoder Block 的整体结构
 
-一个标准的 Transformer Encoder Layer 主要包含两个子模块：
+一个标准的 Transformer Encoder Block 主要包含两个子模块：
 
 1. Multi-Head Self-Attention
 2. Position-wise Feed-Forward Network
@@ -74,14 +74,14 @@ print('PyTorch version:', torch.__version__)
 1. Residual Connection
 2. Layer Normalization
 
-所以，一个 Encoder 层可以写成下面这个形式：
+所以，一个 Encoder Block 可以写成下面这个形式：
 
 $$
-H = \mathrm{LayerNorm}(X + \mathrm{MultiheadAttention}(X))
+H = \operatorname{LayerNorm}(X + \operatorname{MultiheadAttention}(X))
 $$
 
 $$
-Y = \mathrm{LayerNorm}(H + \mathrm{FFN}(H))
+Y = \operatorname{LayerNorm}(H + \operatorname{FFN}(H))
 $$
 
 这里的 $X$ 是当前层的输入表示，$Y$ 是当前层的输出表示，FFN 是 Position-wise Feed-Forward Network。
@@ -93,13 +93,13 @@ $$
   <figcaption>图 1：Transformer Encoder Block 结构图</figcaption>
 </figure>
 
-这就是最基本的 Encoder Layer 结构。
+这就是最基本的 Encoder Block 结构。
 
 需要注意的是，上面的写法是比较容易理解的 **Post-LN** 形式，也就是先做子模块，再做残差连接和 LayerNorm。原始 Transformer 使用的就是这种结构。后来很多现代 Transformer 会使用 **Pre-LN** 结构，也就是先对输入做 LayerNorm，再送入子模块。我们后面写代码时会采用更常见也更稳定的 Pre-LN 写法。
 
 ### 8.6.2.1 第一部分：Multi-Head Attention
 
-Encoder 层的第一部分是 multi-head attention。需要注意的是，这里的 attention 是 self-attention，$Q$、$K$、$V$ 都来自同一个输入 $X$：
+Encoder Block 的第一部分是 multi-head attention。需要注意的是，这里的 attention 是 self-attention，$Q$、$K$、$V$ 都来自同一个输入 $X$：
 
 $$
 Q = XW_Q,\quad K = XW_K,\quad V = XW_V
@@ -111,9 +111,9 @@ $$
 \operatorname{MultiheadAttention}(Q,K,V)
 $$
 
-其中，Multi-head attention 里的每个 head 都是在不同的投影空间里做 scaled dot-product attention。
+其中，multi-head attention 里的每个 head 都是在不同的投影空间里做 scaled dot-product attention。
 
-这一部分的作用是让不同 token 之间交换信息。经过 self-attention 之后，每个 token 的表示不再只包含它自己的词义和位置信息，而是融合了整句上下文的信息。所以，通过不断堆叠 Encoder 层，就可以把一串原本相对孤立的 token embedding，逐步变成一串上下文化的 token representation。
+这一部分的作用是让不同 token 之间交换信息。经过 self-attention 之后，每个 token 的表示不再只包含它自己的词义和位置信息，而是融合了整句上下文的信息。所以，通过不断堆叠 Encoder Block，就可以把一串原本相对孤立的 token embedding，逐步变成一串上下文化的 token representation。
 
 ### 8.6.2.2 第二部分：Residual Connection
 
@@ -125,7 +125,7 @@ $$
 
 这就是**残差连接（Residual Connection）**，也是我们前面在 ResNet 里学过的一个重要结构。
 
-这样做有两个好处。第一，它可以保留原来的信息。如果某些信息暂时不需要被修改，残差路径可以让它更容易传递到后面的层。第二，它可以缓解深层网络训练困难的问题。如果没有残差连接，每一层的输出都必须经过子模块本身，原来的输入信息必须由这个子模块学习并保留下来。随着 Encoder 层越堆越深，这会让信息和梯度的传递都变得更困难。残差连接提供了一条更直接的信息通路，让原表示可以继续向后传递，而子模块只需要学习在原表示基础上的增量修改，让深层 Transformer 更容易训练。
+这样做有两个好处。第一，它可以保留原来的信息。如果某些信息暂时不需要被修改，残差路径可以让它更容易传递到后面的层。第二，它可以缓解深层网络训练困难的问题。如果没有残差连接，每一层的输出都必须经过子模块本身，原来的输入信息必须由这个子模块学习并保留下来。随着 Encoder Block 越堆越深，这会让信息和梯度的传递都变得更困难。残差连接提供了一条更直接的信息通路，让原表示可以继续向后传递，而子模块只需要学习在原表示基础上的增量修改，让深层 Transformer 更容易训练。
 
 所以，Transformer Encoder 不是简单地一层覆盖一层，而是每一层都在原表示上做逐步修正。
 
@@ -140,7 +140,7 @@ $$
 LayerNorm 会在这个向量内部计算均值和方差，然后做标准化：
 
 $$
-\mathrm{LayerNorm}(X) = \gamma \frac{X - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta
+\operatorname{LayerNorm}(X) = \gamma \frac{X - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta
 $$
 
 其中，$\gamma$ 和 $\beta$ 是可学习参数。
@@ -151,10 +151,10 @@ $$
 
 ### 8.6.2.4 第四部分：Position-wise Feed-Forward Network
 
-Encoder 层的第四部分是 feed-forward network，通常简称 FFN。它的形式很简单：
+Encoder Block 的第四部分是 feed-forward network，通常简称 FFN。它的形式很简单：
 
 $$
-\mathrm{FFN}(x) = \sigma(xW_1 + b_1)W_2 + b_2
+\operatorname{FFN}(x) = \sigma(xW_1 + b_1)W_2 + b_2
 $$
 
 其中，$\sigma$ 是非线性激活函数，原始 Transformer 使用的是 ReLU，现代模型中也经常使用 GELU 或 SiLU。
@@ -182,21 +182,21 @@ $$
 FFN 做的是：
 
 $$
-\mathrm{FFN}(H) = [\mathrm{FFN}(h_1), \mathrm{FFN}(h_2), \dots, \mathrm{FFN}(h_n)]
+\operatorname{FFN}(H) = [\operatorname{FFN}(h_1), \operatorname{FFN}(h_2), \dots, \operatorname{FFN}(h_n)]
 $$
 
 不同位置使用同一套 FFN 参数，但计算时彼此独立。
 
-到此，我们可以把 Encoder 层中两大模块的分工理解成：
+到此，我们可以把 Encoder Block 中两大模块的分工理解成：
 
 - Self-attention 负责 token 之间的信息交换；
 - FFN 负责对每个 token 的表示做进一步非线性加工。
 
-一个负责混合上下文，一个负责加工表示。两者组合起来，才形成完整的 Transformer Encoder Layer。
+一个负责混合上下文，一个负责加工表示。两者组合起来，才形成完整的 Transformer Encoder Block。
 
 ## 8.6.3 Pre-LN 和 Post-LN
 
-前面为了理解方便，我们把 Encoder 层写成了：
+前面为了理解方便，我们把 Encoder Block 写成了：
 
 $$
 H = \operatorname{LayerNorm}(X + \operatorname{MultiheadAttention}(X))
@@ -224,9 +224,9 @@ $$
 
 为了使代码更接近现代实现，下面我们采用 Pre-LN 写法。
 
-## 8.6.4 Transformer Encoder Layer 的 PyTorch 实现
+## 8.6.4 Transformer Encoder Block 的 PyTorch 实现
 
-下面我们实现一个简化版 Transformer Encoder Layer。这里为了避免重复实现 multi-head attention，我们直接使用 PyTorch 提供的 `nn.MultiheadAttention`。
+下面我们实现一个简化版 Transformer Encoder Block。这里为了避免重复实现 multi-head attention，我们直接使用 PyTorch 提供的 `nn.MultiheadAttention`。
 
 ```{python}
 class TransformerEncoderLayer(nn.Module):
@@ -266,15 +266,18 @@ class TransformerEncoderLayer(nn.Module):
 
     def forward(
         self,
-        x: Tensor,
-        key_padding_mask: Tensor | None = None,
+        src: Tensor,
+        src_mask: Tensor | None = None,
+        src_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
         # Pre-LN: normalize before self-attention
-        # x: (batch_size, seq_len, d_model)
+        # src: (batch_size, seq_len, d_model)
+        x = src
         h = self.norm1(x)
         attn_out, _ = self.self_attn(
             h, h, h,
-            key_padding_mask=key_padding_mask,
+            attn_mask=src_mask,
+            key_padding_mask=src_key_padding_mask,
             need_weights=False,
         )  # fmt: skip
         x = x + self.dropout1(attn_out)
@@ -287,13 +290,13 @@ class TransformerEncoderLayer(nn.Module):
         return x
 
 
-x = torch.randn(2, 5, 512)  # (batch_size, seq_len, d_model)
+x = torch.randn(2, 32, 512)  # (batch_size, seq_len, d_model)
 encoder_layer = TransformerEncoderLayer(d_model=512, num_heads=8)
 
 with torch.inference_mode():
     output = encoder_layer(x)
 
-print('Encoder Layer output shape:', output.shape)
+print('Encoder Block output shape:', output.shape)
 ```
 
 这段代码里最关键的是两条残差路径：
@@ -310,9 +313,9 @@ x = x + self.dropout2(ffn_out)
 
 第一条残差对应 multi-head self-attention，第二条残差对应 FFN。
 
-## 8.6.5 堆叠多个 Encoder Layer
+## 8.6.5 堆叠多个 Encoder Block
 
-有了单个 Encoder Layer 以后，完整的 Transformer Encoder 就很容易写了。我们只需要把它重复堆叠多次。
+有了单个 Encoder Block 以后，完整的 Transformer Encoder 就很容易写了。我们只需要把它重复堆叠多次。
 
 ```{python}
 class TransformerEncoder(nn.Module):
@@ -340,16 +343,22 @@ class TransformerEncoder(nn.Module):
 
     def forward(
         self,
-        x: Tensor,
-        key_padding_mask: Tensor | None = None,
+        src: Tensor,
+        src_mask: Tensor | None = None,
+        src_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
+        x = src
         for layer in self.layers:
-            x = layer(x, key_padding_mask=key_padding_mask)
+            x = layer(
+                x,
+                src_mask=src_mask,
+                src_key_padding_mask=src_key_padding_mask,
+            )
         x = self.norm(x)
         return x
 
 
-x = torch.randn(2, 5, 512)  # (batch_size, seq_len, d_model)
+x = torch.randn(2, 32, 512)  # (batch_size, seq_len, d_model)
 encoder = TransformerEncoder(d_model=512, num_heads=8, num_layers=6)
 
 with torch.inference_mode():
@@ -362,19 +371,19 @@ print('Encoder output shape:', output.shape)
 
 原始的序列输入是 token id，形状通常是：
 
-```python
+```text
 (batch_size, seq_len)
 ```
 
 经过 token embedding 和 position embedding 之后，变成：
 
-```python
+```text
 (batch_size, seq_len, d_model)
 ```
 
-然后依次通过多个 Encoder 层，最后输出仍然是：
+然后依次通过多个 Encoder Block，最后输出仍然是：
 
-```python
+```text
 (batch_size, seq_len, d_model)
 ```
 
@@ -397,7 +406,7 @@ Transformers are very powerful models
 
 在 PyTorch 的 `nn.MultiheadAttention` 里，`key_padding_mask` 的形状通常是：
 
-```python
+```text
 (batch_size, seq_len)
 ```
 
@@ -419,7 +428,7 @@ output = encoder(input_ids, key_padding_mask=key_padding_mask)
 
 这一点在 NLP 任务里非常重要。否则模型可能会把 `[PAD]` 也当成有意义的 token，从而影响表示学习。
 
-## 8.6.7 Encoder 输出可以用来做什么
+## 8.6.7 Encoder 的输出可以用来做什么
 
 Transformer Encoder 的输出是一组上下文化 token 表示：
 
@@ -457,8 +466,8 @@ $$
 
 这一节里，我们把前面学过的 self-attention、multi-head attention 和 positional encoding 组合了起来，形成了完整的 Transformer Encoder。
 
-一个 Encoder 层主要由两部分组成：multi-head self-attention 和 position-wise feed-forward network。前者负责让不同 token 之间交换上下文信息，后者负责对每个 token 的表示做非线性加工。每个子模块外面还会配上残差连接和 LayerNorm，让深层网络更容易训练。
+一个 Encoder Block 主要由两部分组成：multi-head self-attention 和 position-wise feed-forward network。前者负责让不同 token 之间交换上下文信息，后者负责对每个 token 的表示做非线性加工。每个子模块外面还会配上残差连接和 LayerNorm，让深层网络更容易训练。
 
-把多个 Encoder 层堆叠起来以后，模型就可以对输入序列进行多轮信息交互和表示加工。最终输出的每个 token 向量，都不再只是它自己的 embedding，而是融合了整个上下文后的表示。
+把多个 Encoder Block 堆叠起来以后，模型就可以对输入序列进行多轮信息交互和表示加工。最终输出的每个 token 向量，都不再只是它自己的 embedding，而是融合了整个上下文后的表示。
 
 到这里，我们已经看完了 Transformer Encoder 的核心结构。下一节我们继续往前走，看 Transformer Decoder。它和 Encoder 很像，但多了一个关键限制：在生成时，当前位置不能偷看未来的 token，否则模型就不是在预测下一个词，而是在抄答案。这就引出了 masked self-attention。
