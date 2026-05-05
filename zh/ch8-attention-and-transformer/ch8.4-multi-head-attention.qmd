@@ -119,7 +119,7 @@ $$
 最后再经过一个线性变换 $W^O$，得到最终输出：
 
 $$
-\operatorname{MultiHead}(Q, K, V)
+\operatorname{MultiheadAttention}(Q, K, V)
 = \operatorname{Concat}(\mathrm{head}_1, \dots, \mathrm{head}_h)W^O
 $$
 
@@ -306,25 +306,25 @@ class MultiheadAttention(nn.Module):
 
 一开始，`q`、`k`、`v` 的形状都是：
 
-```python
+```text
 (batch_size, seq_len, d_model)
 ```
 
 然后我们把 `d_model` 拆成：
 
-```python
+```text
 (num_heads, head_dim)
 ```
 
 于是形状变成：
 
-```python
+```text
 (batch_size, seq_len, num_heads, head_dim)
 ```
 
 再通过 `transpose(1, 2)`，把 head 维度移到序列长度前面：
 
-```python
+```text
 (batch_size, num_heads, seq_len, head_dim)
 ```
 
@@ -332,13 +332,13 @@ class MultiheadAttention(nn.Module):
 
 最后，多个 head 的输出会再转回：
 
-```python
+```text
 (batch_size, seq_len, num_heads, head_dim)
 ```
 
 然后重新合并成：
 
-```python
+```text
 (batch_size, seq_len, d_model)
 ```
 
