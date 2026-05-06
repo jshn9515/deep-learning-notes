@@ -7,7 +7,7 @@ comments: false
 
 listing:
   contents:
-    - ./**/*.qmd
+    - part*.qmd
   sort: title asc
   type: table
   fields: [title, author, date]
