@@ -4,6 +4,8 @@
 
 It provides code examples, helper functions, and small utilities used throughout the tutorial, similar in spirit to the `d2l` package for _Dive into Deep Learning_.
 
+The package structure is similar to PyTorch: module classes live under `dnnl.nn`, and stateless helper functions live under `dnnl.nn.functional`. The APIs are also designed to feel close to their PyTorch counterparts where practical.
+
 This package is intended as a lightweight code supplement rather than a general-purpose deep learning framework. Its goal is to make the examples in the notes easier to run, reuse, and extend.
 
 ## What is this package for?
@@ -44,15 +46,38 @@ This way, changes to the source code take effect immediately without reinstallin
 
 ## Example
 
-After installation, you can import the package in Python:
+After installation, you can import neural network modules from `dnnl.nn`:
 
 ```python
-import dnnl.<chapter No.>
+import torch
+import dnnl.nn as nn
+
+attn = nn.MultiheadAttention(embed_dim=16, num_heads=4)
+
+query = torch.randn(2, 8, 16)
+key = torch.randn(2, 8, 16)
+value = torch.randn(2, 8, 16)
+
+output = attn(query, key, value)
 ```
 
-For example, the code supplement for Chapter 1 is placed in `ch1`, and the code supplement for Chapter 2 is placed in `ch2`.
+You can also import stateless functions from `dnnl.nn.functional`:
 
-As more chapters are added to the notes, the package will continue to grow with corresponding chapter-based modules and utilities.
+```python
+import torch
+import dnnl.nn.functional as F
+
+query = torch.randn(2, 4, 8, 16)
+key = torch.randn(2, 4, 8, 16)
+value = torch.randn(2, 4, 8, 16)
+
+output, weights = F.scaled_dot_product_attention(
+    query,
+    key,
+    value,
+    need_weights=True,
+)
+```
 
 ## License
 
