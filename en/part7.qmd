@@ -1,0 +1,19 @@
+---
+title: "Part 7: Multimodal Learning"
+author: jshn9515
+date: 2026-05-05
+date-modified: today
+comments: false
+
+listing:
+  contents:
+    - ch15-multimodal-learning/*.qmd
+  sort: title asc
+  type: table
+  fields: [title, author, date]
+  date-format: iso
+
+open-graph:
+  title: part7-multimodal-learning
+  description: "Part 7: Multimodal Learning"
+---
