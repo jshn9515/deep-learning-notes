@@ -67,7 +67,7 @@ website:
         - section: "Part 4: Attention 机制与 Transformer"
           contents:
             - section: "Chapter 8: Attention 与 Transformer：从固定长度编码到动态上下文建模"
-              contents: "zh/ch8-attention-and-transformer/*.qmd"
+              contents: "zh/ch8-attention-and-transformers/*.qmd"
             - section: "Chapter 10: FlashAttention: 高效的注意力机制实现"
               contents: "zh/ch10-flash-attention/*.qmd"
         - section: "Part 6: 生成模型"
