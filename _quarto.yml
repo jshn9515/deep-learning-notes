@@ -93,5 +93,19 @@ website:
               contents: "en/ch2-pytorch-introduction/*.qmd"
         - section: "Part 4: Attention Mechanism and Transformer"
           contents:
-            - section: "Chapter 10: FlashAttention: An Efficient Implementation of Attention Mechanism"
+            - section: "Chapter 8: Attention and Transformer: From Fixed-Length Encoding to Dynamic Context Modeling"
+              contents: "en/ch8-attention-and-transformer/*.qmd"
+            - section: "Chapter 10: FlashAttention: Efficient Implementation of Attention Mechanism"
               contents: "en/ch10-flash-attention/*.qmd"
+        - section: "Part 6: Generative Models"
+          contents:
+            - section: "Chapter 12: GAN: Generative Adversarial Networks"
+              contents: "en/ch12-generative-adversarial-networks/*.qmd"
+            - section: "Chapter 13: VAE: Variational Autoencoders"
+              contents: "en/ch13-autoencoders-and-vaes/*.qmd"
+            - section: "Chapter 14: Diffusion Models: From Denoising to Generation"
+              contents: "en/ch14-diffusion-models/*.qmd"
+        - section: "Part 7: Multimodal Learning"
+          contents:
+            - section: "Chapter 15: CLIP: Multimodal Models Integrating Vision and Language"
+              contents: "en/ch15-multimodal-learning/*.qmd"
