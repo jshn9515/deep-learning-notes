@@ -2,6 +2,7 @@ import math
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
 __all__ = [
@@ -54,6 +55,6 @@ class SinusoidalTimestepEmbedding(nn.Module):
         emb = torch.concat([emb.sin(), emb.cos()], dim=-1)
 
         if self.embedding_dim % 2 == 1:
-            emb = torch.nn.functional.pad(emb, (0, 1))
+            emb = F.pad(emb, (0, 1))
 
         return emb
