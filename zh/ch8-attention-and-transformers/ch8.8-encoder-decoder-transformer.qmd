@@ -8,9 +8,9 @@ open-graph:
 title: "8.8 Encoder-Decoder Transformer：把 Encoder 和 Decoder 连接起来"
 ---
 
-前面几节里，我们已经分别看过 Transformer Encoder 和 Transformer Decoder。Encoder 的核心任务是把输入序列编码成一组上下文表示；Decoder 的核心任务是在 causal mask 的限制下，根据已有目标前缀继续预测后面的 token。
+前面几节里，我们已经分别看过 Transformer encoder 和 Transformer decoder。Encoder 的核心任务是把输入序列编码成一组上下文表示；decoder 的核心任务是在 causal mask 的限制下，根据已有目标前缀继续预测后面的 token。
 
-这一节，我们不再重复拆解 Encoder Block 或 Decoder Block 的内部结构，而是把它们连接起来，从整体上看完整的 **Encoder-Decoder Transformer** 是如何完成序列到序列生成的。
+这一节，我们不再重复拆解 encoder block 或 decoder block 的内部结构，而是把它们连接起来，从整体上看完整的 **Encoder-Decoder Transformer** 是如何完成序列到序列生成的。
 
 这一节重点回答三个问题：
 
@@ -31,7 +31,7 @@ print('PyTorch version:', torch.__version__)
 
 ## 8.8.1 从 Seq2Seq 到条件自回归生成
 
-Encoder-Decoder Transformer 适合处理一类任务：**给定一个输入序列，生成另一个输出序列**。
+Encoder-decoder Transformer 适合处理一类任务：**给定一个输入序列，生成另一个输出序列。**
 
 比如机器翻译：
 
@@ -47,7 +47,7 @@ Input: 打印 "Hello, World!"
 Output: print("Hello, World!")
 ```
 
-这类任务通常叫做 **Sequence-to-Sequence**，简称 **Seq2Seq**。它的输入和输出都是序列，但二者的长度不一定相同，语言、结构和表达方式也可能完全不同。
+这类任务通常叫做 **sequence-to-sequence**，简称 **seq2seq**。它的输入和输出都是序列，但二者的长度不一定相同，语言、结构和表达方式也可能完全不同。
 
 我们可以把输入序列写成：
 
@@ -79,25 +79,25 @@ $$
 
 这个公式里有两个关键信息来源。第一个是输入序列 $X$，它告诉模型“要根据什么内容生成”；第二个是目标前缀 $y_{<t}$，它告诉模型“现在已经生成到哪里了”。
 
-这也正好对应 Encoder-Decoder Transformer 的两个部分：
+这也正好对应 encoder-decoder Transformer 的两个部分：
 
 - Encoder 负责处理输入序列 $X$；
-- Decoder 负责根据目标前缀 $y_{<t}$，并结合 Encoder 输出，预测下一个目标 token $y_t$。
+- Decoder 负责根据目标前缀 $y_{<t}$，并结合 encoder 输出，预测下一个目标 token $y_t$。
 
-所以，Encoder-Decoder Transformer 的核心不是简单地把 Encoder 和 Decoder 拼在一起，而是让模型在生成每个 token 时同时利用两类信息：**源序列的内容**，以及**目标端已经生成的前缀**。
+所以，encoder-decoder Transformer 的核心不是简单地把 encoder 和 decoder 拼在一起，而是让模型在生成每个 token 时同时利用两类信息：**源序列的内容**，以及**目标端已经生成的前缀**。
 
 ## 8.8.2 Encoder-Decoder Transformer 的信息流
 
-完整 Encoder-Decoder Transformer 的信息流可以写成：
+完整 encoder-decoder Transformer 的信息流可以写成：
 
 <figure class="figure" style="text-align: center;">
   <img src="figures/ch8.8-transformer.png" alt="图 1：Transformer 网络结构图" style="height: 600px;">
   <figcaption>图 1：Transformer 网络结构图 [@vaswani2023Attention, fig. 1]</figcaption>
 </figure>
 
-图中左半部分是 Encoder，右半部分是 Decoder。
+图中左半部分是 encoder，右半部分是 decoder。
 
-Encoder 侧负责处理输入序列。输入 token 先经过 token embedding 和 positional encoding，然后送入多层 Encoder Stack，得到一组源序列表示：
+Encoder 侧负责处理输入序列。输入 token 先经过 token embedding 和 positional encoding，然后送入多层 encoder stack，得到一组源序列表示：
 
 $$
 H_{\mathrm{enc}} = \operatorname{Encoder}(X)
@@ -105,7 +105,7 @@ $$
 
 其中 $H_{\mathrm{enc}}$ 可以理解为输入序列中每个位置的上下文表示。
 
-Decoder 侧负责生成目标序列。它接收目标端已经出现的前缀 $y_{<t}$，先通过 masked self-attention 建模目标前缀内部的关系，再通过 cross-attention 读取 Encoder 输出 $H_{\mathrm{enc}}$。
+Decoder 侧负责生成目标序列。它接收目标端已经出现的前缀 $y_{<t}$，先通过 masked self-attention 建模目标前缀内部的关系，再通过 cross-attention 读取 encoder 输出 $H_{\mathrm{enc}}$。
 
 也就是说，公式里的
 
@@ -120,7 +120,7 @@ $$
 
 所以我们可以把完整信息流简单概括为：
 
-> **Encoder 先读入源序列，得到源序列表示；Decoder 一边看目标前缀，一边通过 cross-attention 读取源序列表示，然后预测下一个目标 token。**
+> **Encoder 先读入源序列，得到源序列表示；decoder 一边看目标前缀，一边通过 cross-attention 读取源序列表示，然后预测下一个目标 token。**
 
 接下来，我们就来看看训练和推理时这个过程是怎么组织的。
 
@@ -136,14 +136,14 @@ $$
 
 其中，`<BOS>` 表示句子开始，`<EOS>` 表示句子结束。
 
-训练 Decoder 时，我们通常会把目标序列右移一位作为输入：
+训练 decoder 时，我们通常会把目标序列右移一位作为输入：
 
 ```text
 Decoder input:  <BOS>   y1    y2    y3
 Target  label:  y1      y2    y3    <EOS>
 ```
 
-也就是说，模型看到 `<BOS>` 时，要预测 $y_1$；看到 `<BOS>`，$y_1$ 时，要预测 $y_2$；看到 `<BOS>`，$y_1$，$y_2$ 时，要预测 $y_3$。这里的关键是，训练时喂给 Decoder 的历史 token 来自真实答案，而不是模型自己生成的结果。这就叫 **teacher forcing**。
+也就是说，模型看到 `<BOS>` 时，要预测 $y_1$；看到 `<BOS>`，$y_1$ 时，要预测 $y_2$；看到 `<BOS>`，$y_1$，$y_2$ 时，要预测 $y_3$。这里的关键是，训练时喂给 decoder 的历史 token 来自真实答案，而不是模型自己生成的结果。这就叫 **teacher forcing**。
 
 我们可以把 teacher forcing 想象成老师在旁边纠正学生。训练时，老师不断提供正确的历史 token，让模型始终在正确前缀下学习预测下一个 token。这样做可以让训练更稳定：即使模型一开始预测错了，后面的位置仍然能看到正确前缀，而不会因为前面一步错了，导致后面所有位置都跟着偏掉。
 
@@ -163,7 +163,7 @@ $$
 
 但训练时，我们已经知道完整目标序列，所以可以一次性构造右移后的 decoder input 和对应的 target label，然后让 Decoder 同时输出所有位置的预测。
 
-但是，如果我们一次性输入完整目标前缀，模型会不会偷看未来呢？答案是不会。因为 Decoder 的 self-attention 里有 **causal mask**。
+但是，如果我们一次性输入完整目标前缀，模型会不会偷看未来呢？答案是不会。因为 decoder 的 self-attention 里有 **causal mask**。
 
 Causal mask 会保证：
 
@@ -179,7 +179,7 @@ Causal mask 会保证：
 - 计算上是并行的：所有位置一起算；
 - 信息上仍然是自回归的：每个位置只能看到自己之前的 token。
 
-训练时 Decoder 的输出通常会经过一个线性层映射到词表大小，并对每个位置计算交叉熵损失：
+训练时 decoder 的输出通常会经过一个线性层映射到词表大小，并对每个位置计算交叉熵损失：
 
 $$
 \mathcal{L} = -\sum_{t=1}^{T} \log p(y_t \mid y_{<t}, X)
@@ -191,7 +191,7 @@ $$
 
 ## 8.8.4 自回归生成：推理时使用模型自己生成的前缀
 
-但是，推理时就不一样了。这时候我们没有目标答案，也就没有真实前缀可以喂给 Decoder。模型只能从 `<BOS>` 开始，一步一步生成。
+但是，推理时就不一样了。这时候我们没有目标答案，也就没有真实前缀可以喂给 decoder。模型只能从 `<BOS>` 开始，一步一步生成。
 
 过程大致是：
 
@@ -211,7 +211,7 @@ Step 4 输入: <BOS>, y1, y2, y3
 
 这里的 $y_1, y_2, y_3$ 都是模型自己生成的 token。
 
-这就是**自回归生成（Autoregressive Generation）**。它和训练最大的区别就是，训练时 Decoder 看到的前缀来自真实答案，而推理时 Decoder 看到的前缀来自模型自己。如果模型第一步生成错了，那么第二步就只能基于这个错误 token 继续生成，导致错误在后续生成过程中不断累积。这种现象通常叫做 **Exposure Bias**。
+这就是**自回归生成（Autoregressive Generation）**。它和训练最大的区别就是，训练时 decoder 看到的前缀来自真实答案，而推理时 decoder 看到的前缀来自模型自己。如果模型第一步生成错了，那么第二步就只能基于这个错误 token 继续生成，导致错误在后续生成过程中不断累积。这种现象通常叫做 **Exposure Bias**。
 
 ## 8.8.5 训练和推理的对比
 
@@ -234,13 +234,13 @@ Step 4 输入: <BOS>, y1, y2, y3
   - 串行
 :::
 
-训练和推理使用的是同一个 Encoder-Decoder Transformer，只是 Decoder 的输入来源不同。
+训练和推理使用的是同一个 encoder-decoder Transformer，只是 decoder 的输入来源不同。
 
 训练时，目标序列已经给定，所以可以用右移后的真实目标序列作为前缀，并行预测所有位置；推理时，真实目标序列不存在，模型只能把自己刚生成的 token 拼回输入，再继续预测下一个 token。
 
 ## 8.8.6 Encoder-Decoder 中的 Mask
 
-完整 Encoder-Decoder Transformer 里通常会涉及几种 mask。前面我们已经重点讲过 causal mask，这里只简单梳理它们各自屏蔽什么。
+完整 encoder-decoder Transformer 里通常会涉及几种 mask。前面我们已经重点讲过 causal mask，这里只简单梳理它们各自屏蔽什么。
 
 ::: {.list-table tbl-colwidths="[25,25,50]"}
 - - Mask
@@ -249,23 +249,23 @@ Step 4 输入: <BOS>, y1, y2, y3
 
 - - Source padding mask
   - Encoder self-attention
-  - 屏蔽源序列中的 padding token，防止 Encoder 关注这些位置。
+  - 屏蔽源序列中的 padding token，防止 encoder 关注这些位置。
 
 - - Target padding mask
   - Decoder masked self-attention
-  - 屏蔽目标序列中的 padding token，防止 Decoder 关注这些位置。
+  - 屏蔽目标序列中的 padding token，防止 decoder 关注这些位置。
 
 - - Source causal mask
   - Encoder self-attention
-  - 通常不需要，因为 Encoder 不涉及自回归生成；只有当希望 Encoder 也按从左到右的方式处理输入时才会使用。
+  - 通常不需要，因为 encoder 不涉及自回归生成；只有当希望 encoder 也按从左到右的方式处理输入时才会使用。
 
 - - Target causal mask
   - Decoder masked self-attention
-  - 屏蔽目标序列中的未来位置，防止 Decoder 在训练时看到未来 token。
+  - 屏蔽目标序列中的未来位置，防止 decoder 在训练时看到未来 token。
 
 - - Memory key padding mask
   - Decoder cross-attention
-  - 屏蔽 Encoder 输出中对应源序列 padding token 的位置，防止 Decoder 关注这些位置。
+  - 屏蔽 encoder 输出中对应源序列 padding token 的位置，防止 decoder 关注这些位置。
 :::
 
 这些 mask 的名字在不同框架里可能略有不同，但核心就是两类：
@@ -275,7 +275,7 @@ Step 4 输入: <BOS>, y1, y2, y3
 
 ## 8.8.7 PyTorch 中的 `nn.Transformer`
 
-PyTorch 提供了完整的 Encoder-Decoder Transformer 模块：
+PyTorch 提供了完整的 encoder-decoder Transformer 模块：
 
 ```{python}
 transformer = nn.Transformer(
@@ -288,7 +288,7 @@ transformer = nn.Transformer(
 )
 ```
 
-它内部已经包含 Encoder 和 Decoder。调用时通常传入：
+它内部已经包含 encoder 和 decoder。调用时通常传入：
 
 ```{python}
 src = torch.randn(2, 32, 512)  # (batch_size, src_seq_len, d_model)
@@ -300,9 +300,9 @@ print('Output shape:', output.shape)
 
 其中：
 
-- `src` 是 Encoder 输入；
-- `tgt` 是 Decoder 输入；
-- 输出是 Decoder 的 hidden states。
+- `src` 是 encoder 输入；
+- `tgt` 是 decoder 输入；
+- 输出是 decoder 的 hidden states。
 
 如果使用 `batch_first=True`，形状通常是：
 
