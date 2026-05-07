@@ -5,8 +5,7 @@ from dnnl.nn import functional as dF
 
 
 def test_autoencoder_encode_decode_and_forward_shapes():
-    torch.manual_seed(0)
-    model = AutoEncoder(input_shape=(1, 4, 4), hidden_dim=8, latent_dim=3)
+    model = AutoEncoder((1, 4, 4), hidden_dim=8, latent_dim=3)
     x = torch.rand(2, 1, 4, 4)
 
     z = model.encode(x)
@@ -20,8 +19,7 @@ def test_autoencoder_encode_decode_and_forward_shapes():
 
 
 def test_vae_forward_and_loss_shapes():
-    torch.manual_seed(1)
-    model = VAE(input_shape=(1, 4, 4), hidden_dim=8, latent_dim=3)
+    model = VAE((1, 4, 4), hidden_dim=8, latent_dim=3)
     x = torch.rand(2, 1, 4, 4)
 
     x_hat, mu, logvar = model(x)
@@ -52,4 +50,4 @@ def test_vae_loss_supports_mse_and_rejects_unknown_loss():
     except NotImplementedError as exc:
         assert 'Unsupported loss function' in str(exc)
     else:
-        raise AssertionError('vae_loss should reject unsupported loss functions.')
+        raise AssertionError('`vae_loss` should reject unsupported loss functions.')
