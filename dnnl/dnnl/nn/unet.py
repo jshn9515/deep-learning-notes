@@ -20,7 +20,7 @@ class Block(nn.Module):
         self.norm = nn.GroupNorm(groups, out_channels)
         self.act = nn.SiLU()
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.proj(x)
         x = self.norm(x)
         x = self.act(x)
@@ -63,7 +63,7 @@ class AttentionBlock(nn.Module):
         B, C, H, W = x.shape
         h = self.norm(x)
         h = h.view(B, C, H * W).transpose(1, 2)  # (B, HW, C)
-        attn_out = self.attn(h, h, h)
+        attn_out, _ = self.attn(h, h, h)
         attn_out = attn_out.transpose(1, 2).view(B, C, H, W)
         return x + attn_out
 
@@ -99,6 +99,8 @@ class Upsample(nn.Module):
 
 
 class UNet2DModel(nn.Module):
+    """A compact 2D U-Net with timestep conditioning and attention blocks."""
+
     def __init__(
         self,
         in_channels: int = 3,
@@ -106,6 +108,15 @@ class UNet2DModel(nn.Module):
         block_out_channels: tuple[int, ...] = (64, 128, 256, 512),
         time_emb_dim: int = 256,
     ):
+        """Initialize the U-Net down path, bottleneck, and up path.
+
+        Args:
+            in_channels (int, default: 3): Number of input image channels.
+            out_channels (int, default: 3): Number of output image channels.
+            block_out_channels (tuple[int, ...], default: (64, 128, 256, 512)): 
+                Channel sizes for each U-Net resolution level.
+            time_emb_dim (int, default: 256): Dimension of timestep embeddings.
+        """
         super().__init__()
         self.time_embedding = nn.Sequential(
             SinusoidalTimestepEmbedding(time_emb_dim),
@@ -170,6 +181,7 @@ class UNet2DModel(nn.Module):
         self.final_conv = nn.Conv2d(in_ch, out_channels, kernel_size=1)
 
     def forward(self, x: Tensor, timesteps: Tensor) -> Tensor:
+        """Run the U-Net on a batch of images and timesteps."""
         if x.size(0) != timesteps.size(0):
             raise AssertionError(
                 f'Batch size of x and timesteps must match, '
