@@ -1,4 +1,4 @@
-name: Test and Build DNNL Package
+name: Test and Build dnnl Package
 
 on:
   push:
