@@ -6,6 +6,8 @@ __all__ = ['DDPMScheduler']
 
 
 class DDPMScheduler:
+    """Noise schedule and reverse-step helper for DDPM sampling."""
+
     def __init__(
         self,
         num_train_timesteps: int = 1000,
@@ -39,6 +41,16 @@ class DDPMScheduler:
         noise: Tensor,
         timesteps: Tensor,
     ) -> Tensor:
+        """Add noise to clean samples at the requested timesteps.
+
+        Args:
+            original_samples (Tensor): Clean samples ``x_0``.
+            noise (Tensor): Gaussian noise with the same shape as ``original_samples``.
+            timesteps (Tensor): 1D tensor of timestep indices, one per batch item.
+
+        Returns:
+            Noisy samples ``x_t``.
+        """
         if original_samples.shape != noise.shape:
             raise AssertionError('original_samples and noise must have the same shape.')
 
@@ -62,6 +74,12 @@ class DDPMScheduler:
         num_inference_steps: int,
         device: Device = 'cpu',
     ):
+        """Set the inference timestep schedule.
+
+        Args:
+            num_inference_steps (int): Number of reverse diffusion steps to run.
+            device (Device, default: 'cpu'): Device where the timestep tensor should live.
+        """
         if num_inference_steps > self.num_train_timesteps:
             raise AssertionError(
                 f'num_inference_steps must be in the range (0, {self.num_train_timesteps}].'
@@ -77,6 +95,7 @@ class DDPMScheduler:
         )
 
     def previous_timestep(self, timestep: int) -> int:
+        """Return the previous inference timestep for the current schedule."""
         if self.num_inference_steps != self.num_train_timesteps:
             index = (self.timesteps == timestep).float().argmax()
             if index == len(self.timesteps) - 1:
