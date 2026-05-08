@@ -113,7 +113,7 @@ class UNet2DModel(nn.Module):
         Args:
             in_channels (int, default: 3): Number of input image channels.
             out_channels (int, default: 3): Number of output image channels.
-            block_out_channels (tuple[int, ...], default: (64, 128, 256, 512)): 
+            block_out_channels (tuple[int, ...], default: (64, 128, 256, 512)):
                 Channel sizes for each U-Net resolution level.
             time_emb_dim (int, default: 256): Dimension of timestep embeddings.
         """
