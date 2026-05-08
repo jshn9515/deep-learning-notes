@@ -10,6 +10,7 @@ __all__ = [
 
 
 def add_noise_v1(x0: Tensor, betas: Tensor) -> Tensor:
+    """Iteratively add Gaussian noise according to a beta schedule."""
     xt = x0.clone()
     for beta in betas:
         noise = torch.randn_like(x0)
@@ -18,6 +19,7 @@ def add_noise_v1(x0: Tensor, betas: Tensor) -> Tensor:
 
 
 def add_noise_v2(x0: Tensor, betas: Tensor, timestep: int) -> Tensor:
+    """Sample ``x_t`` directly from ``x_0`` at a given diffusion timestep."""
     noise = torch.randn_like(x0)
     alphas = 1.0 - betas
     alpha_bars = alphas.cumprod(dim=0)
@@ -25,6 +27,7 @@ def add_noise_v2(x0: Tensor, betas: Tensor, timestep: int) -> Tensor:
 
 
 def denoise_v1(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
+    """Compute one DDPM reverse mean step with deterministic variance offset."""
     alphas = 1.0 - betas
     alpha_t = alphas[timestep]
     alpha_bars = alphas.cumprod(dim=0)
@@ -47,6 +50,7 @@ def denoise_v1(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
 
 
 def denoise_v2(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
+    """Compute one DDPM reverse step and sample noise when ``timestep > 0``."""
     alphas = 1.0 - betas
     alpha_t = alphas[timestep]
     alpha_bars = alphas.cumprod(dim=0)
