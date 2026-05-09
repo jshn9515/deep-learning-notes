@@ -4,8 +4,9 @@ date: 2026-04-02
 date-modified: 2026-04-04
 open-graph:
   title: ch14.5-elbo-for-ddpm
-  description: "DDPM from a Variational Perspective: Where Does the ELBO Come From?"
+  description: "14.5 DDPM from a Variational Perspective: Where Does the ELBO Come From?"
 title: "14.5 从变分推导看 DDPM：ELBO 从哪里来"
+order: 5
 ---
 
 前面几节里，我们已经从直觉和算法实现的角度理解了 DDPM。但是，很多读者会有一个新的疑问：
@@ -25,23 +26,31 @@ title: "14.5 从变分推导看 DDPM：ELBO 从哪里来"
 
 我们先来回忆一下生成模型最根本的目标。无论是 AE、VAE 还是 Diffusion，我们最终都希望模型能够逼近真实数据分布 $p_{\text{data}}(x)$。更具体一点，我们希望最大化观测数据的对数似然：
 
-$$ \log p_\theta(x_0) $$
+$$
+\log p_\theta(x_0)
+$$
 
 这里的 $x_0$ 表示真实样本，$\theta$ 表示模型参数[^1]。
 
 问题在于，在 DDPM 里，我们并不是直接定义一个简单的 $p_\theta(x_0)$。相反，我们引入了一整串潜变量：
 
-$$ x_1, x_2, \dots, x_T $$
+$$
+x_1, x_2, \dots, x_T
+$$
 
 于是，整个生成过程可以写成：
 
-$$ p_\theta(x_{0:T}) = p(x_T)\prod_{t=1}^T p_\theta(x_{t-1}\mid x_t) $$
+$$
+p_\theta(x_{0:T}) = p(x_T)\prod_{t=1}^T p_\theta(x_{t-1}\mid x_t)
+$$
 
 其中，$p(x_T)$ 通常设成标准高斯分布；$p_\theta(x_{t-1}\mid x_t)$ 是模型需要学习的反向去噪分布。
 
 这样定义以后，边缘似然就变成：
 
-$$ p_\theta(x_0) = \int p_\theta(x_{0:T})\,dx_{1:T} $$
+$$
+p_\theta(x_0) = \int p_\theta(x_{0:T})\,dx_{1:T}
+$$
 
 你会发现，问题一下子变难了：因为我们要把所有中间变量都积分掉，这通常是很难直接算的。所以这时，一个非常熟悉的思路就出现了：
 
@@ -55,11 +64,15 @@ $$ p_\theta(x_0) = \int p_\theta(x_{0:T})\,dx_{1:T} $$
 
 在 VAE 里，我们引入了一个近似后验 $q_\phi(z\mid x)$，这个近似后验由编码器来扮演。编码器把图像编码成潜变量 $z$，这个过程就是我们构造的变分分布 $q$。而在 DDPM 里，对应的角色则由前向加噪过程来扮演：
 
-$$ q(x_{1:T}\mid x_0)=\prod_{t=1}^T q(x_t\mid x_{t-1}) $$
+$$
+q(x_{1:T}\mid x_0)=\prod_{t=1}^T q(x_t\mid x_{t-1})
+$$
 
 这里的每一步前向转移都是我们自己规定好的，比如：
 
-$$ q(x_t\mid x_{t-1})=\mathcal{N}\Bigl(x_t;\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I\Bigr) $$
+$$
+q(x_t\mid x_{t-1})=\mathcal{N}\Bigl(x_t;\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I\Bigr)
+$$
 
 这个过程有两个重要特点：
 
@@ -74,23 +87,36 @@ $$ q(x_t\mid x_{t-1})=\mathcal{N}\Bigl(x_t;\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I
 
 我们关心的是：
 
-$$ \log p_\theta(x_0) $$
+$$
+\log p_\theta(x_0)
+$$
 
 对任意一个分布 $q(x_{1:T}\mid x_0)$，都有：
 
-$$ \log p_\theta(x_0) = \log \int q(x_{1:T}\mid x_0)\frac{p_\theta(x_{0:T})}{q(x_{1:T}\mid x_0)}\,dx_{1:T} $$
+$$
+\log p_\theta(x_0) =
+\log \int q(x_{1:T}\mid x_0)\frac{p_\theta(x_{0:T})}{q(x_{1:T}\mid x_0)}\,dx_{1:T}
+$$
 
 因为 $\log$ 是一个凹函数，根据 Jensen 不等式：
 
-$$ \log \mathbb{E}[Z] \ge \mathbb{E}[\log Z] $$
+$$
+\log \mathbb{E}[Z] \ge \mathbb{E}[\log Z]
+$$
 
 我们有：
 
-$$ \log p_\theta(x_0) \ge \mathbb{E}_{q(x_{1:T}\mid x_0)} \left[\log \frac{p_\theta(x_{0:T})}{q(x_{1:T}\mid x_0)} \right] $$
+$$
+\log p_\theta(x_0) \ge \mathbb{E}_{q(x_{1:T}\mid x_0)}
+\left[\log \frac{p_\theta(x_{0:T})}{q(x_{1:T}\mid x_0)} \right]
+$$
 
 这就是 ELBO：
 
-$$ \mathcal{L}_{\text{ELBO}} = \mathbb{E}_{q(x_{1:T}\mid x_0)} \left[\log p_\theta(x_{0:T})-\log q(x_{1:T}\mid x_0)\right] $$
+$$
+\mathcal{L}_{\text{ELBO}} = \mathbb{E}_{q(x_{1:T}\mid x_0)}
+\left[\log p_\theta(x_{0:T})-\log q(x_{1:T}\mid x_0)\right]
+$$
 
 所以 DDPM 的训练，也可以理解成最大化数据对数似然的一个可计算下界。
 
@@ -98,19 +124,29 @@ $$ \mathcal{L}_{\text{ELBO}} = \mathbb{E}_{q(x_{1:T}\mid x_0)} \left[\log p_\the
 
 现在我们把联合分布写开：
 
-$$ p_\theta(x_{0:T}) = p(x_T)\prod_{t=1}^T p_\theta(x_{t-1}\mid x_t) $$
+$$
+p_\theta(x_{0:T}) = p(x_T)\prod_{t=1}^T p_\theta(x_{t-1}\mid x_t)
+$$
 
 同时，前向过程是：
 
-$$ q(x_{1:T}\mid x_0)=\prod_{t=1}^T q(x_t\mid x_{t-1}) $$
+$$
+q(x_{1:T}\mid x_0)=\prod_{t=1}^T q(x_t\mid x_{t-1})
+$$
 
 把它们代回 ELBO：
 
-$$ \mathcal{L}_{\text{ELBO}} = \mathbb{E}_q \left[\log p(x_T)+\sum_{t=1}^T \log p_\theta(x_{t-1}\mid x_t) - \sum_{t=1}^T \log q(x_t\mid x_{t-1})\right] $$
+$$
+\mathcal{L}_{\text{ELBO}} = \mathbb{E}_q
+\left[\log p(x_T)+\sum_{t=1}^T \log p_\theta(x_{t-1}\mid x_t) -
+\sum_{t=1}^T \log q(x_t\mid x_{t-1})\right]
+$$
 
 接下来通过整理项，可以把它改写成标准形式。在 DDPM 文献里，常见的写法是把负 ELBO 分解成三类项：
 
-$$ L = L_0 + \sum_{t=2}^T L_{t-1} + L_T $$
+$$
+L = L_0 + \sum_{t=2}^T L_{t-1} + L_T
+$$
 
 我们大致可以这样理解：
 
@@ -126,7 +162,9 @@ $$ L = L_0 + \sum_{t=2}^T L_{t-1} + L_T $$
 
 这里最关键的是中间项。它的形式是：
 
-$$ D_\mathrm{KL}\Bigl(q(x_{t-1}\mid x_t, x_0) \;\|\; p_\theta(x_{t-1}\mid x_t)\Bigr) $$
+$$
+D_\mathrm{KL}\Bigl(q(x_{t-1}\mid x_t, x_0) \;\|\; p_\theta(x_{t-1}\mid x_t)\Bigr)
+$$
 
 也就是说，给定当前含噪图像 $x_t$，以及真实的干净图像 $x_0$，前向过程会产生一个真实后验 $q(x_{t-1}\mid x_t, x_0)$；我们希望模型学到的反向分布 $p_\theta(x_{t-1}\mid x_t)$ 尽可能接近它。对于每一个时间步，我们希望模型去逼近“如果我知道真实图像，那么这一步应该怎么往回走”的最优条件分布。这就把反向去噪这件事，变成了一个非常标准的分布拟合问题。
 
@@ -136,51 +174,80 @@ $$ D_\mathrm{KL}\Bigl(q(x_{t-1}\mid x_t, x_0) \;\|\; p_\theta(x_{t-1}\mid x_t)\B
 
 从 14.3.1 我们知道，真实后验是一个高斯分布：
 
-$$ q(x_{t-1}\mid x_t, x_0)=\mathcal{N}\bigl(x_{t-1};\tilde{\mu}_t(x_t,x_0),\,\tilde{\beta}_t I\bigr) $$
+$$
+q(x_{t-1}\mid x_t, x_0) =
+\mathcal{N}\bigl(x_{t-1};\tilde{\mu}_t(x_t,x_0),\,\tilde{\beta}_t I\bigr)
+$$
 
 那么一个自然的做法就是让模型也输出一个高斯分布：
 
-$$ p_\theta(x_{t-1}\mid x_t)=\mathcal{N}\bigl(x_{t-1};\mu_\theta(x_t,t),\,\Sigma_\theta(x_t,t)\bigr) $$
+$$
+p_\theta(x_{t-1}\mid x_t) 
+\mathcal{N}\bigl(x_{t-1};\mu_\theta(x_t,t),\,\Sigma_\theta(x_t,t)\bigr)
+$$
 
 这样，中间的 KL 项就变成了两个高斯分布之间的距离。
 
 在最经典的 DDPM 设定里，通常会把方差部分固定或部分固定：
 
-$$ \Sigma_\theta(x_t,t) = \sigma_t^2 I $$
+$$
+\Sigma_\theta(x_t,t) = \sigma_t^2 I
+$$
 
 于是模型的主要任务就集中在学习均值 $\mu_\theta(x_t,t)$ 上。
 
 实际上，如果两个高斯协方差相同，KL 会化成一个均值的二次项加上一个常数：
 
-$$ D_\mathrm{KL}\Bigl(\mathcal{N}(\tilde{\mu}_t, \sigma_t^2 I) \;\|\; \mathcal{N}(\mu_\theta, \sigma^2_t I)\Bigr) \propto \frac{1}{2\sigma_t^2} \|\tilde{\mu}_t - \mu_\theta\|^2 $$
+$$
+D_\mathrm{KL}\Bigl(\mathcal{N}(\tilde{\mu}_t, \sigma_t^2 I) \;\|\;
+\mathcal{N}(\mu_\theta, \sigma^2_t I)\Bigr) \propto \frac{1}{2\sigma_t^2}\|
+\tilde{\mu}_t - \mu_\theta\|^2
+$$
 
 所以最小化中间的 KL 项就等价于让模型最小化：
 
-$$ \|\tilde{\mu}_t(x_t,x_0) - \mu_\theta(x_t,t)\|^2 $$
+$$
+\|\tilde{\mu}_t(x_t,x_0) - \mu_\theta(x_t,t)\|^2
+$$
 
 也就是说，从 ELBO 出发，我们先先得到的是均值匹配的平方误差。
 
 但是我们知道，直接让模型预测均值不如让模型预测噪声来得稳定。所以我们不直接输出 $\mu_\theta(x_t,t)$，而是让模型预测噪声 $\epsilon_\theta(x_t,t)$，再用它来构造模型均值：
 
-$$ \mu_\theta(x_t,t) = \frac{1}{\sqrt{\alpha_t}}\Bigl(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}} \epsilon_\theta(x_t,t)\Bigr) $$
+$$
+\mu_\theta(x_t,t) = \frac{1}{\sqrt{\alpha_t}}
+\Bigl(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}} \epsilon_\theta(x_t,t)\Bigr)
+$$
 
 我们把真实均值也写出来：
 
-$$ \tilde{\mu}_t(x_t,x_0) = \frac{1}{\sqrt{\alpha_t}}\Bigl(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}} \epsilon\Bigr) $$
+$$
+\tilde{\mu}_t(x_t,x_0) = \frac{1}{\sqrt{\alpha_t}}
+\Bigl(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}} \epsilon\Bigr)
+$$
 
 你会发现，模型估计的均值和真实均值的形式一模一样，只不过把真实噪声 $\epsilon$ 换成了模型预测的噪声 $\epsilon_\theta(x_t,t)$。因为两边的公式形式相同，所以 $\tilde{\mu}_t - \mu_\theta$ 最后只差在 $\epsilon - \epsilon_\theta(x_t,t)$ 这一项上。这样，中间的 KL 项就会化成：
 
-$$ L_{t-1} = \mathbb{E}_{x_0,\epsilon,t}\left[\frac{\beta_t^2}{2\sigma_t^2\alpha_t(1-\bar{\alpha}_t)} \|\epsilon - \epsilon_\theta(x_t,t)\|^2\right] + C $$
+$$
+L_{t-1} = \mathbb{E}_{x_0,\epsilon,t}
+\left[\frac{\beta_t^2}{2\sigma_t^2\alpha_t(1-\bar{\alpha}_t)} \|
+\epsilon - \epsilon_\theta(x_t,t)\|^2\right] + C
+$$
 
 其中，$C$ 是一个和模型参数 $\theta$ 无关的常数。
 
 论文和实际实现里，通常把上面的权重先忽略掉，或者做成简单采样平均，于是得到：
 
-$$ L_{\text{simple}} = \mathbb{E}_{x_0,\epsilon,t}\left[\|\epsilon - \epsilon_\theta(x_t,t)\|^2\right] $$
+$$
+L_{\text{simple}} = \mathbb{E}_{x_0,\epsilon,t}
+\left[\|\epsilon - \epsilon_\theta(x_t,t)\|^2\right]
+$$
 
 其中，$x_t$ 是通过前向过程采样得到的：
 
-$$ x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t} \epsilon $$
+$$
+x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t} \epsilon
+$$
 
 这就是最经典的 DDPM 训练目标。
 
@@ -194,13 +261,17 @@ $$ x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t} \epsilon $$
 
 比如先验匹配项：
 
-$$ L_T = D_\mathrm{KL}\Bigl(q(x_T\mid x_0) \;\|\; p(x_T)\Bigr) $$
+$$
+L_T = D_\mathrm{KL}\Bigl(q(x_T\mid x_0) \;\|\; p(x_T)\Bigr)
+$$
 
 其实，在前向加噪的过程中，可以证明的是，只要加噪的链条足够长，$q(x_T\mid x_0)$ 就会非常接近标准高斯分布 $p(x_T)$。也就是说，我们只要保证步数足够长就行，根本用不着模型去学习这个先验匹配项。
 
 那么重建项呢？它的形式是：
 
-$$ L_0 = -\mathbb{E}_{q(x_{1:T}\mid x_0)} \left[\log p_\theta(x_0\mid x_1)\right] $$
+$$
+L_0 = -\mathbb{E}_{q(x_{1:T}\mid x_0)} \left[\log p_\theta(x_0\mid x_1)\right]
+$$
 
 也就是采样过程中从 $x_1$ 还原 $x_0$ 的重建误差。虽然它很重要，但真正决定模型能否学好的，是中间的 KL 项。因为它直接约束了模型在每一步的去噪能力，而重建项只是约束了最后一步的还原能力。只要模型在每一步都能学好去噪，最后一步的还原自然也就做好了。所以我们在实际训练中，通常会把重建项放在一边，专注于优化中间的 KL 项。
 

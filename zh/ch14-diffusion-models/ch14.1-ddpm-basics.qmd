@@ -4,11 +4,12 @@ date: 2026-03-29
 date-modified: 2026-04-04
 open-graph:
   title: ch14.1-ddpm-basics
-  description: "DDPM: From Denoising to Generation"
+  description: "14.1 DDPM: From Denoising to Generation"
 title: "14.1 DDPM：从去噪到生成"
+order: 1
 ---
 
-前面我们已经见过几类生成模型。GAN 像是一场对抗游戏，让生成器一步生成出逼真的样本；AutoEncoder 在学压缩与重建；VAE 则开始显式地建模概率分布，可以从潜变量中采样；而到了 Diffusion Model，它的思路又很不一样：
+前面我们已经见过几类生成模型。GAN 像是一场对抗游戏，让生成器一步生成出逼真的样本；AutoEncoder 在学压缩与重建；VAE 则开始显式地建模概率分布，可以从潜变量中采样；而到了 diffusion model，它的思路又很不一样：
 
 > **它不是一步把图像画出来，而是从一团噪声开始，一点一点把图像洗出来。**
 
@@ -105,7 +106,9 @@ DDPM 其实做了两件事。
 
 我们人为规定一个简单、固定的过程，把真实图像一步步加噪，直到最后变成标准高斯噪声：
 
-$$ x_0 \rightarrow x_1 \rightarrow x_2 \rightarrow \cdots \rightarrow x_T $$
+$$
+x_0 \rightarrow x_1 \rightarrow x_2 \rightarrow \cdots \rightarrow x_T
+$$
 
 其中，$x_0$ 是真实图像；$x_t$ 是第 $t$ 步加噪后的结果；$x_T$ 基本上就是纯噪声。
 
@@ -115,14 +118,16 @@ $$ x_0 \rightarrow x_1 \rightarrow x_2 \rightarrow \cdots \rightarrow x_T $$
 
 既然前向过程会把图像变成噪声，那么我们就训练一个神经网络，去学习反方向的过程：
 
-$$ x_T \rightarrow x_{T-1} \rightarrow x_{T-2} \rightarrow \cdots \rightarrow x_0 $$
+$$
+x_T \rightarrow x_{T-1} \rightarrow x_{T-2} \rightarrow \cdots \rightarrow x_0
+$$
 
 也就是，输入当前带噪的图，预测这一步应该去掉多少噪声，得到稍微更干净一点的图；重复很多次，最后得到一张清晰图像。
 
 于是，当我们想要生成图片时就很简单了：从一个随机高斯噪声开始，反复调用去噪网络，最后生成样本。所以，DDPM 的生成并不是像 GAN 那样直接生成，而是从噪声出发，逐步去噪。
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.1-ddpm-chain.png" alt="图 1：DDPM 生成过程示意图" style="width: 80%;">
+  <img src="figures/ch14.1-ddpm-chain.png" style="width: 80%;">
   <figcaption>图 1：DDPM 生成过程示意图 [@ho2020DDPM, fig. 2]</figcaption>
 </figure>
 
@@ -132,11 +137,16 @@ $$ x_T \rightarrow x_{T-1} \rightarrow x_{T-2} \rightarrow \cdots \rightarrow x_
 
 也就是说，它不是直接硬学：
 
-$$ \text{noise} \rightarrow \text{image} $$
+$$
+\text{noise} \rightarrow \text{image}
+$$
 
 而是学：
 
-$$ \text{noise} \rightarrow \text{slightly less noisy image} \rightarrow \cdots \rightarrow \text{clean image} $$
+$$
+\text{noise} \rightarrow \text{slightly less noisy image}
+\rightarrow\cdots \rightarrow \text{clean image} 
+$$
 
 每一步都只做一点点修改，因此学习难度更低，也更稳定。
 
@@ -146,7 +156,10 @@ $$ \text{noise} \rightarrow \text{slightly less noisy image} \rightarrow \cdots 
 
 在最常见的 DDPM 记号里，我们会把第 $t$ 步的带噪样本写成：
 
-$$ x_t = \sqrt{\bar{\alpha}_t}\,x_0 + \sqrt{1 - \bar{\alpha}_t}\,\epsilon, \qquad \epsilon \sim \mathcal{N}(0, I) $$
+$$
+x_t = \sqrt{\bar{\alpha}_t}\,x_0 + \sqrt{1 - \bar{\alpha}_t}\,\epsilon,
+\qquad \epsilon \sim \mathcal{N}(0, I)
+$$
 
 这条式子现在不用急着完全吃透，我们只需要先抓住它表达的意思：
 
@@ -159,11 +172,15 @@ $$ x_t = \sqrt{\bar{\alpha}_t}\,x_0 + \sqrt{1 - \bar{\alpha}_t}\,\epsilon, \qqua
 
 在训练时，模型的任务通常就是：
 
-$$ \epsilon_\theta(x_t, t) \approx \epsilon $$
+$$
+\epsilon_\theta(x_t, t) \approx \epsilon
+$$
 
 也就是说，给它一张在某个时刻的含噪声图像，让它猜出其中混入的噪声。这就是为什么很多 DDPM 论文和代码实现里，最后的损失函数看起来像一个很简单的均方误差：
 
-$$ \mathcal{L} = \mathbb{E}\left[\left\|\epsilon - \epsilon_\theta(x_t, t)\right\|^2\right] $$
+$$
+\mathcal{L} = \mathbb{E}\left[\left\|\epsilon - \epsilon_\theta(x_t, t)\right\|^2\right]
+$$
 
 表面上它只是在猜噪声，但本质上它是在学习如何把样本从噪声方向，慢慢拉回数据分布。
 

@@ -4,8 +4,9 @@ date: 2026-04-01
 date-modified: 2026-04-16
 open-graph:
   title: ch14.4-ddpm-design-and-sampling
-  description: "DDPM Network Architecture and Sampling Process"
+  description: "14.4 DDPM Network Architecture and Sampling Process"
 title: "14.4 DDPM 的网络结构与采样过程"
+order: 4
 ---
 
 前面几节里，我们已经把 DDPM 最核心的想法搭起来了：
@@ -22,7 +23,8 @@ title: "14.4 DDPM 的网络结构与采样过程"
 import math
 import random
 
-import dnnl.ch14 as ch14
+import dnnl.nn as dnn
+import dnnl.nn.functional as dF
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -48,7 +50,9 @@ print('Using device:', device)
 
 我们先回忆一下训练时的任务。我们会从真实图像 $x_0$ 出发，随机采样一个时间步 $t$，然后按照前向过程构造出带噪图像 $x_t$。接着，把 $(x_t, t)$ 输入神经网络，让它预测当前这一步里的噪声：
 
-$$ \epsilon_\theta(x_t, t) $$
+$$
+\epsilon_\theta(x_t, t)
+$$
 
 所以，我们需要输入一张带噪图像 $x_t$ 和当前时间步 $t$，让网络输出这张图像中包含的噪声估计 $\epsilon_\theta(x_t, t)$。如果这个噪声估计足够准确，我们就能按照反向公式，把图像往更干净的方向推一步。
 
@@ -58,7 +62,9 @@ $$ \epsilon_\theta(x_t, t) $$
 
 所以在 DDPM 里，模型一般都写成：
 
-$$ \epsilon_\theta(x_t, t) $$
+$$
+\epsilon_\theta(x_t, t)
+$$
 
 也就是说，时间步 $t$ 是模型输入的一部分。这是一种条件信息。它告诉网络现在噪声有多强，让网络知道当前应该做多大幅度的修正，从而让同一个网络可以处理不同噪声水平下的去噪任务。
 
@@ -74,7 +80,9 @@ $$ \epsilon_\theta(x_t, t) $$
 
 一种常见做法是使用正弦余弦形式的编码：
 
-$$ \text{emb}(t) = [\sin(\omega_1 t), \cos(\omega_1 t), \sin(\omega_2 t), \cos(\omega_2 t), \dots] $$
+$$
+\text{emb}(t) = [\sin(\omega_1 t), \cos(\omega_1 t), \sin(\omega_2 t), \cos(\omega_2 t), \dots]
+$$
 
 然后再经过几层 MLP，把它变成适合当前网络宽度的特征向量。
 
@@ -85,33 +93,38 @@ $$ \text{emb}(t) = [\sin(\omega_1 t), \cos(\omega_1 t), \sin(\omega_2 t), \cos(\
 :::
 
 ```{python}
-class SinusoidalPositionEmbeddings(nn.Module):
+class SinusoidalTimestepEmbedding(nn.Module):
     def __init__(self, embedding_dim: int, max_period: int = 10000):
-        """Embed time steps into a high-dimensional space using sinusoidal functions.
-
-        Args:
-            embedding_dim (int): The dimension of the output embedding vector.
-            max_period (int): The maximum period for the sinusoidal functions,
-                which controls the frequency of the embeddings.
-        """
         super().__init__()
         self.embedding_dim = embedding_dim
         self.max_period = max_period
 
-    def forward(self, timesteps: Tensor):
+    def forward(self, timesteps: Tensor) -> Tensor:
         half_dim = self.embedding_dim // 2
-        scale = -math.log(self.max_period) / (half_dim - 1)
+        if half_dim == 0:
+            return torch.zeros(
+                timesteps.size(0),
+                self.embedding_dim,
+                device=timesteps.device,
+                dtype=torch.float32,
+            )
+
+        scale = -math.log(self.max_period) / max(half_dim - 1, 1)
         emb = torch.arange(half_dim, device=timesteps.device) * scale
         emb = timesteps.unsqueeze(1) * emb.exp().unsqueeze(0)
         emb = torch.concat([emb.sin(), emb.cos()], dim=-1)
+
+        if self.embedding_dim % 2 == 1:
+            emb = F.pad(emb, (0, 1))
+
         return emb
 ```
 
 ```{python}
-pos_emb = SinusoidalPositionEmbeddings(embedding_dim=32)
+timestep_emb = SinusoidalTimestepEmbedding(embedding_dim=32)
 
 timesteps = torch.tensor([0, 10, 50, 100, 200, 500, 1000])
-emb = pos_emb(timesteps)
+emb = timestep_emb(timesteps)
 
 fig = plt.figure(1, figsize=(8, 4))
 ax = fig.add_subplot(1, 1, 1)
@@ -121,14 +134,14 @@ yticks = np.arange(len(timesteps))
 ax.set_xticks(xticks + 0.5, xticks + 1)
 ax.set_yticks(yticks + 0.5, timesteps.tolist())
 ax.set_xlabel('Embedding Dimension')
-ax.set_title('Illustration of sinusoidal time embeddings')
+ax.set_title('Illustration of sinusoidal time embedding')
 fig.colorbar(im)
-fig.savefig('figures/ch14.4-time-embeddings.svg')
+fig.savefig('figures/ch14.4-time-embedding.svg')
 plt.close(fig)
 ```
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.4-time-embeddings.svg">
+  <img src="figures/ch14.4-time-embedding.svg">
 </figure>
 
 这张图中的每一行表示某一个时间步的编码结果，每一列表示某一个编码维度在不同时间步上的取值变化。有些列颜色变化较快，说明这些维度对应较高频率，对时间步的细微变化更敏感；有些列变化较慢，说明这些维度对应较低频率，能够提供更平滑、更粗粒度的时间信息。
@@ -175,7 +188,7 @@ U-Net 这个名字来自它的形状。它一般分成两部分：
 当然，在更现代的扩散模型里，除了时间嵌入，还常常会加入类别条件、文本条件，或者通过交叉注意力把外部信息融入到网络中。但在最基础的 DDPM 场景里，时间嵌入 + U-Net 就已经是非常经典的组合了。
 
 ```{python}
-unet = ch14.UNet2DModel().to(device)
+unet = dnn.UNet2DModel().to(device)
 x = torch.randn(1, 3, 64, 64, device=device)
 timesteps = torch.tensor([10], dtype=torch.float32, device=device)
 
@@ -201,7 +214,7 @@ print(out.shape)
 这是生成阶段的伪代码，同样也很简单：
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.4-ddpm-sampling.png" alt="算法 2：DDPM 生成过程伪代码" style="width: 60%;">
+  <img src="figures/ch14.4-ddpm-sampling.png" style="width: 60%;">
   <figcaption>算法 2：DDPM 生成过程伪代码 [@ho2020DDPM, alg. 2]</figcaption>
 </figure>
 
@@ -209,11 +222,15 @@ print(out.shape)
 
 我们知道，反向过程一般写成一个高斯分布：
 
-$$ p_\theta(x_{t-1}\mid x_t) = \mathcal{N}(\mu_\theta(x_t,t), \Sigma_\theta(x_t,t)) $$
+$$
+p_\theta(x_{t-1}\mid x_t) = \mathcal{N}(\mu_\theta(x_t,t), \Sigma_\theta(x_t,t))
+$$
 
 这是一个概率分布。这意味着，从 $x_t$ 到 $x_{t-1}$ 的过程不仅有一个均值，还会有一定随机性。所以，为了体现这种随机性，在采样时，我们往往会按照模型给出的均值方向前进的同时，再加入一点随机扰动。也就是说，每一步采样的过程是：
 
-$$ x_{t-1} = \mu_\theta(x_t, t) + \sigma_\theta(x_t, t) \cdot z $$
+$$
+x_{t-1} = \mu_\theta(x_t, t) + \sigma_\theta(x_t, t) \cdot z
+$$
 
 如果完全没有随机性，采样路径可能会过于僵硬。适当保留一些随机扰动，则更符合原始概率模型的定义。也就是说，DDPM 的采样过程本质上也是一个随机过程，而不是一个完全确定的过程。
 
@@ -253,7 +270,7 @@ def denoise_v2(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
 
 T = 1000
 betas = torch.linspace(0.0001, 0.02, steps=T)
-xt = ch14.add_noise_v2(x0, betas, T - 1)
+xt = dF.add_noise(x0, betas, T - 1)
 trajectory = [xt.clone()]
 
 for t in range(T - 1, -1, -1):
@@ -300,8 +317,8 @@ plt.close(fig)
 data = torch.randn(32, 3, 32, 32)
 train_ds = utils.TensorDataset(data)
 train_dl = utils.DataLoader(train_ds, batch_size=16, shuffle=True)
-model = ch14.UNet2DModel().to(device)
-scheduler = ch14.DDPMScheduler()
+model = dnn.UNet2DModel().to(device)
+scheduler = dnn.DDPMScheduler()
 
 model.train()
 # 1. Iterate over the training data.
@@ -328,6 +345,8 @@ for x0, *_ in train_dl:
     # 6. Compute the loss between the predicted noise and the actual noise.
     loss = F.mse_loss(pred_noise, noise)
     loss.backward()
+
+print('Training step completed, loss:', loss.item())
 ```
 
 ### 14.4.5.2 采样过程
