@@ -6,6 +6,7 @@ open-graph:
   title: ch2.2-autograd-contexts
   description: "Gradient Recording and Control in PyTorch"
 title: "2.2 PyTorch 中的梯度记录与控制"
+order: 2
 ---
 
 在 2.1 节里，我们回答了一个问题：梯度是怎么被算出来的？前向传播时记账，反向传播时查账，Autograd 把计算图搭起来，再沿着图把梯度传回去。
@@ -189,7 +190,7 @@ except RuntimeError as err:
     print('RuntimeError:', err)
 ```
 
-因为 `inference_mode()` 不是暂时关闭记录，而是创建了一种特殊的推理张量（inference tensor）。这类张量被标记为“永远不会进入自动微分系统”。即使你之后开启梯度模式，它们也不会被纳入计算图。所以，`no_grad()` 是暂时关闭，而 `inference_mode()` 是永久关闭。如果我们能够确定这段代码永远只用于推理，那就可以使用 `inference_mode()`。
+因为 `inference_mode()` 不是暂时关闭记录，而是创建了一种特殊的推理张量（inference tensor）。这类张量被标记为永远不会进入自动微分系统。即使你之后开启梯度模式，它们也不会被纳入计算图。所以，`no_grad()` 是暂时关闭，而 `inference_mode()` 是永久关闭。如果我们能够确定这段代码永远只用于推理，那就可以使用 `inference_mode()`。
 
 ## 2.2.4 不同梯度模式下的行为对比
 
@@ -221,4 +222,3 @@ except RuntimeError as err:
 - 在该模式下创建的张量无法再重新加入自动微分系统
 
 这是不可逆的关闭。这种模式的优化最激进，但限制也最大。适用于纯推理、模型评估和数据处理等场景。
-
