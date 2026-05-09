@@ -96,7 +96,7 @@ def test_scaled_dot_product_attention_supports_causal_mode():
 
     output, weights = dF.scaled_dot_product_attention(query, key, value, is_causal=True)
     expected = F.scaled_dot_product_attention(query, key, value, is_causal=True)
-    forbidden = dF.generate_casual_mask(max(tgt_len, src_len))[:tgt_len, :src_len]
+    forbidden = torch.ones(tgt_len, src_len, dtype=torch.bool).triu(diagonal=1)
 
     assert weights is not None
     assert torch.allclose(output, expected, atol=1e-6)
@@ -105,26 +105,26 @@ def test_scaled_dot_product_attention_supports_causal_mode():
     assert torch.allclose(masked_weights, torch.zeros_like(masked_weights))
 
 
-def test_generate_casual_mask_masks_future_positions():
-    mask = dF.generate_casual_mask(4)
+def test_generate_causal_mask_masks_future_positions():
+    mask = dF.generate_causal_mask(4)
     expected = torch.tensor(
         [
-            [False, True, True, True],
-            [False, False, True, True],
-            [False, False, False, True],
-            [False, False, False, False],
+            [0.0, -torch.inf, -torch.inf, -torch.inf],
+            [0.0, 0.0, -torch.inf, -torch.inf],
+            [0.0, 0.0, 0.0, -torch.inf],
+            [0.0, 0.0, 0.0, 0.0],
         ]
     )
 
-    assert mask.dtype == torch.bool
+    assert mask.dtype == torch.float32
     assert torch.equal(mask, expected)
 
 
-def test_scaled_dot_product_attention_causal_uses_generated_mask():
+def test_scaled_dot_product_attention_causal_uses_boolean_mask():
     query = torch.randn(batch_size, num_heads, tgt_len, head_dim)
     key = torch.randn(batch_size, num_heads, src_len, head_dim)
     value = torch.randn(batch_size, num_heads, src_len, head_dim)
-    mask = dF.generate_casual_mask(max(tgt_len, src_len))[:tgt_len, :src_len]
+    mask = torch.ones(tgt_len, src_len, dtype=torch.bool).triu(diagonal=1)
 
     causal_output, causal_weights = dF.scaled_dot_product_attention(
         query, key, value, is_causal=True
