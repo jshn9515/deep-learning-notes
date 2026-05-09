@@ -6,15 +6,21 @@ open-graph:
   title: ch13.4-vae-training-phenomena
   description: "VAE Training Phenomena and Latent Space Intuition"
 title: "13.4 VAE Training Phenomena and Latent Space Intuition"
+order: 4
 ---
 
 Previously, we already knew that the objective function of VAE consists of two parts:
 
-$$ \mathcal{L}(x)=\mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)]-D_{\mathrm{KL}}(q_\phi(z\mid x)\,\|\,p(z)) $$
+$$
+\mathcal{L}(x) = \mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)] -
+D_{\mathrm{KL}}(q_\phi(z\mid x)\,\|\,p(z))
+$$
 
 If we write it as the loss minimized during training, it is:
 
-$$ \text{loss}=\text{reconstruction loss}+\text{KL loss} $$
+$$
+\mathrm{loss} = \mathrm{reconstruction loss}+\mathrm{KL loss}
+$$
 
 But just looking at the formula is not enough. To really understand VAE, the most important thing is to see what phenomena appear during training:
 
@@ -28,6 +34,8 @@ In this section, we do not only talk about conclusions. Instead, we directly obs
 ```{python}
 from collections import defaultdict
 
+import dnnl.nn as dnn
+import dnnl.nn.functional as dF
 import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
@@ -75,10 +83,8 @@ train_dl = utils.DataLoader(train_ds, batch_size=256, shuffle=True, drop_last=Tr
 Here we directly use the VAE model and ELBO loss function defined in the previous sections. At the same time, to avoid making the value of the loss function too large, we sum up the loss function values and then divide by the number of samples in the current batch.
 
 ```{python}
-from dnnl.ch13 import VAE, vae_loss
-
 input_shape = (1, 28, 28)
-model = VAE(input_shape).to(device)
+model = dnn.VAE(input_shape).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 ```
 
@@ -110,7 +116,7 @@ for epoch in range(1, num_epochs + 1):
     for x, _ in train_dl:
         x = x.to(device)
         x_hat, mu, logvar = model(x)
-        loss, recon_loss, kl_loss = vae_loss(x_hat, x, mu, logvar)
+        loss, recon_loss, kl_loss = dF.vae_loss(x_hat, x, mu, logvar)
         loss.backward()
 
         loss_metric.update(loss.detach())
@@ -258,7 +264,7 @@ plt.close(fig)
 ```
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.4-latent-space.svg" alt="ch13.4-latent-space">
+  <img src="figures/ch13.4-latent-space.svg">
 </figure>
 
 We can see that digits of the same class form relatively nearby regions in the latent space. Different digits are not completely separated, but have some continuous transitions. The overall distribution of the latent space will not diverge without bound, but will be pulled by the KL term near the center. The latent space learned by VAE can not only encode data, but also often has a geometric structure.
@@ -312,7 +318,9 @@ Now let us look at a very key point in VAE training: the weight of the KL term s
 
 We write the loss as:
 
-$$ \text{loss} = \text{reconstruction loss} + \beta \cdot \text{KL loss} $$
+$$
+\mathrm{loss} = \mathrm{reconstruction loss} + \beta \cdot \mathrm{KL loss}
+$$
 
 Here, $\beta$ is used to control the strength of KL. If $\beta$ is too small, the model cares more about reconstruction, and the latent space may become irregular. If $\beta$ is too large, the model cares more about staying close to the prior, and the reconstruction may become noticeably worse.
 
@@ -324,7 +332,7 @@ models = {}
 
 for beta in betas:
     print(f'Training beta={beta}...')
-    model = VAE(input_shape).to(device)
+    model = dnn.VAE(input_shape).to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
     for epoch in range(5):
@@ -333,7 +341,7 @@ for beta in betas:
         for x, _ in train_dl:
             x = x.to(device)
             x_hat, mu, logvar = model(x)
-            loss, *_ = vae_loss(x_hat, x, mu, logvar, beta=beta)
+            loss, *_ = dF.vae_loss(x_hat, x, mu, logvar, beta=beta)
             loss.backward()
 
             optimizer.step()

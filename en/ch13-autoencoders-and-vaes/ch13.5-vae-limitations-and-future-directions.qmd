@@ -6,6 +6,7 @@ open-graph:
   title: ch13.5-vae-limitations-and-future-directions
   description: "VAE: Advantages, Limitations, and Future Developments"
 title: "13.5 Advantages, Limitations, and Later Developments of VAE"
+order: 5
 ---
 
 In the previous few sections, we have discussed:
@@ -58,7 +59,9 @@ So, we know what assumptions VAE is making, where the loss function comes from, 
 
 One of the most attractive parts of VAE is that the latent space it learns is usually more regular than that of a normal AE. Because of the KL term, the model is encouraged to make the encoded distribution close to the prior, usually a standard normal distribution:
 
-$$ q_\phi(z\mid x) \approx \mathcal{N}(0, I) $$
+$$
+q_\phi(z\mid x) \approx \mathcal{N}(0, I)
+$$
 
 This means the latent space usually has some very useful properties:
 
@@ -92,7 +95,9 @@ If the model tries to take multiple possibilities into account at the pixel leve
 
 Another key objective of VAE is to make the encoded distribution close to the prior:
 
-$$ D_{\mathrm{KL}}(q_\phi(z\mid x)\,\|\,p(z)) $$
+$$
+D_{\mathrm{KL}}(q_\phi(z\mid x)\,\|\,p(z))
+$$
 
 This term makes the latent space more regular, but it also means the model cannot encode every sample in an unrestricted and highly personalized way. In other words, the KL term is encouraging the model not to hide every sample in a very remote corner of the latent space, not to make the posterior distribution too complex, and to express the data in a more compact and more unified way as much as possible. This of course helps when sampling from the prior during generation, but the cost is that some high-frequency details, local differences, and fine textures may be sacrificed.
 
@@ -104,7 +109,9 @@ This leads to a deeper problem: **posterior collapse**.
 
 Posterior collapse refers to a situation that gradually appears during training:
 
-$$ q_\phi(z\mid x) \approx p(z) $$
+$$
+q_\phi(z\mid x) \approx p(z)
+$$
 
 That is to say, no matter what the input $x$ is, the posterior output by the encoder looks almost like the prior. This means the latent variable carries almost no information related to $x$. If the decoder is strong enough at this time, it may rely only on its own modeling ability to reconstruct the data, and not really use $z$ very much.
 
@@ -130,11 +137,15 @@ When $\beta > 1$, the model is more strongly required to stay close to the prior
 
 If we want the model not only to generate randomly, but to generate according to a condition, we can add the conditional variable $y$ into the model. For example, given conditions such as class labels, attributes, or text descriptions, the model generates the corresponding image. At this point, the generation process becomes:
 
-$$ p_\theta(x\mid z, y) $$
+$$
+p_\theta(x\mid z, y)
+$$
 
 And the encoder can also be written as:
 
-$$ q_\phi(z\mid x, y) $$
+$$
+q_\phi(z\mid x, y)
+$$
 
 In this way, the model is not only learning what the overall data looks like, but learning how the data changes under a certain condition.
 

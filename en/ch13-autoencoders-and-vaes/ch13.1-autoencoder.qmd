@@ -6,6 +6,7 @@ open-graph:
   title: ch13.1-autoencoder
   description: "Autoencoders: Starting with Compression and Reconstruction"
 title: "13.1 AutoEncoder: Starting with Compression and Reconstruction"
+order: 1
 ---
 
 Before formally entering VAE (Variational Autoencoder), let us first look at a simpler and more intuitive model, which is also the predecessor of VAE: **AutoEncoder** [@hinton2006AutoEncoder].
@@ -58,12 +59,18 @@ A standard AutoEncoder consists of two parts:
 
 Written as formulas:
 
-$$ z = f_\theta(x) $$
-$$ \hat{x} = g_\phi(z) $$
+$$
+z = f_\theta(x)
+$$
+$$
+\hat{x} = g_\phi(z)
+$$
 
 Combined together, it can also be written as:
 
-$$ \hat{x} = g_\phi(f_\theta(x)) $$
+$$
+\hat{x} = g_\phi(f_\theta(x))
+$$
 
 Here, $x$ is the original input; $z$ is the intermediate **latent representation**; and $\hat{x}$ is the result reconstructed by the model.
 
@@ -71,10 +78,12 @@ Structurally, it looks like a U-shaped funnel. The first half continuously compr
 
 The core structure of an AutoEncoder often looks like this:
 
-$$ x \rightarrow \text{Encoder} \rightarrow z \rightarrow \text{Decoder} \rightarrow \hat{x} $$
+$$
+x \rightarrow \text{Encoder} \rightarrow z \rightarrow \text{Decoder} \rightarrow \hat{x}
+$$
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.1-autoencoder.svg" alt="Figure 1: AutoEncoder Network Structure" style="height: 225px;">
+  <img src="figures/ch13.1-autoencoder.svg" style="height: 225px;">
   <figcaption>Figure 1: AutoEncoder Network Structure [@Mathworks2026AutoEncoder]</figcaption>
 </figure>
 
@@ -92,19 +101,25 @@ The training of an AutoEncoder is very intuitive: given an input $x$, after enco
 
 The most common loss function is **reconstruction loss**:
 
-$$ \mathcal{L}(x, \hat{x}) = \|x - \hat{x}\|^2 $$
+$$
+\mathcal{L}(x, \hat{x}) = \|x - \hat{x}\|^2
+$$
 
 That is, mean squared error (MSE).
 
 If the input is an image and the pixel values are between $[0,1]$, we can also use binary cross entropy (BCE):
 
-$$ \mathcal{L}(x, \hat{x}) = - \sum_i \left[x_i \log \hat{x}_i + (1-x_i)\log(1-\hat{x}_i)\right] $$
+$$
+\mathcal{L}(x, \hat{x}) = - \sum_i \left[x_i \log \hat{x}_i + (1-x_i)\log(1-\hat{x}_i)\right]
+$$
 
 No matter what the exact form is, the idea is the same: let the model learn to recover the original data from the compressed representation as much as possible.
 
 So the optimization objective of AutoEncoder can be written as:
 
-$$ \min_{\theta,\phi} \mathbb{E}_{x \sim p_{\text{data}}}[\mathcal{L}(x, \hat{x})] $$
+$$
+\min_{\theta,\phi} \mathbb{E}_{x \sim p_{\text{data}}}[\mathcal{L}(x, \hat{x})]
+$$
 
 There are no labels here, and no supervised signals like “cat” or “dog” are needed. The model only needs the data itself to train. Therefore, AutoEncoder is often regarded as a **self-supervised / unsupervised** representation learning method.
 
