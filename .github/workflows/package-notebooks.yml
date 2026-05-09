@@ -48,6 +48,9 @@ jobs:
               mkdir -p "$out_subdir"
 
               quarto convert "$qmd" --output "$out_subdir/$stem.ipynb"
+              if [ -d "zh/$rel_dir/figures" ]; then
+                cp -a "zh/$rel_dir/figures" "$out_subdir/"
+              fi
             done < <(find zh -type f -name '*.qmd' -print0)
           fi
 
@@ -64,8 +67,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: dnnl-zh
-          path: |
-            dnnl-zh.tar.gz
+          path: dnnl-zh.tar.gz
 
   package-en:
     runs-on: ubuntu-latest
@@ -95,6 +97,9 @@ jobs:
               mkdir -p "$out_subdir"
 
               quarto convert "$qmd" --output "$out_subdir/$stem.ipynb"
+              if [ -d "en/$rel_dir/figures" ]; then
+                cp -a "en/$rel_dir/figures" "$out_subdir/"
+              fi
             done < <(find en -type f -name '*.qmd' -print0)
           fi
 
@@ -111,5 +116,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: dnnl-en
-          path: |
-            dnnl-en.tar.gz
+          path: dnnl-en.tar.gz
