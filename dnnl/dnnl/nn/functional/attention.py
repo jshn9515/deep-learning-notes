@@ -6,7 +6,7 @@ from torch import Tensor
 
 __all__ = [
     'attention',
-    'generate_casual_mask',
+    'generate_causal_mask',
     'scaled_dot_product_attention',
     'multi_head_attention',
 ]
@@ -92,7 +92,11 @@ def scaled_dot_product_attention(
     scores = scores * scale_factor
 
     if is_causal:
-        causal_mask = generate_casual_mask(target_len, source_len, device=query.device)
+        causal_mask = torch.ones(
+            (target_len, source_len),
+            dtype=torch.bool,
+            device=query.device,
+        ).triu(diagonal=1)
         scores = scores.masked_fill(causal_mask, -math.inf)
 
     if attn_mask is not None:
@@ -207,26 +211,19 @@ def multi_head_attention(
     return output, None
 
 
-def generate_casual_mask(
-    tgt_len: int,
-    src_len: int | None = None,
-    dtype: torch.dtype = torch.bool,
+def generate_causal_mask(
+    sz: int,
     device: torch.device | None = None,
 ) -> Tensor:
     """Generate an upper-triangular causal attention mask.
 
     Args:
         sz (int): Height and width of the square mask.
-        dtype (torch.dtype, default: torch.bool): Output dtype.
-            Use ``torch.bool`` for boolean masks or a floating dtype for additive masks.
         device (torch.device | None, default: None): Optional output device.
 
     Returns:
         A square mask where positions above the diagonal are masked.
     """
-    if src_len is None:
-        src_len = tgt_len
-
-    mask = torch.full((tgt_len, src_len), -torch.inf, dtype=dtype, device=device)
+    mask = torch.full((sz, sz), -torch.inf, device=device)
     mask = mask.triu(diagonal=1)
     return mask
