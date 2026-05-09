@@ -2,7 +2,7 @@ torch==2.11.0
 torchvision==0.26.0
 torchmetrics==1.9.0
 transformers==5.8.0
-diffusers==0.37.1
+diffusers==0.38.0
 tokenizers==0.22.2
 datasets==4.8.5
 
