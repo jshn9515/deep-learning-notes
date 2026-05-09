@@ -5,38 +5,28 @@ from dnnl.nn import (
     SinusoidalTimestepEmbedding,
     UNet2DModel,
 )
-from dnnl.nn.functional import (
-    add_noise_v1,
-    add_noise_v2,
-    denoise_v1,
-    denoise_v2,
-)
+from dnnl.nn.functional import add_noise, denoise
 
 
-def test_noise_helpers_keep_expected_shapes_and_timestep_zero_equivalence():
+def test_add_noise_keeps_expected_shape():
     x0 = torch.ones(2, 1, 4, 4)
     betas = torch.tensor([0.1, 0.2, 0.3])
 
     torch.manual_seed(0)
-    xt_v1 = add_noise_v1(x0, betas[:1])
-    torch.manual_seed(0)
-    xt_v2 = add_noise_v2(x0, betas, timestep=0)
+    xt = add_noise(x0, betas, timestep=0)
 
-    assert xt_v1.shape == x0.shape
-    assert xt_v2.shape == x0.shape
-    assert torch.allclose(xt_v1, xt_v2)
+    assert xt.shape == x0.shape
 
 
-def test_denoise_helpers_are_deterministic_at_timestep_zero():
+def test_denoise_is_deterministic_at_timestep_zero():
     x0 = torch.ones(2, 1, 4, 4)
     xt = torch.full_like(x0, 0.5)
     betas = torch.tensor([0.1, 0.2, 0.3])
 
-    out_v1 = denoise_v1(x0, xt, timestep=0, betas=betas)
-    out_v2 = denoise_v2(x0, xt, timestep=0, betas=betas)
+    output = denoise(x0, xt, timestep=0, betas=betas)
 
-    assert out_v1.shape == x0.shape
-    assert torch.allclose(out_v1, out_v2)
+    assert output.shape == x0.shape
+    assert torch.isfinite(output).all()
 
 
 def test_ddpm_scheduler_add_noise_and_timestep_schedule():
