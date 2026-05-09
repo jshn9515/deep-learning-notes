@@ -6,6 +6,7 @@ open-graph:
   title: ch8.5-positional-encoding
   description: "8.6 Transformer Encoder: Stacking Self-Attention Layers"
 title: "8.6 Transformer Encoder: Stacking Self-Attention"
+order: 6
 ---
 
 In the previous sections, we have already taken apart several of the most central components in Transformer.
@@ -31,8 +32,12 @@ $$
 In this section, we will look at how the Transformer encoder turns self-attention into a complete network structure.
 
 ```{python}
+from collections.abc import Callable
+
+import dnnl.nn as dnn
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
 print('PyTorch version:', torch.__version__)
@@ -89,7 +94,7 @@ Here, $X$ is the input representation of the current layer, $Y$ is the output re
 From the data flow, it looks like this:
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.6-encoder-block.svg" alt="Figure 1: Transformer Encoder Block structure diagram" style="height: 600px;">
+  <img src="figures/ch8.6-encoder-block.svg" style="height: 600px;">
   <figcaption>Figure 1: Transformer Encoder Block structure diagram</figcaption>
 </figure>
 
@@ -226,7 +231,7 @@ To make the code closer to modern implementations, we will use the Pre-LN versio
 
 ## 8.6.4 PyTorch Implementation of Transformer Encoder Block
 
-Below, we implement a simplified Transformer encoder block. To avoid repeatedly implementing multi-head attention, we directly use `nn.MultiheadAttention` provided by PyTorch.
+Below, we implement a simplified Transformer encoder block. To avoid repeatedly implementing multi-head attention, we directly use the `MultiheadAttention` implemented in Section 8.4.
 
 ```{python}
 class TransformerEncoderLayer(nn.Module):
@@ -234,33 +239,26 @@ class TransformerEncoderLayer(nn.Module):
         self,
         d_model: int,
         num_heads: int,
-        dim_feedforward: int | None = None,
+        dim_feedforward: int = 2048,
+        activation: Callable[[Tensor], Tensor] = F.relu,
+        bias: bool = True,
         dropout: float = 0.1,
     ):
         super().__init__()
-        self.d_model = d_model
-        self.num_heads = num_heads
-
-        if dim_feedforward is None:
-            dim_feedforward = 4 * d_model
-        self.d_ff = dim_feedforward
-
-        self.self_attn = nn.MultiheadAttention(
-            embed_dim=d_model,
-            num_heads=num_heads,
+        self.self_attn = dnn.MultiheadAttention(
+            d_model,
+            num_heads,
+            bias=bias,
             dropout=dropout,
-            batch_first=True,
         )
 
-        self.ffn = nn.Sequential(
-            nn.Linear(d_model, self.d_ff),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(self.d_ff, d_model),
-        )
+        self.linear1 = nn.Linear(d_model, dim_feedforward, bias=bias)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(dim_feedforward, d_model, bias=bias)
+        self.activation = activation
 
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
+        self.norm1 = nn.LayerNorm(d_model, bias=bias)
+        self.norm2 = nn.LayerNorm(d_model, bias=bias)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
 
@@ -270,23 +268,35 @@ class TransformerEncoderLayer(nn.Module):
         src_mask: Tensor | None = None,
         src_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
-        # Pre-LN: normalize before self-attention
-        # src: (batch_size, seq_len, d_model)
-        x = src
-        h = self.norm1(x)
-        attn_out, _ = self.self_attn(
-            h, h, h,
+        x = src + self._sa_block(
+            self.norm1(src),
             attn_mask=src_mask,
             key_padding_mask=src_key_padding_mask,
+        )
+        x = x + self._ff_block(self.norm2(x))
+        return x
+
+    def _sa_block(
+        self,
+        x: Tensor,
+        attn_mask: Tensor | None,
+        key_padding_mask: Tensor | None,
+    ) -> Tensor:
+        x, _ = self.self_attn(
+            x, x, x,
+            attn_mask=attn_mask,
+            key_padding_mask=key_padding_mask,
             need_weights=False,
         )  # fmt: skip
-        x = x + self.dropout1(attn_out)
+        x = self.dropout1(x)
+        return x
 
-        # Pre-LN: normalize before FFN
-        h = self.norm2(x)
-        ffn_out = self.ffn(h)
-        x = x + self.dropout2(ffn_out)
-
+    def _ff_block(self, x: Tensor) -> Tensor:
+        x = self.linear1(x)
+        x = self.activation(x)
+        x = self.dropout(x)
+        x = self.linear2(x)
+        x = self.dropout2(x)
         return x
 
 
@@ -324,7 +334,9 @@ class TransformerEncoder(nn.Module):
         d_model: int,
         num_heads: int,
         num_layers: int,
-        dim_feedforward: int | None = None,
+        dim_feedforward: int = 2048,
+        activation: Callable[[Tensor], Tensor] = F.relu,
+        bias: bool = True,
         dropout: float = 0.1,
     ):
         super().__init__()
@@ -334,6 +346,8 @@ class TransformerEncoder(nn.Module):
                     d_model=d_model,
                     num_heads=num_heads,
                     dim_feedforward=dim_feedforward,
+                    activation=activation,
+                    bias=bias,
                     dropout=dropout,
                 )
                 for _ in range(num_layers)
@@ -344,18 +358,19 @@ class TransformerEncoder(nn.Module):
     def forward(
         self,
         src: Tensor,
-        src_mask: Tensor | None = None,
+        mask: Tensor | None = None,
         src_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
-        x = src
+        output = src
         for layer in self.layers:
-            x = layer(
-                x,
-                src_mask=src_mask,
+            output = layer(
+                output,
+                src_mask=mask,
                 src_key_padding_mask=src_key_padding_mask,
             )
-        x = self.norm(x)
-        return x
+
+        output = self.norm(output)
+        return output
 
 
 x = torch.randn(2, 32, 512)  # (batch_size, seq_len, d_model)
@@ -464,7 +479,7 @@ This is also why Transformer encoder can be used for many different tasks. It is
 
 ## 8.6.8 Chapter Summary
 
-In this section, we combined the self-attention, multi-head attention, and positional encoding that we learned earlier to form the complete Transformer Encoder.
+In this section, we combined the self-attention, multi-head attention, and positional encoding that we learned earlier to form the complete Transformer encoder.
 
 An encoder block mainly consists of two parts: multi-head self-attention and a position-wise feed-forward network. The former is responsible for letting different tokens exchange contextual information, while the latter is responsible for nonlinear processing of each token representation. Each submodule is also equipped with a residual connection and LayerNorm, making deep networks easier to train.
 

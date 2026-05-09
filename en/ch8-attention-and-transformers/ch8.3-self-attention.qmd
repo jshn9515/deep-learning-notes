@@ -6,6 +6,7 @@ open-graph:
   title: ch8.3-self-attention
   description: "8.3 Self-Attention: Internal Information Interaction within a Sequence"
 title: "8.3 Self-Attention: Internal Information Interaction within a Sequence"
+order: 3
 ---
 
 In the previous section, we have already viewed cross-attention as an information retrieval mechanism across sequences: one sequence is responsible for proposing the query, and another sequence is responsible for providing the key and value. In this way, a certain position in the target sequence can retrieve relevant information from the source sequence according to the current need.
@@ -86,31 +87,26 @@ Below is a minimal version of self-attention. Here we do not consider multi-head
 
 ```{python}
 class SelfAttention(nn.Module):
-    def __init__(
-        self,
-        attn_dim: int,
-        in_dim: int | None = None,
-        out_dim: int | None = None,
-    ):
+    def __init__(self, embed_dim: int):
         super().__init__()
-        self.attn_dim = attn_dim
-        self.in_dim = in_dim or attn_dim
-        self.out_dim = out_dim or attn_dim
+        self.embed_dim = embed_dim
 
-        self.q_proj = nn.Linear(self.in_dim, attn_dim)
-        self.k_proj = nn.Linear(self.in_dim, attn_dim)
-        self.v_proj = nn.Linear(self.in_dim, attn_dim)
-        self.out_proj = nn.Linear(attn_dim, self.out_dim)
+        self.q_proj = nn.Linear(embed_dim, embed_dim)
+        self.k_proj = nn.Linear(embed_dim, embed_dim)
+        self.v_proj = nn.Linear(embed_dim, embed_dim)
+        self.out_proj = nn.Linear(embed_dim, embed_dim)
 
     def forward(
-        self, x: Tensor, need_weights: bool = False
+        self,
+        x: Tensor,
+        need_weights: bool = False,
     ) -> tuple[Tensor, Tensor | None]:
         q = self.q_proj(x)
         k = self.k_proj(x)
         v = self.v_proj(x)
 
         scores = q @ k.transpose(-2, -1)
-        scores = scores / math.sqrt(self.attn_dim)
+        scores = scores / math.sqrt(self.embed_dim)
 
         attn_weights = scores.softmax(dim=-1)
         attn_output = attn_weights @ v
@@ -125,8 +121,8 @@ class SelfAttention(nn.Module):
 We can casually construct an input and look at the shape of each tensor:
 
 ```{python}
-x = torch.randn(3, 5, 8)  # (batch_size, seq_len, d_model)
-self_attn = SelfAttention(attn_dim=4, in_dim=8)
+x = torch.randn(3, 5, 16)  # (batch_size, seq_len, d_model)
+self_attn = SelfAttention(embed_dim=16)
 
 with torch.inference_mode():
   output, attn_weights = self_attn(x, need_weights=True)
@@ -175,7 +171,7 @@ Self-attention is more like a complete graph. In theory, every position can dire
 More importantly, this graph is not fixed. It is dynamically computed according to the current input. The same token may attend to different positions in different sentences. For example, `bank` may pay more attention to `money` and `deposited` in a financial context, and may pay more attention to `river` and `sat` in a natural-environment context. This shows that what self-attention builds is not a static graph, but an **input-dependent dynamic information graph**.
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.3-self-attn-vis.png" alt="Figure 1: Schematic diagram of dynamic information in Self-Attention" style="width: 80%;">
+  <img src="figures/ch8.3-self-attn-vis.png" style="width: 80%;">
   <figcaption>Figure 1: Schematic diagram of dynamic information in Self-Attention [@vaswani2023Attention, fig. 5]</figcaption>
 </figure>
 
@@ -230,7 +226,7 @@ The first limitation is that it has no natural sense of order by itself. Attenti
 For example:
 
 ```text
-1. dog bites man  
+1. dog bites man
 2. man bites dog
 ```
 

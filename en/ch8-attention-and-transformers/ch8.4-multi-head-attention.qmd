@@ -6,6 +6,7 @@ open-graph:
   title: ch8.4-multi-head-attention
   description: "8.4 Multi-Head Attention: From Single Perspective to Multiple Perspectives"
 title: "8.4 Multi-Head Attention: From Single Perspective to Multiple Perspectives"
+order: 4
 ---
 
 In the previous section, we saw that self-attention allows each position in a sequence to directly build connections with other positions. For a certain token, it no longer has to rely only on the previous hidden state, and it does not need to indirectly see distant information through many convolution layers. Instead, it can aggregate context from the entire sequence at once based on relevance.
@@ -80,7 +81,7 @@ It does not invent a completely new attention computation method. Instead, it ru
 From the overall structure, each head first obtains its own set of $Q$, $K$, and $V$ through its own linear projections, and then independently computes scaled dot-product attention. The outputs of multiple heads are concatenated, and finally passed through a linear layer to be fused into the final multi-head attention output.
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.4-mha.png" alt="Figure 1: MHA computation diagram" style="height: 300px;">
+  <img src="figures/ch8.4-mha.png" style="height: 300px;">
   <figcaption>Figure 1: MHA computation diagram [@vaswani2023Attention, fig. 2]</figcaption>
 </figure>
 
@@ -230,57 +231,44 @@ Below, we write a simplified version of multi-head attention. Here, we do not co
 
 ```{python}
 class MultiheadAttention(nn.Module):
-    def __init__(
-        self,
-        attn_dim: int,
-        num_heads: int,
-        q_dim: int | None = None,
-        k_dim: int | None = None,
-        v_dim: int | None = None,
-        out_dim: int | None = None,
-    ):
+    def __init__(self, embed_dim: int, num_heads: int):
         super().__init__()
-        if attn_dim % num_heads != 0:
-            raise AssertionError('`attn_dim` must be divisible by `num_heads`.')
+        if embed_dim % num_heads != 0:
+            raise AssertionError('`embed_dim` must be divisible by `num_heads`.')
 
-        self.attn_dim = attn_dim
+        self.embed_dim = embed_dim
         self.num_heads = num_heads
-        self.head_dim = attn_dim // num_heads
+        self.head_dim = embed_dim // num_heads
 
-        self.q_dim = q_dim or attn_dim
-        self.k_dim = k_dim or attn_dim
-        self.v_dim = v_dim or attn_dim
-        self.out_dim = out_dim or attn_dim
-
-        self.q_proj = nn.Linear(self.q_dim, attn_dim)
-        self.k_proj = nn.Linear(self.k_dim, attn_dim)
-        self.v_proj = nn.Linear(self.v_dim, attn_dim)
-        self.out_proj = nn.Linear(attn_dim, self.out_dim)
+        self.q_proj = nn.Linear(embed_dim, embed_dim)
+        self.k_proj = nn.Linear(embed_dim, embed_dim)
+        self.v_proj = nn.Linear(embed_dim, embed_dim)
+        self.out_proj = nn.Linear(embed_dim, embed_dim)
 
     def forward(
         self,
-        q: Tensor,
-        k: Tensor,
-        v: Tensor,
+        query: Tensor,
+        key: Tensor,
+        value: Tensor,
         need_weights: bool = False,
     ) -> tuple[Tensor, Tensor | None]:
         # Make sure the sequence lengths of key and value match
-        if k.size(-2) != v.size(-2):
+        if key.size(-2) != value.size(-2):
             raise AssertionError(
                 '`key` and `value` must have the same sequence length.'
             )
 
-        batch_size, q_len, _ = q.size()
-        k_len = k.size(-2)
-        v_len = v.size(-2)
+        batch_size, q_len, _ = query.size()
+        k_len = key.size(-2)
+        v_len = value.size(-2)
 
-        q = self.q_proj(x)
-        k = self.k_proj(x)
-        v = self.v_proj(x)
+        q = self.q_proj(query)
+        k = self.k_proj(key)
+        v = self.v_proj(value)
 
-        q = q.view(batch_size, q_len, self.num_heads, self.head_dim)
-        k = k.view(batch_size, k_len, self.num_heads, self.head_dim)
-        v = v.view(batch_size, v_len, self.num_heads, self.head_dim)
+        q = query.view(batch_size, q_len, self.num_heads, self.head_dim)
+        k = key.view(batch_size, k_len, self.num_heads, self.head_dim)
+        v = value.view(batch_size, v_len, self.num_heads, self.head_dim)
 
         q = q.transpose(1, 2)
         k = k.transpose(1, 2)
@@ -293,7 +281,7 @@ class MultiheadAttention(nn.Module):
         attn_output = attn_weights @ v
 
         attn_output = attn_output.transpose(1, 2).contiguous()
-        attn_output = attn_output.view(batch_size, q_len, self.attn_dim)
+        attn_output = attn_output.view(batch_size, q_len, self.embed_dim)
         output = self.out_proj(attn_output)
 
         if need_weights:
@@ -348,10 +336,10 @@ We visualize the attention matrices of multi-head attention:
 
 ```{python}
 num_heads = 2
-x = torch.randn(3, 5, 8)
+x = torch.randn(3, 5, 16)
 # This is a version of multi-head self-attention.
 # You can change to cross-attention by using different `k` and `v` inputs.
-multihead_attn = MultiheadAttention(attn_dim=8, num_heads=num_heads)
+multihead_attn = MultiheadAttention(embed_dim=16, num_heads=num_heads)
 
 with torch.inference_mode():
   output, attn_weights = multihead_attn(x, x, x, need_weights=True)

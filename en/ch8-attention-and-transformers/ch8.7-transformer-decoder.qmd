@@ -6,6 +6,7 @@ open-graph:
   title: ch8.5-positional-encoding
   description: "8.7 Transformer Decoder: Masked Self-Attention and Cross-Attention"
 title: "8.7 Transformer Decoder: Masked Self-Attention and Cross-Attention"
+order: 7
 ---
 
 Earlier, we looked at the Transformer encoder. The core task of the encoder is to represent each token in the input sequence as a vector with contextual information. After multiple layers of self-attention and feed-forward networks, each position in the input sequence can already fuse information from other positions.
@@ -36,8 +37,12 @@ The encoder is responsible for the first thing, and the decoder is responsible f
 Therefore, the Transformer decoder can be understood as a generation-side Transformer. It not only needs to look at the content it has already generated, but also needs to read source-sequence information from the encoder output.
 
 ```{python}
+from collections.abc import Callable
+
+import dnnl.nn as dnn
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
 print('PyTorch version:', torch.__version__)
@@ -249,7 +254,7 @@ $$
 Therefore, a decoder block can be written as:
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.7-decoder-block.svg" alt="Figure 1: Transformer Decoder Block structure diagram" style="height: 800px;">
+  <img src="figures/ch8.7-decoder-block.svg" style="height: 800px;">
   <figcaption>Figure 1: Transformer Decoder Block structure diagram</figcaption>
 </figure>
 
@@ -265,40 +270,33 @@ class TransformerDecoderLayer(nn.Module):
         self,
         d_model: int,
         num_heads: int,
-        dim_feedforward: int | None = None,
+        dim_feedforward: int = 2048,
+        activation: Callable[[Tensor], Tensor] = F.relu,
+        bias: bool = True,
         dropout: float = 0.1,
     ):
         super().__init__()
-        self.d_model = d_model
-        self.num_heads = num_heads
-
-        if dim_feedforward is None:
-            dim_feedforward = 4 * d_model
-        self.d_ff = dim_feedforward
-
-        self.self_attn = nn.MultiheadAttention(
-            embed_dim=d_model,
-            num_heads=num_heads,
+        self.self_attn = dnn.MultiheadAttention(
+            d_model,
+            num_heads,
             dropout=dropout,
-            batch_first=True,
+            bias=bias,
         )
-        self.cross_attn = nn.MultiheadAttention(
-            embed_dim=d_model,
-            num_heads=num_heads,
+        self.mha_attn = dnn.MultiheadAttention(
+            d_model,
+            num_heads,
             dropout=dropout,
-            batch_first=True,
-        )
-        self.ffn = nn.Sequential(
-            nn.Linear(d_model, self.d_ff),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(self.d_ff, d_model),
+            bias=bias,
         )
 
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-        self.norm3 = nn.LayerNorm(d_model)
+        self.linear1 = nn.Linear(d_model, dim_feedforward, bias=bias)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(dim_feedforward, d_model, bias=bias)
+        self.activation = activation
 
+        self.norm1 = nn.LayerNorm(d_model, bias=bias)
+        self.norm2 = nn.LayerNorm(d_model, bias=bias)
+        self.norm3 = nn.LayerNorm(d_model, bias=bias)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
         self.dropout3 = nn.Dropout(dropout)
@@ -308,32 +306,62 @@ class TransformerDecoderLayer(nn.Module):
         tgt: Tensor,
         memory: Tensor,
         tgt_mask: Tensor | None = None,
+        memory_mask: Tensor | None = None,
         tgt_key_padding_mask: Tensor | None = None,
         memory_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
-        self_attn_out, _ = self.self_attn(
-            query=tgt,
-            key=tgt,
-            value=tgt,
-            attn_mask=tgt_mask,
-            key_padding_mask=tgt_key_padding_mask,
+        x = tgt + self._sa_block(
+            self.norm1(tgt),
+            tgt_mask,
+            tgt_key_padding_mask,
+        )
+        x = x + self._mha_block(
+            self.norm2(x),
+            memory,
+            memory_mask,
+            memory_key_padding_mask,
+        )
+        return x + self._ff_block(self.norm3(x))
+
+    def _sa_block(
+        self,
+        x: Tensor,
+        attn_mask: Tensor | None,
+        key_padding_mask: Tensor | None,
+    ) -> Tensor:
+        x, _ = self.self_attn(
+            x, x, x,
+            attn_mask=attn_mask,
+            key_padding_mask=key_padding_mask,
+            need_weights=False,
+        )  # fmt: skip
+        return self.dropout1(x)
+
+    def _mha_block(
+        self,
+        x: Tensor,
+        memory: Tensor,
+        attn_mask: Tensor | None,
+        key_padding_mask: Tensor | None,
+    ) -> Tensor:
+        x, _ = self.mha_attn(
+            x,
+            memory,
+            memory,
+            attn_mask=attn_mask,
+            key_padding_mask=key_padding_mask,
             need_weights=False,
         )
-        tgt = self.norm1(tgt + self.dropout1(self_attn_out))
+        return self.dropout2(x)
 
-        cross_attn_out, _ = self.cross_attn(
-            query=tgt,
-            key=memory,
-            value=memory,
-            key_padding_mask=memory_key_padding_mask,
-            need_weights=False,
-        )
-        tgt = self.norm2(tgt + self.dropout2(cross_attn_out))
-
-        ffn_out = self.ffn(tgt)
-        tgt = self.norm3(tgt + self.dropout3(ffn_out))
-
-        return tgt
+    def _ff_block(self, x: Tensor) -> Tensor:
+        """Apply the feed-forward block and dropout."""
+        x = self.linear1(x)
+        x = self.activation(x)
+        x = self.dropout(x)
+        x = self.linear2(x)
+        x = self.dropout3(x)
+        return x
 
 
 x = torch.randn(2, 16, 512)  # (batch_size, seq_len, d_model)
@@ -377,7 +405,9 @@ class TransformerDecoder(nn.Module):
         d_model: int,
         num_heads: int,
         num_layers: int,
-        dim_feedforward: int | None = None,
+        dim_feedforward: int = 2048,
+        activation: Callable[[Tensor], Tensor] = F.relu,
+        bias: bool = True,
         dropout: float = 0.1,
     ):
         super().__init__()
@@ -387,6 +417,8 @@ class TransformerDecoder(nn.Module):
                     d_model=d_model,
                     num_heads=num_heads,
                     dim_feedforward=dim_feedforward,
+                    activation=activation,
+                    bias=bias,
                     dropout=dropout,
                 )
                 for _ in range(num_layers)
@@ -399,20 +431,23 @@ class TransformerDecoder(nn.Module):
         tgt: Tensor,
         memory: Tensor,
         tgt_mask: Tensor | None = None,
+        memory_mask: Tensor | None = None,
         tgt_key_padding_mask: Tensor | None = None,
         memory_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
-        x = tgt
+        output = tgt
         for layer in self.layers:
-            x = layer(
-                x,
+            output = layer(
+                output,
                 memory,
                 tgt_mask=tgt_mask,
+                memory_mask=memory_mask,
                 tgt_key_padding_mask=tgt_key_padding_mask,
                 memory_key_padding_mask=memory_key_padding_mask,
             )
-        x = self.norm(x)
-        return x
+
+        output = self.norm(output)
+        return output
 
 
 x = torch.randn(2, 16, 512)  # (batch_size, tgt_seq_len, d_model)
@@ -435,8 +470,11 @@ After discussing the decoder structure, let's look at how to generate the causal
 from torch.types import Device
 
 
-def generate_causal_mask(seq_len: int, device: Device = None) -> Tensor:
-    mask = torch.full((seq_len, seq_len), -torch.inf, device=device)
+def generate_causal_mask(
+    sz: int,
+    device: torch.device | None = None,
+) -> Tensor:
+    mask = torch.full((sz, sz), -torch.inf, device=device)
     mask = mask.triu(diagonal=1)
     return mask
 

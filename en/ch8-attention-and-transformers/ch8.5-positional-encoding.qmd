@@ -6,6 +6,7 @@ open-graph:
   title: ch8.5-positional-encoding
   description: "8.5 Positional Encoding：Adding Sequential Information to Attention"
 title: "8.5 Positional Encoding: Adding Positional Information to Attention"
+order: 5
 ---
 
 In the previous section on self-attention, we saw that each token can directly build connections with all tokens in the sequence. Compared with RNNs, which can only pass information step by step, the advantage of self-attention is that it can be computed in parallel and can more easily capture long-range dependencies. But self-attention also has one very important problem: **by itself, it does not know the order of tokens.**
@@ -15,7 +16,7 @@ In other words, if we only feed a set of token embeddings into self-attention, w
 For example, consider the following two sentences:
 
 ```text
-1. dog bites man  
+1. dog bites man
 2. man bites dog
 ```
 
@@ -160,7 +161,15 @@ Next, let's implement sinusoidal positional encoding with PyTorch:
 
 ```{python}
 class SinusoidalPositionalEncoding(nn.Module):
+    """Add fixed sinusoidal position encodings to batch-first sequences."""
+
     def __init__(self, embed_dim: int, max_len: int = 5000):
+        """Precompute sinusoidal encodings.
+
+        Args:
+            embed_dim (int): Embedding dimension of each token.
+            max_len (int, default: 5000): Maximum supported sequence length.
+        """
         super().__init__()
         self.embed_dim = embed_dim
         self.max_len = max_len
@@ -171,14 +180,15 @@ class SinusoidalPositionalEncoding(nn.Module):
 
         pe = torch.zeros(max_len, embed_dim)
         pe[:, 0::2] = torch.sin(position / div_term)
-        pe[:, 1::2] = torch.cos(position / div_term)
+        pe[:, 1::2] = torch.cos(position / div_term[: pe[:, 1::2].size(1)])
 
         # Add a batch dimension for broadcasting
         self.register_buffer('pe', pe.unsqueeze(0))
 
     def forward(self, x: Tensor) -> Tensor:
+        """Add positional encodings to ``x``."""
         seq_len = x.size(1)
-        return x + self.pe[:, :seq_len]
+        return x + self.pe[:, :seq_len]  # type: ignore
 
 
 x = torch.zeros(2, 32, 512)  # (batch_size, seq_len, d_model)

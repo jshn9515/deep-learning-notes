@@ -6,6 +6,7 @@ open-graph:
   title: ch8.8-encoder-decoder-transformer
   description: "8.8 Encoder-Decoder Transformer: Connecting Encoder and Decoder"
 title: "8.8 Encoder-Decoder Transformer: Connecting Encoder and Decoder"
+order: 8
 ---
 
 In the previous sections, we have looked at the Transformer Encoder and the Transformer Decoder separately. The core task of the Encoder is to encode the input sequence into a set of contextual representations; the core task of the Decoder is to continue predicting later tokens based on the existing target prefix under the constraint of the causal mask.
@@ -25,6 +26,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+import dnnl.nn as dnn
+import dnnl.nn.functional as dF
 
 print('PyTorch version:', torch.__version__)
 ```
@@ -91,7 +94,7 @@ So, the core of the Encoder-Decoder Transformer is not simply putting the Encode
 The information flow of a complete Encoder-Decoder Transformer can be written as:
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.8-transformer.png" alt="Figure 1: Transformer network architecture diagram" style="height: 600px;">
+  <img src="figures/ch8.8-transformer.png" style="height: 600px;">
   <figcaption>Figure 1: Transformer network architecture diagram [@vaswani2023Attention, fig. 1]</figcaption>
 </figure>
 
@@ -278,12 +281,103 @@ The names of these masks may differ slightly across frameworks, but the core is 
 PyTorch provides a complete Encoder-Decoder Transformer module:
 
 ```{python}
-transformer = nn.Transformer(
+class Transformer(nn.Module):
+    def __init__(
+        self,
+        d_model: int = 512,
+        num_heads: int = 8,
+        num_encoder_layers: int = 6,
+        num_decoder_layers: int = 6,
+        dim_feedforward: int = 2048,
+        dropout: float = 0.1,
+        activation: str | Callable[[Tensor], Tensor] = F.relu,
+        layer_norm_eps: float = 1e-5,
+        norm_first: bool = False,
+        bias: bool = True,
+    ):
+        super().__init__()
+        self.d_model = d_model
+        self.num_heads = num_heads
+
+        encoder_layer = dnn.TransformerEncoderLayer(
+            d_model,
+            num_heads,
+            dim_feedforward,
+            bias=bias,
+            dropout=dropout,
+            activation=activation,
+            layer_norm_eps=layer_norm_eps,
+            norm_first=norm_first,
+        )
+        encoder_norm = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
+        self.encoder = dnn.TransformerEncoder(
+            encoder_layer,
+            num_encoder_layers,
+            norm=encoder_norm,
+        )
+
+        decoder_layer = dnn.TransformerDecoderLayer(
+            d_model,
+            num_heads,
+            dim_feedforward,
+            bias=bias,
+            dropout=dropout,
+            activation=activation,
+            layer_norm_eps=layer_norm_eps,
+            norm_first=norm_first,
+        )
+        decoder_norm = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
+        self.decoder = dnn.TransformerDecoder(
+            decoder_layer,
+            num_decoder_layers,
+            norm=decoder_norm,
+        )
+
+    def forward(
+        self,
+        src: Tensor,
+        tgt: Tensor,
+        src_mask: Tensor | None = None,
+        tgt_mask: Tensor | None = None,
+        memory_mask: Tensor | None = None,
+        src_key_padding_mask: Tensor | None = None,
+        tgt_key_padding_mask: Tensor | None = None,
+        memory_key_padding_mask: Tensor | None = None,
+        src_is_causal: bool = False,
+        tgt_is_causal: bool = False,
+        memory_is_causal: bool = False,
+    ) -> Tensor:
+        if src.size(-1) != self.d_model or tgt.size(-1) != self.d_model:
+            raise AssertionError(
+                'The feature number of `src` and `tgt` must be equal to `d_model`.'
+            )
+        if src.size(0) != tgt.size(0):
+            raise AssertionError('The batch size of `src` and `tgt` must be equal.')
+
+        memory = self.encoder(
+            src,
+            mask=src_mask,
+            src_key_padding_mask=src_key_padding_mask,
+            is_causal=src_is_causal,
+        )
+        output = self.decoder(
+            tgt,
+            memory,
+            tgt_mask=tgt_mask,
+            memory_mask=memory_mask,
+            tgt_key_padding_mask=tgt_key_padding_mask,
+            memory_key_padding_mask=memory_key_padding_mask,
+            tgt_is_causal=tgt_is_causal,
+            memory_is_causal=memory_is_causal,
+        )
+        return output
+
+
+transformer = Transformer(
     d_model=512,
-    nhead=8,
+    num_heads=8,
     num_encoder_layers=6,
     num_decoder_layers=6,
-    batch_first=True,
     norm_first=True,  # Pre-LN Transformer
 )
 ```
@@ -327,7 +421,7 @@ When masks are included, a common calling form is:
 ```{python}
 src = torch.randn(2, 32, 512)
 tgt = torch.randn(2, 16, 512)
-tgt_mask = transformer.generate_square_subsequent_mask(tgt.size(1))
+tgt_mask = dF.generate_causal_mask(tgt.size(1), device=tgt.device)
 src_key_padding_mask = torch.zeros(2, 32, dtype=torch.bool)
 tgt_key_padding_mask = torch.zeros(2, 16, dtype=torch.bool)
 memory_key_padding_mask = torch.zeros(2, 32, dtype=torch.bool)
@@ -348,9 +442,6 @@ print('Output shape:', output.shape)
 Below, we write a simplified Seq2Seq Transformer. Here we directly use `nn.Transformer`, and the focus is on the complete calling process, rather than repeatedly implementing the Encoder Block and Decoder Block.
 
 ```{python}
-from dnnl.ch8 import SinusoidalPositionalEncoding
-
-
 class Seq2SeqTransformer(nn.Module):
     def __init__(
         self,
@@ -368,16 +459,15 @@ class Seq2SeqTransformer(nn.Module):
         self.d_model = d_model
         self.src_embedding = nn.Embedding(src_vocab_size, d_model)
         self.tgt_embedding = nn.Embedding(tgt_vocab_size, d_model)
-        self.pos_encoding = SinusoidalPositionalEncoding(d_model, max_len=max_len)
+        self.pos_encoding = dnn.SinusoidalPositionalEncoding(d_model, max_len)
 
-        self.transformer = nn.Transformer(
+        self.transformer = Transformer(
             d_model=d_model,
-            nhead=num_heads,
+            num_heads=num_heads,
             num_encoder_layers=num_encoder_layers,
             num_decoder_layers=num_decoder_layers,
             dim_feedforward=dim_feedforward,
             dropout=dropout,
-            batch_first=True,
             norm_first=True,  # Pre-LN Transformer
         )
         self.output_proj = nn.Linear(d_model, tgt_vocab_size)
@@ -419,7 +509,7 @@ src_vocab_size = 100
 tgt_vocab_size = 100
 src = torch.randint(0, 100, size=(3, 32))
 tgt = torch.randint(0, 100, size=(3, 16))
-tgt_mask = transformer.generate_square_subsequent_mask(tgt.size(1))
+tgt_mask = dF.generate_causal_mask(tgt.size(1))
 
 seq2seq = Seq2SeqTransformer(
     src_vocab_size=src_vocab_size,
@@ -469,18 +559,7 @@ tgt_labels = tgt_ids[:, 1:]
 Then generate the causal mask:
 
 ```{python}
-from torch.types import Device
-
-
-def generate_causal_mask(seq_len: int, device: Device = None) -> Tensor:
-    mask = torch.ones(seq_len, seq_len, device=device)
-    # Upper triangular part is 1, lower triangular part is 0
-    mask = mask.triu(diagonal=1)
-    mask = mask.masked_fill(mask == 1, -math.inf)
-    return mask
-
-
-tgt_mask = generate_causal_mask(
+tgt_mask = dF.generate_causal_mask(
     tgt_inputs.size(1),
     device=tgt_inputs.device,
 )
