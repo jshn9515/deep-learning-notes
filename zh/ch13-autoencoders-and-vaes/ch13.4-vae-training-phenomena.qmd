@@ -4,17 +4,23 @@ date: 2026-03-27
 date-modified: 2026-04-19
 open-graph:
   title: ch13.4-vae-training-phenomena
-  description: "VAE Training Phenomena and Latent Space Intuition"
+  description: "13.4 VAE Training Phenomena and Latent Space Intuition"
 title: "13.4 VAE 的训练现象与潜空间直觉"
+order: 4
 ---
 
 前面我们已经知道，VAE 的目标函数由两部分组成：
 
-$$ \mathcal{L}(x)=\mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)]-D_{\mathrm{KL}}(q_\phi(z\mid x)\,\|\,p(z)) $$
+$$
+\mathcal{L}(x) = \mathbb{E}_{q_\phi(z\mid x)}[\log p_\theta(x\mid z)] -
+D_{\mathrm{KL}}(q_\phi(z\mid x)\,\|\,p(z))
+$$
 
 如果把它写成训练时最小化的损失，就是：
 
-$$ \text{loss}=\text{reconstruction loss}+\text{KL loss} $$
+$$
+\mathrm{loss} = \mathrm{reconstruction loss}+\mathrm{KL loss}
+$$
 
 但只看公式还不够。真正理解 VAE，最重要的是看它在训练中会出现什么现象：
 
@@ -28,6 +34,8 @@ $$ \text{loss}=\text{reconstruction loss}+\text{KL loss} $$
 ```{python}
 from collections import defaultdict
 
+import dnnl.nn as dnn
+import dnnl.nn.functional as dF
 import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
@@ -75,10 +83,8 @@ train_dl = utils.DataLoader(train_ds, batch_size=256, shuffle=True, drop_last=Tr
 这里我们直接利用前面章节定义的 VAE 模型和 ELBO 损失函数。同时，为了避免损失函数的值过大，我们把损失函数的值求和汇总后除以当前批次的样本数量。
 
 ```{python}
-from dnnl.ch13 import VAE, vae_loss
-
 input_shape = (1, 28, 28)
-model = VAE(input_shape).to(device)
+model = dnn.VAE(input_shape).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 ```
 
@@ -110,7 +116,7 @@ for epoch in range(1, num_epochs + 1):
     for x, _ in train_dl:
         x = x.to(device)
         x_hat, mu, logvar = model(x)
-        loss, recon_loss, kl_loss = vae_loss(x_hat, x, mu, logvar)
+        loss, recon_loss, kl_loss = dF.vae_loss(x_hat, x, mu, logvar)
         loss.backward()
 
         loss_metric.update(loss.detach())
@@ -312,7 +318,9 @@ plt.close(fig)
 
 我们把损失写成：
 
-$$ \text{loss} = \text{reconstruction loss} + \beta \cdot \text{KL loss} $$
+$$
+\mathrm{loss} = \mathrm{reconstruction loss} + \beta \cdot \mathrm{KL loss}
+$$
 
 这里的 $\beta$ 用来控制 KL 的强弱。如果 $\beta$ 太小，模型就更在意重建，潜空间可能变得不规整；如果 $\beta$ 太大，模型就更在意贴近先验，重建可能明显变差。
 
@@ -324,7 +332,7 @@ models = {}
 
 for beta in betas:
     print(f'Training beta={beta}...')
-    model = VAE(input_shape).to(device)
+    model = dnn.VAE(input_shape).to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
     for epoch in range(5):
@@ -333,7 +341,7 @@ for beta in betas:
         for x, _ in train_dl:
             x = x.to(device)
             x_hat, mu, logvar = model(x)
-            loss, *_ = vae_loss(x_hat, x, mu, logvar, beta=beta)
+            loss, *_ = dF.vae_loss(x_hat, x, mu, logvar, beta=beta)
             loss.backward()
 
             optimizer.step()
