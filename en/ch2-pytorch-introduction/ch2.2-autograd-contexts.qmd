@@ -6,6 +6,7 @@ open-graph:
   title: ch2.2-autograd-contexts
   description: "Gradient Recording and Control in PyTorch"
 title: "2.2 Gradient Recording and Control in PyTorch"
+order: 2
 ---
 
 In Section 2.1, we answered one question: how are gradients computed? During forward propagation, the framework keeps a ledger; during backpropagation, it checks that ledger. Autograd builds the computation graph and then propagates gradients backward along the graph.
