@@ -4,13 +4,16 @@ date: 2026-03-19
 date-modified: 2026-04-04
 open-graph:
   title: ch10.1-attention-is-io-bound
-  description: "Attention Mechanisms: The I/O Bound Nature of Neural Networks"
+  description: "10.1 Why Attention is IO-Bound"
 title: "10.1 Why Attention is IO-Bound"
+order: 1
 ---
 
 In the previous chapters, we already learned the basic computation process of self-attention. Given $Q, K, V$, the computation of attention (ignoring scaling) is usually written as:
 
-$$ S = QK^\top, \quad P = \text{softmax}(S), \quad O = PV $$
+$$
+S = QK^\top, \quad P = \operatorname{softmax}(S), \quad O = PV
+$$
 
 From this formula, attention does not seem very special. In essence, it is just two matrix multiplications with a softmax in between. Since matrix multiplication is exactly the operation GPUs are best at, a very natural intuition is: attention should mainly be limited by compute. That is, the stronger the GPU's floating-point capability is, the faster attention should run.
 
@@ -46,7 +49,9 @@ Then how do we judge whether an operator is more like compute-bound or more like
 
 In high-performance computing, there is a very core metric, which is **Arithmetic Intensity**:
 
-$$ \text{Arithmetic Intensity} = \frac{\text{FLOPs}}{\text{Bytes Moved}} $$
+$$
+\mathrm{Arithmetic Intensity} = \frac{\mathrm{FLOPs}}{\mathrm{Bytes Moved}}
+$$
 
 That is, for every 1 byte of data moved, how many floating-point operations can be done. This metric directly determines whether the operator is closer to compute-bound or IO-bound.
 
@@ -63,7 +68,9 @@ Take a simple example. Why is matrix multiplication usually compute-bound?
 
 Suppose we have the following matrix multiplication:
 
-$$ C = AB $$
+$$
+C = AB
+$$
 
 where $A$ is an $M \times K$ matrix, $B$ is a $K \times N$ matrix, and the result $C$ is an $M \times N$ matrix.
 
@@ -76,7 +83,7 @@ This is also why GPUs are extremely good at GEMM (general matrix multiplication)
 To understand the IO problem of attention, we also need to know that GPU storage is not unified. In terms of speed and capacity, GPU memory is hierarchical, and can be roughly understood as:
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch10.1-gpu-memory.png" alt="Figure 1: GPU memory hierarchy model" style="width: 40%;">
+  <img src="figures/ch10.1-gpu-memory.png" style="width: 40%;">
   <figcaption>Figure 1: GPU memory hierarchy model [@dao2022FlashAttentionv1, fig. 1]</figcaption>
 </figure>
 
@@ -94,7 +101,9 @@ Next, we will really apply this perspective to attention.
 
 Let us first look only at the most basic single-head attention, ignore the batch dimension, and also ignore the scaling factor for now. The computation process is:
 
-$$ S = QK^\top, \quad P = \text{softmax}(S), \quad O = PV $$
+$$
+S = QK^\top, \quad P = \operatorname{softmax}(S), \quad O = PV
+$$
 
 where $Q, K, V \in \mathbb{R}^{N\times d}$, $S, P \in \mathbb{R}^{N\times N}$, and $O \in \mathbb{R}^{N\times d}$; $N$ is the sequence length, and $d$ is the feature dimension.
 
@@ -111,7 +120,9 @@ Now let us separately look at two things:
 
 Therefore, the total FLOPs of standard attention is approximately:
 
-$$ \text{FLOPs} \approx 2N^2d + 2N^2 + 2N^2d = 4N^2d + 2N^2 \approx O(N^2d) $$
+$$
+\mathrm{FLOPs} \approx 2N^2d + 2N^2 + 2N^2d = 4N^2d + 2N^2 \approx O(N^2d)
+$$
 
 So, from the perspective of computation amount, attention is indeed not cheap. The question is: a large amount of computation does not necessarily mean it is compute-bound. We also need to see what kind of data access pattern these computations are built on.
 
@@ -120,7 +131,7 @@ So, from the perspective of computation amount, attention is indeed not cheap. T
 Let us write the execution process of standard attention more accurately:
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch10.1-attn-forward.png" alt="Algorithm 1: Execution flow of standard Attention" style="width: 100%;">
+  <img src="figures/ch10.1-attn-forward.png" style="width: 100%;">
   <figcaption>Algorithm 1: Execution flow of standard attention [@dao2022FlashAttentionv1, alg. 0]</figcaption>
 </figure>
 
@@ -133,7 +144,9 @@ Assume we use `float32`, and each element takes 4 bytes. We make a very rough es
 
 Therefore, the total IO amount is approximately:
 
-$$ \text{IO} \approx 12Nd + 8N^2 + 8N^2 + 4Nd = 16N^2 + 16Nd \approx O(N^2 + Nd) $$
+$$
+\mathrm{IO} \approx 12Nd + 8N^2 + 8N^2 + 4Nd = 16N^2 + 16Nd \approx O(N^2 + Nd)
+$$
 
 When $N \gg d$, the IO scale is mainly dominated by the $N^2$ term. This shows that the heaviest IO cost of attention is not the input and output themselves, but the repeated read and write of the two $N\times N$ intermediate matrices.
 
@@ -141,7 +154,10 @@ When $N \gg d$, the IO scale is mainly dominated by the $N^2$ term. This shows t
 
 Now let us put FLOPs and IO together. We estimated earlier that the FLOPs of standard attention is about $O(N^2d)$, and IO is about $O(N^2 + Nd)$. Therefore, the arithmetic intensity of attention is about:
 
-$$ \text{Arithmetic Intensity} = \frac{O(N^2d)}{O(N^2 + Nd)} = O\left(\frac{d}{1 + \frac{d}{N}}\right) $$
+$$
+\mathrm{Arithmetic Intensity} = \frac{O(N^2d)}{O(N^2 + Nd)} =
+O\left(\frac{d}{1 + \frac{d}{N}}\right)
+$$
 
 When the sequence length is large enough, this can be approximated as $O(d)$. This means that, for large sequence lengths, the arithmetic intensity of attention is mainly determined by the feature dimension $d$, and does not depend much on the sequence length $N$.
 
@@ -173,4 +189,4 @@ We obtained three key conclusions:
 
 And once we truly understand this point, one question appears: since the most expensive thing is the read and write of intermediate matrices, can we avoid storing them completely?
 
-This is exactly the starting point of FlashAttention. In the next section, we will see that it does not approximate attention, but instead makes the execution process of attention access HBM as little as possible through better blocking and better IO organization.
+This is exactly the starting point of flash attention. In the next section, we will see that it does not approximate attention, but instead makes the execution process of attention access HBM as little as possible through better blocking and better IO organization.
