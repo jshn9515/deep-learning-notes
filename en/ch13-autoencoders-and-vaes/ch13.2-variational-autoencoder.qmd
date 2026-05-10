@@ -4,7 +4,7 @@ date: 2026-03-25
 date-modified: 2026-04-04
 open-graph:
   title: ch13.2-variational-autoencoder
-  description: "VAE: Probabilistic Modeling and the Reparameterization Trick"
+  description: "13.2 VAE: Probabilistic Modeling and the Reparameterization Trick"
 title: "13.2 VAE: Probabilistic Modeling and the Reparameterization Trick"
 order: 2
 ---

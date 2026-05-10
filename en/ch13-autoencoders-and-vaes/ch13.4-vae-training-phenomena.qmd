@@ -4,7 +4,7 @@ date: 2026-03-27
 date-modified: 2026-04-19
 open-graph:
   title: ch13.4-vae-training-phenomena
-  description: "VAE Training Phenomena and Latent Space Intuition"
+  description: "13.4 VAE Training Phenomena and Latent Space Intuition"
 title: "13.4 VAE Training Phenomena and Latent Space Intuition"
 order: 4
 ---
