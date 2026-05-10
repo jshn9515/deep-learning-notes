@@ -4,7 +4,7 @@ date: 2026-04-09
 date-modified: 2026-04-11
 open-graph:
   title: ch8.1-bahdanau-attention
-  description: "Bahdanau Attention: From Fixed-Length Bottleneck to Soft Alignment"
+  description: "8.1 Bahdanau Attention: From Information Compression to Dynamic Retrieval"
 title: "8.1 Bahdanau Attention: From Information Compression to Dynamic Retrieval"
 order: 1
 ---
