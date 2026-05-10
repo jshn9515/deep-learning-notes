@@ -4,7 +4,7 @@ date: 2026-03-19
 date-modified: 2026-04-04
 open-graph:
   title: ch2.1-automatic-differentiation
-  description: "Automatic Differentiation in PyTorch"
+  description: "2.1 Automatic Differentiation in PyTorch"
 title: "2.1 PyTorch 中的自动微分"
 order: 1
 ---
