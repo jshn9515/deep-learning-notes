@@ -4,8 +4,8 @@ date: 2026-03-31
 date-modified: 2026-04-16
 open-graph:
   title: ch14.2-ddpm-forward
-  description: "The Forward Process of DDPM: From Image to Noise"
-title: "14.2 The Forward Noising Process of DDPM"
+  description: "14.2 The Forward Process of DDPM: From Image to Noise"
+title: "14.2 The Forward Process of DDPM: From Image to Noise"
 order: 2
 ---
 

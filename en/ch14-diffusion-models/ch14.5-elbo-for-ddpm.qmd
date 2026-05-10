@@ -4,7 +4,7 @@ date: 2026-04-02
 date-modified: 2026-04-04
 open-graph:
   title: ch14.5-elbo-for-ddpm
-  description: "DDPM from a Variational Perspective: Where Does the ELBO Come From?"
+  description: "14.5 DDPM from a Variational Perspective: Where Does the ELBO Come From?"
 title: "14.5 DDPM from a Variational Derivation: Where Does the ELBO Come From?"
 order: 5
 ---

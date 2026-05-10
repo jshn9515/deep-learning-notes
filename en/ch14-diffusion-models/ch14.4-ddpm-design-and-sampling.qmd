@@ -4,7 +4,7 @@ date: 2026-04-01
 date-modified: 2026-04-16
 open-graph:
   title: ch14.4-ddpm-design-and-sampling
-  description: "DDPM Network Architecture and Sampling Process"
+  description: "14.4 DDPM Network Architecture and Sampling Process"
 title: "14.4 DDPM Network Structure and Sampling Process"
 order: 4
 ---

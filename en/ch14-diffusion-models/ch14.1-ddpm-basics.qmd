@@ -4,7 +4,7 @@ date: 2026-03-29
 date-modified: 2026-04-04
 open-graph:
   title: ch14.1-ddpm-basics
-  description: "DDPM: From Denoising to Generation"
+  description: "14.1 DDPM: From Denoising to Generation"
 title: "14.1 DDPM: From Denoising to Generation"
 order: 1
 ---
