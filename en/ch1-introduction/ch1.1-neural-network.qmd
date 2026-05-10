@@ -4,7 +4,7 @@ date: 2026-04-23
 date-modified: 2026-04-23
 open-graph:
   title: ch1.1-neural-network
-  description: "Neural Networks: A Learnable Function"
+  description: "1.1 Neural Networks: A Learnable Function"
 title: "1.1 Neural Networks: A Learnable Function"
 order: 1
 ---
