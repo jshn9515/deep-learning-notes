@@ -4,7 +4,7 @@ date: 2026-05-05
 date-modified: 2026-05-05
 open-graph:
   title: ch8.5-positional-encoding
-  description: "8.7 Transformer Decoder：Masked Self-Attention and Cross-Attention"
+  description: "8.7 Transformer Decoder: Masked Self-Attention and Cross-Attention"
 title: "8.7 Transformer Decoder：Masked Self-Attention 与 Cross-Attention"
 order: 7
 ---
