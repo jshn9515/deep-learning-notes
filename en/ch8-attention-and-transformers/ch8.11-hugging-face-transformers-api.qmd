@@ -866,6 +866,7 @@ model = AutoModel.from_pretrained(
     model_id,
     attn_implementation='eager',
 )
+ipy.clear_output()
 
 text = 'The animal did not cross the street because it was tired.'
 inputs = tokenizer(text, return_tensors='pt')
