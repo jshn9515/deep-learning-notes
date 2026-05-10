@@ -1,5 +1,5 @@
 ---
-title: "Part 4: Attention Mechanism and Transformer"
+title: "Part 4: Attention Mechanism and Transformers"
 author: jshn9515
 date: 2026-05-05
 date-modified: today
@@ -15,6 +15,6 @@ listing:
   date-format: iso
 
 open-graph:
-  title: part4-attention-mechanism-and-transformer
-  description: "Part 4: Attention Mechanism and Transformer"
+  title: part4-attention-mechanism-and-transformers
+  description: "Part 4: Attention Mechanism and Transformers"
 ---
