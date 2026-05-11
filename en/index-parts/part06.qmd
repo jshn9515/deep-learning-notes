@@ -7,9 +7,9 @@ comments: false
 
 listing:
   contents:
-    - ch12-generative-adversarial-networks/*.qmd
-    - ch13-autoencoders-and-vaes/*.qmd
-    - ch14-diffusion-models/*.qmd
+    - ../ch12-generative-adversarial-networks/*.qmd
+    - ../ch13-autoencoders-and-vaes/*.qmd
+    - ../ch14-diffusion-models/*.qmd
   sort: title asc
   type: table
   fields: [title, author, date]
