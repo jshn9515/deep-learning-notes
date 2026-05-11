@@ -1,0 +1,325 @@
+---
+author: jshn9515
+date: 2026-05-11
+date-modified: 2026-05-11
+open-graph:
+  title: ch11.1-patch-embedding
+  description: "11.2 Patch Embedding: Turning Images into Tokens"
+title: "11.2 Patch Embedding：把图像切成 Token"
+order: 2
+---
+
+```{python}
+import torch
+import torch.nn as nn
+from torch import Tensor
+
+print('PyTorch version:', torch.__version__)
+```
+
+上一节我们从整体上介绍了 Vision Transformer 的基本想法：把图像切成一个个 patch，然后把这些 patch 当成 token 序列输入 Transformer encoder。这个想法看起来很简单，但它其实是 ViT 能够把 Transformer 用到图像上的关键一步。如果没有 patch embedding，图像仍然只是一个二维像素网格；有了 patch embedding 以后，图像就变成了一个和文本 token 序列形式类似的张量，可以直接接到后面的 Transformer 结构上。
+
+这一节我们专门讨论 patch embedding。它要解决的问题可以概括成一句话：如何把一个形状为 $(B, C, H, W)$ 的图像 batch，转换成一个形状为 $(B, N, D)$ 的 token 序列？其中 $B$ 是 batch size，$C$ 是图像通道数，$H$ 和 $W$ 是图像高宽，$N$ 是 patch 数量，$D$ 是每个 token 的 embedding 维度。理解这个形状变化非常重要，因为后面的 class token、position embedding 和 Transformer encoder 都建立在这个序列表示之上。
+
+## 11.2.1 从图像张量到 Patch 序列
+
+在 PyTorch 中，一批图像通常表示成下面这样的四维张量：
+
+$$
+X \in \mathbb{R}^{B \times C \times H \times W}
+$$
+
+这里的每一个样本都是一张图像，图像有 $C$ 个通道，高度为 $H$，宽度为 $W$。以常见的 RGB 图像为例，$C=3$。如果输入大小是 $224 \times 224$，那么一张图像的形状就是 $(3, 224, 224)$，一个 batch 的形状就是 $(B, 3, 224, 224)$。
+
+ViT 不会把每个像素都当成一个 token，而是先把图像切成大小相同的 patch。假设 patch size 是 $P \times P$，并且 $H$ 和 $W$ 都可以被 $P$ 整除，那么图像在高度方向会被切成 $\frac{H}{P}$ 份，在宽度方向会被切成 $\frac{W}{P}$ 份。因此，每张图像的 patch 数量为：
+
+$$
+N = \frac{H}{P} \times \frac{W}{P}
+$$
+
+每个 patch 本身仍然是一个小图像块，它的形状是 $(C, P, P)$。为了把它当成 Transformer 的 token，我们通常会先把它展平成一个向量。展平以后，每个 patch 的维度是：
+
+$$
+C \times P \times P
+$$
+
+对于 RGB 图像和 $16 \times 16$ 的 patch，这个维度就是 $3 \times 16 \times 16 = 768$。因此，如果只做切分和展平，一张 $224 \times 224$ 的 RGB 图像会从 $(3, 224, 224)$ 变成 $(196, 768)$。对于一个 batch，形状则会从 $(B, 3, 224, 224)$ 变成 $(B, 196, 768)$。
+
+## 11.2.2 为什么还需要 Embedding
+
+把 patch 展平成向量以后，我们已经得到了一个序列，但这还不一定是 Transformer 想要的输入。
+
+Transformer encoder 通常希望每个 token 都有统一的模型维度，也就是 $D$ 或 $d_{\mathrm{model}}$。这个维度是模型结构的一部分，会影响 multi-head attention、feed-forward network 和后续所有层的参数形状。因此，ViT 会在展平 patch 之后再接一个线性投影，把每个 patch 向量映射到指定的 embedding 维度。
+
+假设第 $i$ 个 patch 展平后的向量是：
+
+$$
+x_i \in \mathbb{R}^{C P^2}
+$$
+
+那么 patch embedding 可以写成：
+
+$$
+z_i = x_i W_E + b_E
+$$
+
+其中：
+
+$$
+W_E \in \mathbb{R}^{C P^2 \times D}, \quad b_E \in \mathbb{R}^{D}, \quad z_i \in \mathbb{R}^{D}
+$$
+
+这个线性层对所有 patch 共享参数。也就是说，不管 patch 来自图像左上角、中心还是右下角，它们都会通过同一个投影矩阵 $W_E$ 变成 token embedding。这样做和 CNN 中卷积核在不同位置共享参数有一点相似：模型不会给每个空间位置单独设计一套投影参数，而是用同一套规则处理所有 patch。
+
+从直觉上看，patch embedding 的作用不是简单地压缩图像，而是把一个局部图像块转换成适合 Transformer 处理的特征向量。原始 patch 中的像素值只是颜色强度，它们还不是高层语义表示。经过线性投影后，每个 patch 会变成一个 $D$ 维 token，这个 token 会在后续 self-attention 中和其他 patch token 交互，逐渐形成更丰富的图像表示。
+
+## 11.2.3 Patch Embedding 和 Word Embedding 的类比
+
+理解 patch embedding 的一个好方法，是把它和 NLP 中的 word embedding 做类比。
+
+在文本任务中，我们会先把一句话切成 token，例如词、子词或者字符。每个 token 通常是一个离散的编号，比如 `cat` 对应某个 id，`dog` 对应另一个 id。模型会通过一个 embedding table，把这些离散 token id 查表变成连续向量。
+
+图像中的 patch token 有些类似，但又不完全一样。文本 token 是离散符号，所以 word embedding 的输入通常是整数 id；图像 patch 本身已经是连续数值，由像素组成，所以 patch embedding 不需要查表，而是直接对像素向量做线性投影。换句话说，word embedding 是从离散 token id 到向量，patch embedding 是从连续 patch 像素到向量。
+
+这种类比有助于理解 ViT 的整体结构：patch embedding 之后，每个 patch 就像文本中的一个 token；position embedding 负责告诉模型每个 token 的位置；Transformer encoder 负责让 token 之间进行信息交互。只不过，文本 token 通常对应语义单位，而图像 patch 对应空间区域。一个 patch 不一定天然就是一个完整语义对象，它可能只是背景、纹理、物体边缘，或者某个物体的一小部分。
+
+这也说明了 ViT 的一个特点：它把图像处理问题转化成了序列建模问题，但 patch token 的含义和文本 token 的含义并不完全等价。文本 token 通常已经有比较明确的语言单位边界，而 patch 只是人为切出来的图像块。模型需要在后续层中学习这些 patch 之间如何组合，才能形成对物体和场景的理解。
+
+## 11.2.4 用 `unfold` 手动切 Patch
+
+为了更具体地理解 patch embedding，我们先不用现成的卷积层，而是手动把图像切成 patch。PyTorch 中可以使用 `unfold` 来完成这个操作。`unfold` 的作用是沿着某个维度按照指定大小和步长提取局部窗口，因此非常适合演示 patch 切分。
+
+假设输入图像张量的形状是 `(B, C, H, W)`，patch size 是 `patch_size`。我们可以先在高度维度上 unfold，再在宽度维度上 unfold：
+
+```{python}
+B, C, H, W = 2, 3, 224, 224
+patch_size = 16
+
+x = torch.randn(B, C, H, W)
+
+patches = x.unfold(2, patch_size, patch_size)
+patches = patches.unfold(3, patch_size, patch_size)
+print(patches.shape)
+```
+
+输出的维度是：
+
+```text
+(batch_size, channels, num_patches_h, num_patches_w, patch_size, patch_size)
+```
+
+这个形状可以理解为：batch size 是 2，通道数是 3，高度方向有 14 个 patch，宽度方向有 14 个 patch，每个 patch 的大小是 $16 \times 16$。也就是说，`unfold` 之后，patch 的空间网格还保留着，只是原来的图像被拆成了许多局部窗口。
+
+接下来，我们需要把这些 patch 整理成 Transformer 需要的序列形式。Transformer 通常希望输入形状是 `(B, N, D)`，其中 $N$ 是序列长度，$D$ 是 token 维度。因此，我们需要先调整维度顺序，再把每个 patch 展平：
+
+```{python}
+patches = patches.permute(0, 2, 3, 1, 4, 5)
+patches = patches.reshape(B, -1, C * patch_size * patch_size)
+print(patches.shape)
+```
+
+第一行里的 `permute`，把维度调整成：
+
+```text
+(batch_size, num_patches_h, num_patches_w, channels, patch_size, patch_size)
+```
+
+第二行里的 `reshape`，把每个 patch 展平成一个向量，并把 patch 网格展平成一个序列：
+
+```text
+(batch_size, num_patches_h * num_patches_w, channels * patch_size * patch_size)
+```
+
+最终输出的形状是 `(B, N, D)`，其中 `N` 是 patch 数量，`D` 是展平后的维度。
+
+这个例子展示了从图像到 patch 序列的第一步：二维图像网格被拆成 patch 网格，然后 patch 网格被展平成一维序列。不过需要注意的是，`unfold` 很适合教学，因为它能显式展示切 patch 这件事。但在实际模型实现里，我们通常不会这样手动写 patch embedding，而是会使用一个更简洁、更高效的卷积层来完成同样的操作。
+
+## 11.2.5 用线性层实现 Patch Embedding
+
+在手动切出 patch 之后，我们可以接一个线性层，把每个 patch 向量投影到 embedding 维度。假设目标 embedding 维度是 `embed_dim`，那么我们可以这样写：
+
+```{python}
+embed_dim = 768
+proj = nn.Linear(C * patch_size * patch_size, embed_dim)
+
+patch_embeddings = proj(patches)
+print(patch_embeddings.shape)
+```
+
+在这个例子中，patch 展平后的维度刚好也是 768，embedding 维度也设成了 768，所以投影前后的最后一维没有变化。但这只是一个常见配置，不是必须如此。如果 patch size 是 8，那么每个 RGB patch 展平后的维度是 $3\times 8\times 8 = 192$，我们仍然可以用线性层把它投影到 768 维。如果 patch size 是 32，展平维度是 $3\times 32\times 32 = 3072$，我们也可以投影到 768 维。
+
+因此，patch 的原始维度 $CP^2$ 和模型的 embedding 维度 $D$ 是两个不同概念。前者由图像通道数和 patch size 决定，后者由模型设计决定。线性投影的作用就是在这两个维度之间建立映射，让不同大小的 patch 都可以变成统一维度的 token。
+
+把上面的步骤封装起来，一个最直接的 patch embedding 模块可以写成：
+
+```{python}
+class LinearPatchEmbedding(nn.Module):
+    def __init__(
+        self,
+        image_size: int,
+        patch_size: int,
+        in_channels: int,
+        embed_dim: int,
+    ):
+        super().__init__()
+        if image_size % patch_size != 0:
+            raise AssertionError('`image_size` must be divisible by `patch_size`.')
+
+        self.image_size = image_size
+        self.patch_size = patch_size
+        self.num_patches = (image_size // patch_size) ** 2
+        self.unfold = nn.Unfold(kernel_size=patch_size, stride=patch_size)
+        self.proj = nn.Linear(in_channels * patch_size * patch_size, embed_dim)
+
+    def forward(self, x: Tensor) -> Tensor:
+        patches = self.unfold(x)  # (B, C*P*P, N)
+        patches = patches.transpose(1, 2)  # (B, N, C*P*P)
+        output = self.proj(patches)
+        return output
+
+
+x = torch.randn(2, 3, 224, 224)
+patch_embed = LinearPatchEmbedding(
+    image_size=224,
+    patch_size=16,
+    in_channels=3,
+    embed_dim=768,
+)
+out = patch_embed(x)
+print(out.shape)
+```
+
+这个实现的优点是非常直观：先切 patch，再展平，再线性投影。它很适合理解 patch embedding 的本质。不过，在正式实现 ViT 时，我们通常会用卷积层来写，因为卷积层可以把切 patch 和线性投影合并成一步。
+
+## 11.2.6 用卷积层实现 Patch Embedding
+
+ViT 中的 patch embedding 也可以用一个卷积层来实现。这个卷积层的 `kernel_size` 等于 patch size，`stride` 也等于 patch size。也就是说，卷积核每次覆盖一个 patch，并且下一次移动到下一个不重叠的 patch。这样，卷积层输出的每一个空间位置，就对应原图中的一个 patch。
+
+代码可以写成：
+
+```{python}
+class ConvPatchEmbedding(nn.Module):
+    def __init__(
+        self,
+        image_size: int,
+        patch_size: int,
+        in_channels: int,
+        embed_dim: int,
+    ):
+        super().__init__()
+        if image_size % patch_size != 0:
+            raise AssertionError('`image_size` must be divisible by `patch_size`.')
+
+        self.image_size = image_size
+        self.patch_size = patch_size
+        self.num_patches = (image_size // patch_size) ** 2
+
+        self.proj = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=embed_dim,
+            kernel_size=patch_size,
+            stride=patch_size,
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.proj(x)
+        x = x.flatten(2)
+        x = x.transpose(1, 2)
+        return x
+
+
+x = torch.randn(2, 3, 224, 224)
+patch_embed = ConvPatchEmbedding(
+    image_size=224,
+    patch_size=16,
+    in_channels=3,
+    embed_dim=768,
+)
+out = patch_embed(x)
+print(out.shape)
+```
+
+我们来看一下形状变化。
+
+假设输入是 `(B, 3, 224, 224)`，`patch_size=16`，`embed_dim=768`。经过 `nn.Conv2d` 后，输出形状会变成：
+
+```text
+(B, 768, 14, 14)
+```
+
+这里的 768 是输出通道数，也就是每个 patch token 的 embedding 维度；14x14 是 patch 网格的空间大小。
+
+接着，`flatten(2)` 会把最后两个空间维度展平成一个维度，形状变成：
+
+```text
+(B, 768, 196)
+```
+
+最后，`transpose(1, 2)` 把 token 数量维度移到中间，得到 Transformer 常用的 batch-first 序列格式：
+
+```text
+(B, 196, 768)
+```
+
+这个卷积实现和手动切 patch + 线性层的实现本质上是等价的。卷积核的每个输出通道都可以看成一个线性投影方向，它会对当前 patch 中的所有像素做加权求和。相比手动 `unfold`，卷积写法更简洁，也更符合深度学习框架的高效实现方式。
+
+到这里可能大家会有个疑问：卷积层和线性层看起来是两种不同的操作，为什么它们在这里是等价的呢？
+
+## 11.2.7 卷积实现和线性实现为什么等价
+
+为了更清楚地理解卷积实现和线性实现的关系，我们可以只看一个 patch。一个 patch 的形状是 $(C, P, P)$，展平后是一个长度为 $C P^2$ 的向量。线性层会用一个权重矩阵把它映射到 $D$ 维：
+
+$$
+z = x W_E + b_E
+$$
+
+如果用卷积来做同样的事情，卷积层有 $D$ 个输出通道，每个输出通道都有一个形状为 $(C, P, P)$ 的卷积核。对于某一个输出通道，卷积核会和当前 patch 中的所有像素做逐元素乘法并求和，再加上 bias。这个计算其实就是对展平后的 patch 做一次线性变换，得到 $D$ 维输出中的一个分量。$D$ 个卷积核一起作用，就得到一个 $D$ 维向量。
+
+因此，当卷积层满足：
+
+```text
+kernel_size = patch_size
+stride = patch_size
+```
+
+并且没有重叠窗口时，它就可以被看作对每个 patch 使用同一个线性投影。两种写法的区别主要在于实现形式，而不是数学本质。手动切 patch 的写法更接近概念，卷积写法更接近实际工程。
+
+这也是为什么很多 ViT 实现会直接把 patch embedding 写成一个 `nn.Conv2d`。表面上看它用了卷积，但它并不是传统 CNN 中那种小卷积核逐层提取局部特征的结构。这里的卷积只是一个方便的 patch 投影工具，它一次覆盖整个 patch，并把 patch 转成一个 token embedding。
+
+## 11.2.8 Patch Size 的影响
+
+Patch size 是 ViT 中非常重要的超参数。它直接决定 token 数量，而 token 数量又会影响 self-attention 的计算复杂度。
+
+对于大小为 $H \times W$ 的图像和 patch size $P$，token 数量为：
+
+$$
+N = \frac{H}{P} \times \frac{W}{P}
+$$
+
+如果图像大小固定，patch size 越小，token 数量越多；patch size 越大，token 数量越少。由于 self-attention 的复杂度大约和 $N^2$ 成正比，patch size 的选择会显著影响计算量和显存开销。
+
+还是以 $224 \times 224$ 的图像为例。如果 patch size 是 32，那么 token 数量是 $7 \times 7 = 49$；如果 patch size 是 16，token 数量是 $14 \times 14 = 196$；如果 patch size 是 8，token 数量是 $28 \times 28 = 784$。从 16 改成 8，token 数量变成了 4 倍，而 attention 矩阵大小会变成大约 16 倍。
+
+但 patch size 也不能无限增大。patch 越大，每个 token 覆盖的图像区域越粗，模型在早期就失去了更多细粒度空间信息。对于图像分类来说，较大的 patch 可能仍然可以工作，因为分类任务只需要判断整张图像的类别；但对于目标检测、语义分割这类密集预测任务，空间细节非常重要，过大的 patch 可能会影响定位和边界质量。
+
+因此，patch size 本质上是在计算效率和空间细节之间做权衡。小 patch 保留更多细节，但计算更贵；大 patch 计算更便宜，但表示更粗。ViT 最经典的设置之一是对 $224 \times 224$ 图像使用 $16 \times 16$ patch，也就是常说的 ViT-B/16 中的 `/16`。这里的 `16` 指的正是 patch size。
+
+## 11.2.9 Patch Embedding 中的局部性
+
+虽然 ViT 通常被看作一种比 CNN 更少依赖图像先验的模型，但 patch embedding 本身仍然包含了一点局部性。每个 patch token 只来自图像中的一个局部区域，而不是整张图像。换句话说，在进入 Transformer 之前，模型已经把图像划分成了许多局部块，每个 token 的初始表示只包含对应 patch 内部的信息。
+
+不过，这种局部性和 CNN 的局部性并不完全一样。CNN 中的小卷积核会在多层网络中逐渐组合局部信息，而且相邻卷积窗口通常是重叠的。ViT 的标准 patch embedding 通常使用不重叠 patch，每个 patch 在一开始被独立投影成 token。patch 之间的信息交互并不发生在 patch embedding 阶段，而是发生在后面的 self-attention 中。
+
+这带来了一个很有意思的差异：CNN 在结构上强烈鼓励相邻像素和相邻局部区域先发生交互，而 ViT 则把 patch 作为基本单位，让所有 patch 在 Transformer encoder 中全局交互。也就是说，ViT 的 patch embedding 负责把局部区域编码成 token，Transformer encoder 负责在 token 之间建立关系。
+
+这种设计非常简洁，但也带来了一些问题。例如，如果 patch size 较大，patch 内部的细粒度结构可能在一开始就被压到一个向量里；如果任务需要像素级预测，标准 ViT 的 patch 表示可能不够精细。后来的很多视觉 Transformer 改进方法，比如层级结构、窗口注意力、重叠 patch embedding 等，都可以看作是在重新思考 patch embedding 和局部建模之间的关系。
+
+## 11.2.10 本章小结
+
+本节我们详细讨论了 patch embedding。它的核心作用是把图像从形状为 $(B, C, H, W)$ 的二维网格张量，转换成形状为 $(B, N, D)$ 的 token 序列。这个过程包括两个步骤：先把图像切成不重叠的 patch，再把每个 patch 投影成固定维度的 embedding。
+
+从实现上看，patch embedding 可以先用 `unfold` 手动切 patch，再用 `nn.Linear` 做投影；也可以直接用 `nn.Conv2d` 实现。后者通常更简洁，因为当卷积层的 `kernel_size` 和 `stride` 都等于 patch size 时，每个卷积输出位置就对应一个 patch，输出通道数就是 embedding 维度。
+
+Patch size 会影响 ViT 的计算量和表示细节。小 patch 会产生更多 token，保留更多空间信息，但 self-attention 的计算和显存开销也会明显增加；大 patch 会减少 token 数量，提高效率，但可能损失细粒度信息。理解这个权衡，是后面理解 ViT 局限、Swin Transformer 以及密集预测视觉任务的重要基础。
+
+不过，这个序列还缺少两个重要部分。第一，它还没有 class token，因此还没有一个专门用于汇总整张图像信息的位置。第二，它还没有 position embedding，因此模型还不知道每个 patch 来自图像中的哪个空间位置。下一节我们会继续讨论这两个组件：class token 如何表示整张图像，position embedding 又如何给 patch token 补上位置信息。
