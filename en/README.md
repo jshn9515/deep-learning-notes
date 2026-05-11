@@ -10,7 +10,7 @@
 - 2.1 Automatic Differentiation in PyTorch
 - 2.2 Gradient Recording and Control in PyTorch
 
-## Chapter 8: Attention and Transformers: From Fixed-Length Encoding to Dynamic Context Modeling
+## Chapter 8: Attention and Transformer: From Dynamic Retrieval to Sequence Modeling
 
 - 8.1 Bahdanau Attention: From Information Compression to Dynamic Retrieval
 - 8.2 Cross-Attention: One Sequence Querying Another Sequence
@@ -24,16 +24,16 @@
 - 8.10 Three Different Transformer Architectures: Understanding, Generation, and Input-Output Conversion
 - 8.11 Hugging Face Transformers API: From Structure to Calls
 
-## Chapter 10: FlashAttention: Efficient Implementation of Attention Mechanism
+## Chapter 10: Efficient Attention Implementations: From Memory-Efficient Attention to FlashAttention
 
 - 10.1 Why Attention is IO-Bound
 - 10.2 Flash Attention v1: Eliminating the IO Bottleneck in Attention Mechanisms
 
-## Chapter 12: GAN: Generative Adversarial Networks
+## Chapter 12: GAN: Learning to Generate through Adversarial Training
 
 - 12.1 Generative Adversarial Network (GAN)
 
-## Chapter 13: VAE: Variational Autoencoders
+## Chapter 13: VAE: From Compression and Reconstruction to Probabilistic Generation
 
 - 13.1 AutoEncoder: Starting with Compression and Reconstruction
 - 13.2 VAE: Probabilistic Modeling and the Reparameterization Trick
@@ -49,6 +49,6 @@
 - 14.4 DDPM Network Structure and Sampling Process
 - 14.5 DDPM from a Variational Derivation: Where Does the ELBO Come From?
 
-## Chapter 15: CLIP: Multimodal Models Integrating Vision and Language
+## Chapter 15: Vision-Language Models: From Image-Text Alignment to Multimodal Dialogue
 
 - 15.1 CLIP: Connecting Images and Language with Contrastive Learning
