@@ -78,4 +78,4 @@ This project website is built with [Quarto](https://quarto.org/).
 
 ## ⭐ Star History
 
-![Star History Chart](https://api.star-history.com/svg?repos=jshn9515/deep-learning-notes&type=Date)
+[![Star History Chart](https://api.star-history.com/chart?repos=jshn9515/deep-learning-notes&type=date&legend=top-left)](https://www.star-history.com/?repos=jshn9515%2Fdeep-learning-notes&type=date&legend=top-left)
