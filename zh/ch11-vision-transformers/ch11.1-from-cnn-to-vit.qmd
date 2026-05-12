@@ -4,7 +4,7 @@ date: 2026-05-11
 date-modified: 2026-05-11
 open-graph:
   title: ch11.1-from-cnn-to-vit
-  description: "11.1 From CNN to ViT: Treating Images as Sequences"
+  description: "11.1 From CNN to Vision Transformer: Treating Images as Sequences"
 title: "11.1 从 CNN 到 Vision Transformer：把图像当成序列"
 order: 1
 ---
