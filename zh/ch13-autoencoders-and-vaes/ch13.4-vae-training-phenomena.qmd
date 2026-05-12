@@ -34,14 +34,13 @@ $$
 ```{python}
 from collections import defaultdict
 
-import dnnl.nn as dnn
-import dnnl.nn.functional as dF
 import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
+from dnnl.models.vae import VAE
 from sklearn.manifold import TSNE
 from torchmetrics.aggregation import MeanMetric
 from torchvision.utils import make_grid
@@ -84,7 +83,7 @@ train_dl = utils.DataLoader(train_ds, batch_size=256, shuffle=True, drop_last=Tr
 
 ```{python}
 input_shape = (1, 28, 28)
-model = dnn.VAE(input_shape).to(device)
+model = VAE(input_shape).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 ```
 
@@ -116,7 +115,7 @@ for epoch in range(1, num_epochs + 1):
     for x, _ in train_dl:
         x = x.to(device)
         x_hat, mu, logvar = model(x)
-        loss, recon_loss, kl_loss = dF.vae_loss(x_hat, x, mu, logvar)
+        loss, recon_loss, kl_loss = model.loss(x_hat, x, mu, logvar)
         loss.backward()
 
         loss_metric.update(loss.detach())
@@ -332,7 +331,7 @@ models = {}
 
 for beta in betas:
     print(f'Training beta={beta}...')
-    model = dnn.VAE(input_shape).to(device)
+    model = VAE(input_shape).to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
     for epoch in range(5):
@@ -341,7 +340,7 @@ for beta in betas:
         for x, _ in train_dl:
             x = x.to(device)
             x_hat, mu, logvar = model(x)
-            loss, *_ = dF.vae_loss(x_hat, x, mu, logvar, beta=beta)
+            loss, *_ = model.loss(x_hat, x, mu, logvar, beta=beta)
             loss.backward()
 
             optimizer.step()
