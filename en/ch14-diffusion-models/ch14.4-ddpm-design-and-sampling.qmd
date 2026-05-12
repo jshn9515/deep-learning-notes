@@ -23,8 +23,7 @@ In this section, we explain the overall running process of DDPM from the perspec
 import math
 import random
 
-import dnnl.nn as dnn
-import dnnl.nn.functional as dF
+import dnnl.models.ddpm.utils as dutils
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -33,6 +32,7 @@ import torch.nn.functional as F
 import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
+from dnnl.models.ddpm import DDPMScheduler, UNet2DModel
 from torch import Tensor
 
 plt.rc('savefig', dpi=300, bbox='tight')
@@ -188,7 +188,7 @@ A common method is:
 Of course, in more modern diffusion models, besides time embedding, category conditions and text conditions are also often added, or external information is integrated into the network through cross-attention. But in the most basic DDPM scenario, time embedding + U-Net is already a very classic combination.
 
 ```{python}
-unet = dnn.UNet2DModel().to(device)
+unet = UNet2DModel().to(device)
 x = torch.randn(1, 3, 64, 64, device=device)
 timesteps = torch.tensor([10], dtype=torch.float32, device=device)
 
@@ -270,7 +270,7 @@ def denoise_v2(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
 
 T = 1000
 betas = torch.linspace(0.0001, 0.02, steps=T)
-xt = dF.add_noise(x0, betas, T - 1)
+xt = dutils.add_noise(x0, betas, T - 1)
 trajectory = [xt.clone()]
 
 for t in range(T - 1, -1, -1):
@@ -317,8 +317,8 @@ The `add_noise()` function here is the `add_noise_v2()` function we defined in t
 data = torch.randn(32, 3, 32, 32)
 train_ds = utils.TensorDataset(data)
 train_dl = utils.DataLoader(train_ds, batch_size=16, shuffle=True)
-model = dnn.UNet2DModel().to(device)
-scheduler = dnn.DDPMScheduler()
+model = UNet2DModel().to(device)
+scheduler = DDPMScheduler()
 
 model.train()
 # 1. Iterate over the training data.
