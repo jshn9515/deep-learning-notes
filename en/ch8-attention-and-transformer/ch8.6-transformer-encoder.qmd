@@ -13,9 +13,9 @@ In the previous sections, we have already taken apart several of the most centra
 
 Self-attention lets each token in a sequence directly exchange information with other tokens; multi-head attention lets the model observe the sequence in parallel from multiple representation spaces; positional encoding adds the order information that self-attention itself lacks.
 
-But so far, what we have seen are still only separate components. A real Transformer encoder does not just perform self-attention once. Instead, it organizes these components into a module that can be repeatedly stacked. This module is usually called a **Transformer Encoder Block**, or simply an **Encoder Block** or **Encoder Layer**.
+But so far, what we have seen are still only separate components. A real Transformer Encoder does not just perform self-attention once. Instead, it organizes these components into a module that can be repeatedly stacked. This module is usually called a **Transformer Encoder Block**, or simply an **Encoder Block** or **Encoder Layer**.
 
-From the overall view, a Transformer encoder is just multiple encoder blocks stacked together:
+From the overall view, a Transformer Encoder is just multiple encoder blocks stacked together:
 
 $$
 X
@@ -57,7 +57,7 @@ For example, consider this sentence:
 
 For the model to understand that `it` refers to `animal`, it may not be as simple as looking at the similarity between `it` and `animal`. It also needs to combine semantics, syntactic structure, commonsense relations, and the descriptions in the context. The first layer may first capture local word meanings and phrase relations; higher layers may further combine this information and form a more abstract sentence-level understanding.
 
-So, the role of a multi-layer Transformer encoder is not to simply repeat the same operation, but to make the representations become more abstract layer by layer.
+So, the role of a multi-layer Transformer Encoder is not to simply repeat the same operation, but to make the representations become more abstract layer by layer.
 
 We can roughly understand it this way:
 
@@ -69,7 +69,7 @@ Of course, this is only an intuitive explanation. It does not mean every layer h
 
 ## 8.6.2 The Overall Structure of an Encoder Block
 
-A standard Transformer encoder block mainly contains two submodules:
+A standard Transformer Encoder block mainly contains two submodules:
 
 1. Multi-Head Self-Attention
 2. Position-wise Feed-Forward Network
@@ -197,7 +197,7 @@ At this point, we can understand the division of labor between the two major mod
 - Self-attention is responsible for information exchange between tokens;
 - FFN is responsible for further nonlinear processing of each token representation.
 
-One module mixes context, and the other processes representations. Only when the two are combined do we get a complete Transformer encoder block.
+One module mixes context, and the other processes representations. Only when the two are combined do we get a complete Transformer Encoder block.
 
 ## 8.6.3 Pre-LN and Post-LN
 
@@ -231,7 +231,7 @@ To make the code closer to modern implementations, we will use the Pre-LN versio
 
 ## 8.6.4 PyTorch Implementation of Transformer Encoder Block
 
-Below, we implement a simplified Transformer encoder block. To avoid repeatedly implementing multi-head attention, we directly use the `MultiheadAttention` implemented in Section 8.4.
+Below, we implement a simplified Transformer Encoder block. To avoid repeatedly implementing multi-head attention, we directly use the `MultiheadAttention` implemented in Section 8.4.
 
 ```{python}
 class TransformerEncoderLayer(nn.Module):
@@ -325,7 +325,7 @@ The first residual path corresponds to multi-head self-attention, and the second
 
 ## 8.6.5 Stacking Multiple Encoder Blocks
 
-After we have a single encoder block, writing a complete Transformer encoder becomes very easy. We only need to stack it multiple times.
+After we have a single encoder block, writing a complete Transformer Encoder becomes very easy. We only need to stack it multiple times.
 
 ```{python}
 class TransformerEncoder(nn.Module):
@@ -445,7 +445,7 @@ This is very important in NLP tasks. Otherwise, the model may treat `[PAD]` as a
 
 ## 8.6.7 What Can the Encoder Output Be Used For?
 
-The output of a Transformer encoder is a set of contextualized token representations:
+The output of a Transformer Encoder is a set of contextualized token representations:
 
 $$
 H = [h_1, h_2, \dots, h_n]
@@ -475,14 +475,14 @@ $$
 h_{\mathrm{avg}} = \frac{1}{n}\sum_{i=1}^{n}h_i
 $$
 
-This is also why Transformer encoder can be used for many different tasks. It is responsible for encoding the input sequence into contextualized representations. As for whether we attach a classification head, a tagging head, or a retrieval head afterward, that depends on the specific task.
+This is also why Transformer Encoder can be used for many different tasks. It is responsible for encoding the input sequence into contextualized representations. As for whether we attach a classification head, a tagging head, or a retrieval head afterward, that depends on the specific task.
 
 ## 8.6.8 Chapter Summary
 
-In this section, we combined the self-attention, multi-head attention, and positional encoding that we learned earlier to form the complete Transformer encoder.
+In this section, we combined the self-attention, multi-head attention, and positional encoding that we learned earlier to form the complete Transformer Encoder.
 
 An encoder block mainly consists of two parts: multi-head self-attention and a position-wise feed-forward network. The former is responsible for letting different tokens exchange contextual information, while the latter is responsible for nonlinear processing of each token representation. Each submodule is also equipped with a residual connection and LayerNorm, making deep networks easier to train.
 
 After multiple encoder blocks are stacked, the model can perform multiple rounds of information interaction and representation processing on the input sequence. In the final output, each token vector is no longer just its own embedding, but a representation that has fused the whole context.
 
-At this point, we have finished the core structure of the Transformer encoder. In the next section, we continue forward and look at the Transformer decoder. It is very similar to the encoder, but it has one key restriction: during generation, the current position cannot peek at future tokens. Otherwise, the model would not be predicting the next word; it would be copying the answer. This leads us to masked self-attention.
+At this point, we have finished the core structure of the Transformer Encoder. In the next section, we continue forward and look at the Transformer decoder. It is very similar to the encoder, but it has one key restriction: during generation, the current position cannot peek at future tokens. Otherwise, the model would not be predicting the next word; it would be copying the answer. This leads us to masked self-attention.

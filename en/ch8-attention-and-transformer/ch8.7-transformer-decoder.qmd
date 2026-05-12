@@ -9,7 +9,7 @@ title: "8.7 Transformer Decoder: Masked Self-Attention and Cross-Attention"
 order: 7
 ---
 
-Earlier, we looked at the Transformer encoder. The core task of the encoder is to represent each token in the input sequence as a vector with contextual information. After multiple layers of self-attention and feed-forward networks, each position in the input sequence can already fuse information from other positions.
+Earlier, we looked at the Transformer Encoder. The core task of the encoder is to represent each token in the input sequence as a vector with contextual information. After multiple layers of self-attention and feed-forward networks, each position in the input sequence can already fuse information from other positions.
 
 If we are only doing tasks such as text classification, sequence labeling, or image classification, an encoder is often enough. This is because these tasks usually only need to understand the input and then make predictions based on the input representation.
 
@@ -50,7 +50,7 @@ print('PyTorch version:', torch.__version__)
 
 ## 8.7.1 What Is Different Between the Decoder and the Encoder
 
-Structurally, the Transformer decoder and encoder are very similar. Both are formed by stacking multiple blocks. Each block also contains attention, residual connections, LayerNorm, and a feed-forward network. However, the decoder has two extra key points compared with the encoder.
+Structurally, the Transformer Decoder and encoder are very similar. Both are formed by stacking multiple blocks. Each block also contains attention, residual connections, LayerNorm, and a feed-forward network. However, the decoder has two extra key points compared with the encoder.
 
 The first difference is that self-attention in the decoder needs a mask.
 
@@ -60,7 +60,7 @@ The second difference is that the decoder also needs cross-attention.
 
 The decoder cannot only look at the part it has already generated. It also needs to refer to the encoder's understanding of the input sequence. For example, in translation, when generating Chinese words, it needs to keep looking back at which parts of the English source sentence are most relevant. This process is completed through cross-attention.
 
-So, a standard Transformer decoder block usually contains three parts:
+So, a standard Transformer Decoder block usually contains three parts:
 
 1. Masked Self-Attention;
 2. Cross-Attention;
@@ -207,13 +207,13 @@ Corresponding this to the Transformer:
 - The encoder hidden state is similar to the key and value;
 - The weighted-sum context vector is similar to the cross-attention output.
 
-So the cross-attention in the Transformer decoder is not a completely unfamiliar new thing. It can be seen as the modern version of early encoder-decoder attention inside the Transformer structure.
+So the cross-attention in the Transformer Decoder is not a completely unfamiliar new thing. It can be seen as the modern version of early encoder-decoder attention inside the Transformer structure.
 
 The difference is that Transformer no longer relies on RNNs to generate hidden states step by step. Instead, it uses self-attention and positional encoding to model sequence representations. At the same time, cross-attention is also written in the standard Q, K, V form, and it can be computed in parallel through multi-head attention.
 
 ## 8.7.4 Overall Structure of the Decoder Block
 
-Now we can put together a Transformer decoder block. Suppose the target sequence representation input to the decoder block is $Y$, and the encoder output is $H_{enc}$.
+Now we can put together a Transformer Decoder block. Suppose the target sequence representation input to the decoder block is $Y$, and the encoder output is $H_{enc}$.
 
 First, perform masked self-attention:
 
@@ -262,7 +262,7 @@ Compared with the encoder block, the decoder block has one more cross-attention 
 
 ## 8.7.5 PyTorch Implementation of a Transformer Decoder Block
 
-Below, we implement a simplified Transformer decoder block. Here, to make the structure clearer, we directly use PyTorch's built-in `nn.MultiheadAttention`.
+Below, we implement a simplified Transformer Decoder block. Here, to make the structure clearer, we directly use PyTorch's built-in `nn.MultiheadAttention`.
 
 ```{python}
 class TransformerDecoderLayer(nn.Module):
@@ -396,7 +396,7 @@ This exactly corresponds to what we discussed earlier: the decoder uses its own 
 
 ## 8.7.6 Stacking Decoder Blocks
 
-Like the encoder, we usually stack multiple decoder blocks to form a complete Transformer decoder.
+Like the encoder, we usually stack multiple decoder blocks to form a complete Transformer Decoder.
 
 ```{python}
 class TransformerDecoder(nn.Module):
@@ -485,7 +485,7 @@ print(mask)
 
 It will be added to the attention scores, making the softmax weights at the corresponding positions become 0.
 
-Below is a simple example showing how to apply the causal mask to the Transformer decoder block:
+Below is a simple example showing how to apply the causal mask to the Transformer Decoder block:
 
 ```{python}
 x = torch.randn(2, 16, 512)  # (batch_size, tgt_seq_len, d_model)
@@ -559,7 +559,7 @@ Masked self-attention is responsible for modeling $y_{<t}$, and cross-attention 
 
 ## 8.7.9 Summary
 
-In this section, we broke down the core structure of the Transformer decoder.
+In this section, we broke down the core structure of the Transformer Decoder.
 
 The decoder is very similar to the encoder. Both are composed of attention, feed-forward networks, residual connections, and LayerNorm. But the decoder has two key characteristics. First, its self-attention is masked self-attention, where each position can only attend to itself and previous positions, and cannot see future tokens. Second, it contains cross-attention, which uses the decoder representation as the query to retrieve source-sequence information from the encoder output.
 

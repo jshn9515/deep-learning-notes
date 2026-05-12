@@ -9,7 +9,7 @@ title: "8.10 Three Different Transformer Architectures: Understanding, Generatio
 order: 10
 ---
 
-In the previous sections, we looked separately at the Transformer encoder and the Transformer decoder.
+In the previous sections, we looked separately at the Transformer Encoder and the Transformer Decoder.
 
 - The core of the encoder is **self-attention**, which lets each token in a sequence see both left and right context at the same time, so it is well suited for understanding tasks.
 - The core of the decoder is **masked self-attention**, which only lets each token see tokens before its current position, so it is well suited for autoregressive generation.
@@ -69,7 +69,7 @@ If the task is to take one input and generate another output, this structure is 
 
 ## 8.10.2 Encoder-Only: Better for Understanding
 
-Encoder-only models keep only the Transformer encoder and do not use a decoder. The structure can be written simply as:
+Encoder-only models keep only the Transformer Encoder and do not use a decoder. The structure can be written simply as:
 
 $$
 X \rightarrow \mathrm{Transformer Encoder} \rightarrow H
@@ -95,7 +95,7 @@ This includes both tokens on its left and tokens on its right. Therefore, encode
 
 The most typical encoder-only model is **BERT**.
 
-BERT stands for Bidirectional Encoder Representations from Transformers. The name already states its core idea: it uses the Transformer encoder to learn bidirectional contextual representations.
+BERT stands for Bidirectional Encoder Representations from Transformers. The name already states its core idea: it uses the Transformer Encoder to learn bidirectional contextual representations.
 
 For example, in the sentence:
 
@@ -173,7 +173,7 @@ So the output of an encoder-only model does not directly generate text. It provi
 
 ## 8.10.3 Decoder-Only: Better for Generation
 
-Decoder-only models keep only the masked self-attention part of the Transformer decoder. Note, however, that because the model is decoder-only, it usually has no encoder and therefore no cross-attention. It uses only masked self-attention and feed-forward networks. The structure can be written simply as:
+Decoder-only models keep only the masked self-attention part of the Transformer Decoder. Note, however, that because the model is decoder-only, it usually has no encoder and therefore no cross-attention. It uses only masked self-attention and feed-forward networks. The structure can be written simply as:
 
 $$
 X \rightarrow \mathrm{Transformer Decoder Blocks} \rightarrow H
@@ -443,9 +443,9 @@ However, in modern large models, these boundaries are not absolute. Decoder-only
 
 In this section, we compared the three common Transformer architectures.
 
-Encoder-only uses only the Transformer encoder, and its core is bidirectional self-attention. It lets every token see the entire input sequence, so it is well suited for text understanding, classification, extraction, and representation learning. BERT is the most typical encoder-only model.
+Encoder-only uses only the Transformer Encoder, and its core is bidirectional self-attention. It lets every token see the entire input sequence, so it is well suited for text understanding, classification, extraction, and representation learning. BERT is the most typical encoder-only model.
 
-Decoder-only uses only the Transformer decoder with a causal mask, and its core is left-to-right autoregressive modeling. It learns the language distribution through next-token prediction and generates text step by step during inference. The GPT series is the most typical decoder-only model.
+Decoder-only uses only the Transformer Decoder with a causal mask, and its core is left-to-right autoregressive modeling. It learns the language distribution through next-token prediction and generates text step by step during inference. The GPT series is the most typical decoder-only model.
 
 Encoder-decoder uses both an encoder and a decoder. The encoder understands the input bidirectionally, while the decoder generates output through masked self-attention and reads encoder representations through cross-attention. It is very suitable for input-to-output conversion tasks such as machine translation, summarization, and paraphrasing. The original Transformer, T5, and BART all belong to this category.
 
