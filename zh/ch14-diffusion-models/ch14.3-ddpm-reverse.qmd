@@ -32,7 +32,7 @@ $$
 ```{python}
 import random
 
-import dnnl.nn.functional as dF
+import dnnl.models.ddpm.utils as dutils
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
@@ -163,7 +163,7 @@ def denoise_v1(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
 
 T = 1000
 betas = torch.linspace(0.0001, 0.02, steps=T)
-xt = dF.add_noise(x0, betas, T - 1)
+xt = dutils.add_noise(x0, betas, T - 1)
 trajectory = [xt.clone()]
 
 for t in range(T - 1, -1, -1):
