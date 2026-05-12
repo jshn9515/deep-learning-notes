@@ -1,6 +1,7 @@
 import copy
 from collections.abc import Callable
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
@@ -8,6 +9,8 @@ from torch import Tensor
 from .attention import MultiheadAttention
 
 __all__ = [
+    'SinusoidalPositionalEncoding',
+    'LearnablePositionalEmbedding',
     'Transformer',
     'TransformerEncoder',
     'TransformerEncoderLayer',
@@ -34,6 +37,68 @@ def _clone_module(module: nn.Module, num_layers: int) -> nn.ModuleList:
     return nn.ModuleList(copy.deepcopy(module) for _ in range(num_layers))
 
 
+class SinusoidalPositionalEncoding(nn.Module):
+    """Add fixed sinusoidal position encodings to batch-first sequences."""
+
+    def __init__(self, embed_dim: int, max_len: int = 5000):
+        """Precompute sinusoidal encodings.
+
+        Args:
+            embed_dim (int): Embedding dimension of each token.
+            max_len (int, default: 5000): Maximum supported sequence length.
+        """
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.max_len = max_len
+
+        position = torch.arange(max_len).unsqueeze(1)
+        exp_term = torch.arange(0, embed_dim, 2) / embed_dim
+        div_term = torch.pow(10000.0, exp_term)
+
+        pe = torch.zeros(max_len, embed_dim)
+        pe[:, 0::2] = torch.sin(position / div_term)
+        pe[:, 1::2] = torch.cos(position / div_term[: pe[:, 1::2].size(1)])
+
+        # Add a batch dimension for broadcasting
+        self.register_buffer('pe', pe.unsqueeze(0))
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Add positional encodings to ``x``."""
+        if x.size(1) > self.max_len:
+            raise AssertionError(f'Sequence length {x.size(1)} exceeds {self.max_len}.')
+
+        seq_len = x.size(1)
+        x = x + self.pe[:, :seq_len]  # type: ignore
+        return x
+
+
+class LearnablePositionalEmbedding(nn.Module):
+    """Add learnable position embeddings to batch-first sequences."""
+
+    def __init__(self, embed_dim: int, max_len: int = 5000):
+        """Precompute learnable position embeddings.
+
+        Args:
+            embed_dim (int): Embedding dimension of each token.
+            max_len (int, default: 5000): Maximum supported sequence length.
+        """
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.max_len = max_len
+        self.pe = nn.Embedding(max_len, embed_dim)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Add positional encodings to ``x``."""
+        if x.size(1) > self.max_len:
+            raise AssertionError(f'Sequence length {x.size(1)} exceeds {self.max_len}.')
+
+        seq_len = x.size(1)
+        positions = torch.arange(seq_len, device=x.device)
+        pos_emb = self.pe(positions)
+        x = x + pos_emb.unsqueeze(0)
+        return x
+
+
 class TransformerEncoderLayer(nn.Module):
     """A batch-first Transformer encoder layer."""
 
@@ -42,11 +107,11 @@ class TransformerEncoderLayer(nn.Module):
         d_model: int,
         num_heads: int,
         dim_feedforward: int = 2048,
+        bias: bool = True,
         dropout: float = 0.1,
         activation: str | Callable[[Tensor], Tensor] = F.relu,
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
-        bias: bool = True,
     ):
         """Initialize self-attention, feed-forward, and normalization blocks.
 
@@ -392,11 +457,11 @@ class Transformer(nn.Module):
         num_encoder_layers: int = 6,
         num_decoder_layers: int = 6,
         dim_feedforward: int = 2048,
+        bias: bool = True,
         dropout: float = 0.1,
         activation: str | Callable[[Tensor], Tensor] = F.relu,
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
-        bias: bool = True,
     ):
         """Initialize a full encoder-decoder Transformer.
 
