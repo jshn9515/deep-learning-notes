@@ -75,3 +75,7 @@ quarto convert path/to/file.qmd
 
 - 本仓库中的笔记内容采用 **CC BY-NC 4.0 协议**。
 - `dnnl` 库采用 **MIT 协议**。
+
+## ⭐ Star History
+
+![Star History Chart](https://api.star-history.com/svg?repos=jshn9515/deep-learning-notes&type=Date)

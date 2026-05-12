@@ -75,3 +75,7 @@ This project website is built with [Quarto](https://quarto.org/).
 
 - The notes in this repository are licensed under **CC BY-NC 4.0**.
 - The `dnnl` library is licensed under **MIT**.
+
+## ⭐ Star History
+
+![Star History Chart](https://api.star-history.com/svg?repos=jshn9515/deep-learning-notes&type=Date)
