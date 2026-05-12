@@ -31,7 +31,7 @@
 
 ## Chapter 11: Vision Transformers：从图像分类到视觉序列建模
 
-- 11.1 从 CNN 到 ViT：把图像当成序列
+- 11.1 从 CNN 到 Vision Transformer：把图像当成序列
 - 11.2 Patch Embedding：把图像切成 Token
 
 ## Chapter 12: GAN：在对抗中学习生成
