@@ -37,10 +37,10 @@ class ViTLinearPatchEmbedding(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """Convert images of shape ``(batch, channels, height, width)`` to patch tokens."""
-        patches = self.unfold(x)  # (B, C*P*P, N)
-        patches = patches.transpose(1, 2)  # (B, N, C*P*P)
-        output = self.proj(patches)
-        return output
+        x = self.unfold(x)  # (B, C*P*P, N)
+        x = x.transpose(1, 2)  # (B, N, C*P*P)
+        x = self.proj(x)
+        return x
 
 
 class ViTConvPatchEmbedding(nn.Module):
