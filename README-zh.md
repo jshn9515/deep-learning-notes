@@ -41,7 +41,7 @@ quarto convert path/to/file.qmd
 本仓库所有代码已在以下环境测试通过：
 
 - Python 3.14
-- PyTorch 2.11
+- PyTorch 2.12
 
 完整依赖见 `requirements.txt`。
 

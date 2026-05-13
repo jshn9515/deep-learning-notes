@@ -41,7 +41,7 @@ quarto convert path/to/file.qmd
 All code in this repository has been tested in the following environment:
 
 - Python 3.14
-- PyTorch 2.11
+- PyTorch 2.12
 
 See `requirements.txt` for the full list of dependencies.
 
