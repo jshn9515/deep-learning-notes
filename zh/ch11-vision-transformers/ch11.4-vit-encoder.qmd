@@ -1,0 +1,520 @@
+---
+author: jshn9515
+date: 2026-05-13
+date-modified: 2026-05-13
+open-graph:
+  title: ch11.4-vit-encoder
+  description: "11.4 ViT Encoder: Transformer Encoder on Images"
+title: "11.4 ViT Encoder：图像上的 Transformer Encoder"
+order: 4
+---
+
+前面两节里，我们已经完成了 ViT 的输入部分。
+
+一张图像先经过 patch embedding，从
+
+$$
+(B, C, H, W)
+$$
+
+变成 patch token 序列：
+
+$$
+(B, N, D)
+$$
+
+然后我们在序列最前面加入 class token，并加上 position embedding，得到：
+
+$$
+(B, N+1, D)
+$$
+
+到这一步，图像已经被转换成 Transformer 可以处理的序列。接下来要做的事情就很直接了：把这个序列送入 ViT Encoder。
+
+从结构上看，ViT Encoder 和文本 Transformer Encoder 几乎没有本质的区别。它同样由多层 encoder block 堆叠而成，每一层都包含：
+
+1. Multi-Head Self-Attention；
+2. Feed-Forward Network；
+3. Residual Connection；
+4. Layer Normalization。
+
+区别主要不在 encoder 本身，而在输入 token 的来源。文本 Transformer 的 token 来自一个个词，ViT 的 token 来自图像 patch。
+
+这一节我们就来看一看，当 Transformer Encoder 被用在图像 patch 序列上时，它到底在做什么。
+
+```{python}
+import dnnl.nn as dnn
+import torch
+import torch.nn as nn
+from torch import Tensor
+
+print('PyTorch version:', torch.__version__)
+```
+
+## 11.4.1 ViT Encoder 的输入和输出
+
+ViT Encoder 的输入是上一节得到的 token 序列：
+
+$$
+Z_0 \in \mathbb{R}^{B \times (N+1) \times D}
+$$
+
+其中，$B$ 是 batch size，$N$ 是 patch token 数量，$+1$ 来自 class token，$D$ 是 embedding 维度。
+
+ViT Encoder 会保持序列长度和 embedding 维度不变。经过 $L$ 层 encoder block 后，输出仍然是：
+
+$$
+Z_L \in \mathbb{R}^{B \times (N+1) \times D}
+$$
+
+也就是说，ViT Encoder 并不会把序列压缩成一个向量。它输出的仍然是一串 token representation：
+
+$$
+Z_L = [z_\mathrm{cls}^{(L)}, z_1^{(L)}, z_2^{(L)}, \dots, z_N^{(L)}]
+$$
+
+其中，第一个 token 是 class token 的最终表示：
+
+$$
+z_\mathrm{cls}^{(L)} = Z_L[:, 0, :]
+$$
+
+如果任务是图像分类，ViT 通常会取这个 class token 的输出表示，再接一个线性分类头：
+
+$$
+\mathrm{logits} = z_\mathrm{cls}^{(L)} W + b
+$$
+
+所以，ViT Encoder 的作用不是直接输出分类结果，而是把输入的 patch token 序列逐层加工成更高层的视觉表示。
+
+## 11.4.2 图像上的 Self-Attention 在做什么？
+
+在文本 Transformer 里，self-attention 让每个词可以和句子里的其他词交互。在 ViT 里，self-attention 做的是类似的事情：让每个 patch token 可以和图像中的其他 patch token 交互。
+
+假设输入序列是：
+
+$$
+Z = [z_\mathrm{cls}, z_1, z_2, \dots, z_N]
+$$
+
+其中，$z_i$ 表示第 $i$ 个图像 patch。Self-attention 会根据当前 token 表示计算 query、key 和 value：
+
+$$
+Q = ZW_Q, \quad K = ZW_K, \quad V = ZW_V
+$$
+
+然后计算 attention：
+
+$$
+\operatorname{Attention}(Q,K,V)
+= \operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
+$$
+
+这意味着，每个 patch 都可以根据自己的 query，从所有 patch 的 value 中聚合信息。
+
+直观来说，某个 patch 可能一开始只表示图像中的一个局部区域，比如一小块天空、一小块草地，或者物体的一部分。经过 self-attention 之后，这个 patch 的表示可以融合远处 patch 的信息。例如，一个包含“狗的头部”的 patch，可以关注到包含“狗的身体”的 patch；一个表示“车轮”的 patch 也可以直接关注到表示“车身”的 patch。
+
+这和 CNN 的局部卷积有明显区别。
+
+CNN 通常通过多层卷积逐渐扩大感受野。底层卷积主要看局部区域，高层特征才逐渐获得更大的上下文。ViT 的 self-attention 则从第一层开始就允许任意两个 patch 直接交互。
+
+当然，这并不意味着 ViT 一定比 CNN 更好。它只是采用了另一种建模方式：
+
+> **CNN 更强调局部归纳偏置，ViT 更依赖 self-attention 在数据中学习 patch 之间的关系。**
+
+## 11.4.3 Class Token 如何汇聚整张图的信息？
+
+前面我们说过，class token 是一个专门用来表示整张图的 token。现在，我们可以从 self-attention 的角度重新理解它。
+
+在每一层 encoder block 中，class token 也会参与 self-attention。它会和所有 patch token 一起计算 query、key 和 value。也就是说，class token 可以关注所有 patch token：
+
+$$
+z_\mathrm{cls} \leftarrow
+\operatorname{Attention}(z_\mathrm{cls}, [z_\mathrm{cls}, z_1, \dots, z_N])
+$$
+
+这里的箭头表示 class token 的表示会根据所有 token 的信息更新。
+
+在 self-attention 的计算中，CLS token 和普通 patch token 没有特殊区别。它同样会产生 query、key、value，并和所有 token 一起参与注意力计算。特殊之处在于它的用途：经过多层 Transformer Encoder 后，我们通常取 CLS token 的最终表示作为整张图像的全局表示，用于分类任务。
+
+所以，class token 并不是一开始就天然知道整张图的信息。它只是一个可学习的“全局位置”。真正让它获得全局信息的是 encoder 中反复进行的 self-attention 交互。
+
+## 11.4.4 ViT Encoder Block 的结构
+
+一个 ViT Encoder Block 和标准 Transformer Encoder Block 基本相同。实际实现中常见的是 Pre-LN 写法：
+
+$$
+H = X + \operatorname{MSA}(\operatorname{LN}(X))
+$$
+
+$$
+Y = H + \operatorname{MLP}(\operatorname{LN}(H))
+$$
+
+从数据流上看，一个 encoder block 可以理解成两步。
+
+第一步，self-attention 让 token 之间交换信息：
+
+$$
+(B, N+1, D) \rightarrow (B, N+1, D)
+$$
+
+第二步，MLP 对每个 token 的特征做非线性变换：
+
+$$
+(B, N+1, D) \rightarrow (B, N+1, D)
+$$
+
+注意，MLP 不改变序列长度，也不直接混合不同 token。不同 token 之间的信息交换主要发生在 self-attention 里。
+
+### 11.4.4.1 实现 MLP 模块
+
+ViT Encoder Block 里的 MLP 通常是一个两层全连接网络。它会先把维度从 $D$ 扩展到更大的隐藏维度，再投影回 $D$：
+
+$$
+D \rightarrow D_\mathrm{mlp} \rightarrow D
+$$
+
+原始 ViT 中常见设置是：
+
+$$
+D_\mathrm{mlp} = 4D
+$$
+
+激活函数通常使用 GELU。
+
+```{python}
+class ViTMLP(nn.Module):
+    def __init__(
+        self,
+        embed_dim: int,
+        mlp_dim: int,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(embed_dim, mlp_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(mlp_dim, embed_dim),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.net(x)
+```
+
+测试一下形状：
+
+```{python}
+batch_size = 2
+seq_len = 16 + 1  # 16 patch tokens + 1 class token
+embed_dim = 64
+mlp_dim = 256
+
+x = torch.randn(batch_size, seq_len, embed_dim)
+mlp = ViTMLP(embed_dim=embed_dim, mlp_dim=mlp_dim)
+out = mlp(x)
+
+print('Input shape:', x.shape)
+print('Output shape:', out.shape)
+```
+
+可以看到，MLP 不改变输入形状。它只是对每个 token 的 embedding 维度做非线性变换。
+
+### 11.4.4.2 实现 ViT Encoder Block
+
+接下来我们来实现一个教学版 ViT Encoder Block。
+
+这里我们使用第 8 章我们实现的 `MultiheadAttention`，同时使用 Pre-LN 写法。与 PyTorch 的 `nn.MultiheadAttention` 不同，我们的实现默认是 batch first 的，所以输入输出形状都是 `(B, N, D)`。
+
+```{python}
+class ViTEncoderLayer(nn.Module):
+    def __init__(
+        self,
+        embed_dim: int,
+        mlp_dim: int,
+        num_heads: int,
+        dropout: float = 0.0,
+        attn_dropout: float = 0.0,
+    ):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(embed_dim)
+        self.attn = dnn.MultiheadAttention(
+            embed_dim=embed_dim,
+            num_heads=num_heads,
+            dropout=attn_dropout,
+        )
+        self.dropout1 = nn.Dropout(dropout)
+
+        self.norm2 = nn.LayerNorm(embed_dim)
+        self.mlp = ViTMLP(
+            embed_dim=embed_dim,
+            mlp_dim=mlp_dim,
+            dropout=dropout,
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        attn_input = self.norm1(x)
+        attn_output, _ = self.attn(
+            attn_input,
+            attn_input,
+            attn_input,
+            need_weights=False,
+        )
+        x = x + self.dropout1(attn_output)
+
+        mlp_input = self.norm2(x)
+        x = x + self.mlp(mlp_input)
+        return x
+```
+
+这段代码里有两个残差连接：
+
+```python
+x = x + self.dropout1(attn_output)
+```
+
+和：
+
+```python
+x = x + self.mlp(mlp_input)
+```
+
+第一条残差连接对应 self-attention 子层，第二条残差连接对应 MLP 子层。由于这两个子层的输入和输出形状都是 `(B, N + 1, D)`，所以 residual connection 可以直接相加。
+
+我们来测试一下：
+
+```{python}
+batch_size = 2
+seq_len = 16 + 1  # 16 patch tokens + 1 class token
+embed_dim = 64
+mlp_dim = 256
+num_heads = 4
+
+x = torch.randn(batch_size, seq_len, embed_dim)
+block = ViTEncoderLayer(
+    embed_dim=embed_dim,
+    mlp_dim=mlp_dim,
+    num_heads=num_heads,
+)
+out = block(x)
+
+print('Input shape:', x.shape)
+print('Output shape:', out.shape)
+```
+
+输出形状仍然是 `(B, N + 1, D)`。
+
+这就是 encoder block 一个很重要的特点：它可以被反复堆叠，因为每一层的输入和输出形状完全相同。
+
+### 11.4.4.3 堆叠多个 Encoder Block
+
+单个 encoder block 只进行一次 self-attention 和一次 MLP 变换。完整的 ViT Encoder 会把多个 encoder block 堆起来。
+
+如果一共有 $L$ 层，那么可以写成：
+
+$$
+Z_0 \rightarrow Z_1 \rightarrow Z_2 \rightarrow \cdots \rightarrow Z_L
+$$
+
+其中每一层都是：
+
+$$
+Z_l = \operatorname{EncoderBlock}_l(Z_{l-1})
+$$
+
+实现时我们可以用 `nn.ModuleList`：
+
+```{python}
+class ViTEncoder(nn.Module):
+    def __init__(
+        self,
+        embed_dim: int,
+        mlp_dim: int,
+        num_heads: int,
+        num_layers: int,
+        dropout: float = 0.0,
+        attn_dropout: float = 0.0,
+    ):
+        super().__init__()
+        self.layers = nn.ModuleList(
+            [
+                ViTEncoderLayer(
+                    embed_dim=embed_dim,
+                    mlp_dim=mlp_dim,
+                    num_heads=num_heads,
+                    dropout=dropout,
+                    attn_dropout=attn_dropout,
+                )
+                for _ in range(num_layers)
+            ]
+        )
+        self.norm = nn.LayerNorm(embed_dim)
+
+    def forward(self, x: Tensor) -> Tensor:
+        for layer in self.layers:
+            x = layer(x)
+        x = self.norm(x)
+        return x
+```
+
+我们在最后又加了一个 `LayerNorm`。这是很多 Pre-LN Transformer 中常见的做法：每个 block 内部先归一化再进入子层，整个 encoder 结束后再做一次最终归一化。
+
+测试一下：
+
+```{python}
+batch_size = 2
+seq_len = 16 + 1  # 16 patch tokens + 1 class token
+embed_dim = 64
+mlp_dim = 256
+num_heads = 4
+num_layers = 4
+
+x = torch.randn(batch_size, seq_len, embed_dim)
+encoder = ViTEncoder(
+    embed_dim=embed_dim,
+    mlp_dim=mlp_dim,
+    num_heads=num_heads,
+    num_layers=num_layers,
+)
+out = encoder(x)
+
+print('Input shape:', x.shape)
+print('Encoder output shape:', out.shape)
+print('CLS output shape:', out[:, 0].shape)
+```
+
+可以看到，encoder 输出仍然是一个 token 序列，而 `out[:, 0]` 就是 class token 的最终表示。
+
+## 11.4.5 ViT Encoder 和文本 Encoder 有什么不同？
+
+从代码上看，ViT Encoder 和文本 Transformer Encoder 几乎一样。它们的主要差异在 encoder 之前。
+
+文本 Transformer 的输入通常是：
+
+$$
+\text{token ids} \rightarrow
+\text{word embedding} \rightarrow
+\text{position embedding} \rightarrow
+\text{Transformer Encoder}
+$$
+
+ViT 的输入则是：
+
+$$
+\text{image} \rightarrow
+\text{patch embedding} \rightarrow
+\text{class token} \rightarrow
+\text{position embedding} \rightarrow
+\text{Transformer Encoder}
+$$
+
+也就是说，ViT 最关键的变化是把图像转换成了 token 序列。一旦完成这个转换，后面的 encoder 就可以直接复用 Transformer 的思想。
+
+不过，图像和文本仍然有一些重要差异。
+
+第一，图像 patch 来自二维网格。即使最后被展平成一维序列，它们之间仍然有二维空间关系。因此 ViT 需要 position embedding 来告诉模型 patch 的位置。
+
+第二，图像 patch 的数量会随着分辨率快速增加。如果 patch size 不变，输入分辨率越高，序列长度越长，self-attention 的计算量也会快速增加。
+
+第三，图像任务往往需要保留空间结构。分类任务只需要最后的全局表示，但目标检测、语义分割等密集预测任务需要每个位置的特征。这也是为什么后来的视觉 Transformer 会发展出很多专门面向视觉任务的结构，例如层级特征、窗口注意力和多尺度表示。
+
+这些内容会在后面的章节继续展开。
+
+## 11.4.6 Attention 复杂度和 patch 数量
+
+ViT Encoder 的计算瓶颈主要来自 self-attention。
+
+如果序列长度是 $N+1$，那么 attention score 的形状大致是：
+
+$$
+(B, \text{num\_heads}, N+1, N+1)
+$$
+
+因此，attention 的计算和显存开销都和序列长度的平方有关：
+
+$$
+O(N^2)
+$$
+
+这里的 $N$ 是 patch token 数量：
+
+$$
+N = \frac{H}{P} \times \frac{W}{P}
+$$
+
+所以，如果图像分辨率变大，或者 patch size 变小，序列长度都会变大，attention 的开销也会迅速上升。
+
+比如，对于 $224 \times 224$ 的图像：
+
+- patch size 为 16 时，patch 数量是 $14 \times 14 = 196$；
+- patch size 为 8 时，patch 数量是 $28 \times 28 = 784$。
+
+Patch 数量变成了 4 倍，但 attention score 的大小大约会变成 16 倍。
+
+这也是原始 ViT 在高分辨率图像和密集预测任务上会遇到困难的原因之一。ViT 的全局 self-attention 很强大，但代价也很明显。因此，后续的视觉 Transformer 研究中，很多工作都在探索更高效的 attention 机制，例如局部窗口注意力、稀疏注意力和层级结构，以降低计算复杂度。
+
+## 11.4.7 从 Encoder 输出到分类结果
+
+最后，我们用一个简单的分类头把 encoder 输出变成 logits。
+
+如果 encoder 输出是：
+
+$$
+Z_L \in \mathbb{R}^{B \times (N+1) \times D}
+$$
+
+那么 class token 表示是：
+
+$$
+z_\mathrm{cls} = Z_L[:, 0, :] \in \mathbb{R}^{B \times D}
+$$
+
+分类头就是一个线性层：
+
+$$
+\mathrm{logits} = \operatorname{Linear}(z_\mathrm{cls})
+$$
+
+代码如下：
+
+```{python}
+class ViTClassifierHead(nn.Module):
+    def __init__(self, embed_dim: int, num_classes: int):
+        super().__init__()
+        self.fc = nn.Linear(embed_dim, num_classes)
+
+    def forward(self, x: Tensor) -> Tensor:
+        cls_token = x[:, 0]
+        logits = self.fc(cls_token)
+        return logits
+```
+
+测试一下：
+
+```{python}
+batch_size = 2
+seq_len = 16 + 1  # 16 patch tokens + 1 class token
+embed_dim = 64
+num_classes = 10
+
+encoder_output = torch.randn(batch_size, seq_len, embed_dim)
+head = ViTClassifierHead(embed_dim=embed_dim, num_classes=num_classes)
+logits = head(encoder_output)
+
+print('Encoder output shape:', encoder_output.shape)
+print('Logits shape:', logits.shape)
+```
+
+输出形状是 `(B, num_classes)`，这就可以直接用于图像分类任务。
+
+## 11.4.8 本节小结
+
+这一节我们把 ViT 的输入序列接到了 Transformer Encoder 上。
+
+ViT Encoder 的核心结构和标准 Transformer Encoder 基本相同，都是多层 encoder block 的堆叠。每个 encoder block 包含 multi-head self-attention、MLP、残差连接和 LayerNorm。
+
+在图像上，self-attention 的作用是让不同 patch token 之间直接交换信息。class token 则在这个过程中不断从所有 patch token 中汇聚信息，最后作为整张图像的全局表示。
+
+下一节，我们会把前面几节的组件组合起来，从零实现一个完整的 Vision Transformer，并让它真正输出分类 logits。
