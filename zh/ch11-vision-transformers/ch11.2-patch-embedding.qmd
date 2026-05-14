@@ -274,7 +274,7 @@ print('Number of patches:', patch_embed.num_patches)
 这时，图像已经变成了 Transformer 可以处理的序列形式：
 
 $$
-(B, C, H, W) \rightarrow (B, N, D)
+(B, C, H, W) \rightarrow (B, N, C \times P^2) \rightarrow (B, N, D)
 $$
 
 后面的 Transformer Encoder 就可以把这 $N$ 个 patch token 当作普通 token 序列来处理。
