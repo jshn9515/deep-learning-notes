@@ -1,9 +1,13 @@
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
 __all__ = [
     'ViTLinearPatchEmbedding',
     'ViTConvPatchEmbedding',
+    'ViTPositionalEmbedding',
+    'ViTEmbedding',
 ]
 
 
@@ -82,3 +86,162 @@ class ViTConvPatchEmbedding(nn.Module):
         x = x.flatten(2)
         x = x.transpose(1, 2)
         return x
+
+
+class ViTAddClassToken(nn.Module):
+    """Prepend a learnable class token to patch embeddings."""
+
+    def __init__(self, embed_dim: int):
+        """Initialize the class token parameter.
+
+        Args:
+            embed_dim (int): Embedding dimension of each token.
+        """
+        super().__init__()
+        cls_token = torch.zeros(1, 1, embed_dim)
+        self.cls_token = nn.Parameter(cls_token)
+        nn.init.trunc_normal_(self.cls_token, std=0.02)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Prepend the class token to each batch item."""
+        batch_size = x.size(0)
+        cls_token = self.cls_token.expand(batch_size, -1, -1)
+        x = torch.concat([cls_token, x], dim=1)
+        return x
+
+
+class ViTPositionalEmbedding(nn.Module):
+    """Learnable ViT positional embeddings with optional class-token support."""
+
+    def __init__(
+        self,
+        num_patches: int,
+        embed_dim: int,
+        use_cls_token: bool = True,
+    ):
+        """Initialize learnable positional embeddings.
+
+        Args:
+            num_patches (int): Number of image patch tokens.
+            embed_dim (int): Embedding dimension of each token.
+            use_cls_token (bool, default: True): Whether the sequence includes a
+                leading class token.
+        """
+        super().__init__()
+        self.num_patches = num_patches
+        self.embed_dim = embed_dim
+        self.use_cls_token = use_cls_token
+
+        num_tokens = num_patches + int(use_cls_token)
+        pos_embed = torch.zeros(1, num_tokens, embed_dim)
+        self.pos_embed = nn.Parameter(pos_embed)
+        nn.init.trunc_normal_(self.pos_embed, std=0.02)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Add positional embeddings to an input token sequence."""
+        if x.size(1) != self.pos_embed.size(1):
+            raise AssertionError(
+                f'Expected sequence length {self.pos_embed.size(1)}, '
+                f'but got {x.size(1)}.'
+            )
+        return x + self.pos_embed
+
+    def interpolate(
+        self,
+        old_grid_size: tuple[int, int],
+        new_grid_size: tuple[int, int],
+    ) -> Tensor:
+        """Resize patch positional embeddings to a new image grid.
+
+        Args:
+            old_grid_size (tuple[int, int]): Original patch grid as ``(height, width)``.
+            new_grid_size (tuple[int, int]): Target patch grid as ``(height, width)``.
+
+        Returns:
+            Positional embeddings resized to the target grid. The class token
+            embedding is preserved when ``use_cls_token`` is ``True``.
+        """
+        if self.use_cls_token:
+            cls_pos_embed = self.pos_embed[:, :1]
+            patch_pos_embed = self.pos_embed[:, 1:]
+        else:
+            cls_pos_embed = None
+            patch_pos_embed = self.pos_embed
+
+        old_h, old_w = old_grid_size
+        new_h, new_w = new_grid_size
+        embed_dim = self.pos_embed.size(-1)
+
+        if patch_pos_embed.size(1) != old_h * old_w:
+            raise AssertionError(
+                f'Expected old grid with {patch_pos_embed.size(1)} patches, '
+                f'but got {old_h * old_w}.'
+            )
+
+        patch_pos_embed = patch_pos_embed.reshape(1, old_h, old_w, embed_dim)
+        patch_pos_embed = patch_pos_embed.permute(0, 3, 1, 2)
+        patch_pos_embed = F.interpolate(
+            patch_pos_embed,
+            size=(new_h, new_w),
+            mode='bicubic',
+            align_corners=False,
+        )
+        patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1)
+        patch_pos_embed = patch_pos_embed.reshape(1, new_h * new_w, embed_dim)
+
+        if cls_pos_embed is not None:
+            return torch.concat([cls_pos_embed, patch_pos_embed], dim=1)
+
+        return patch_pos_embed
+
+
+class ViTEmbedding(nn.Module):
+    """ViT input embedding that combines patch, class, and positional embeddings."""
+
+    def __init__(
+        self,
+        image_size: int,
+        patch_size: int,
+        in_channels: int,
+        embed_dim: int,
+        dropout: float = 0.0,
+    ):
+        """Initialize the complete ViT embedding stem.
+
+        Args:
+            image_size (int): Height and width of the square input image.
+            patch_size (int): Height and width of each square patch.
+            in_channels (int): Number of input image channels.
+            embed_dim (int): Output embedding dimension for each token.
+            dropout (float, default: 0.0): Dropout probability applied after embeddings.
+        """
+        super().__init__()
+        self.patch_embed = ViTConvPatchEmbedding(
+            image_size=image_size,
+            patch_size=patch_size,
+            in_channels=in_channels,
+            embed_dim=embed_dim,
+        )
+        self.add_cls_token = ViTAddClassToken(embed_dim)
+        self.pos_embed = ViTPositionalEmbedding(
+            num_patches=self.patch_embed.num_patches,
+            embed_dim=embed_dim,
+            use_cls_token=True,
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Convert images into class-token-prefixed ViT embeddings."""
+        x = self.patch_embed(x)
+        x = self.add_cls_token(x)
+        x = self.pos_embed(x)
+        x = self.dropout(x)
+        return x
+
+    def interpolate_pos_embedding(
+        self,
+        old_grid_size: tuple[int, int],
+        new_grid_size: tuple[int, int],
+    ) -> Tensor:
+        """Resize the learned positional embeddings for a new patch grid."""
+        return self.pos_embed.interpolate(old_grid_size, new_grid_size)
