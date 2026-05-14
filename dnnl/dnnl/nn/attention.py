@@ -16,10 +16,10 @@ class MultiheadAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
+        bias: bool = True,
         kdim: int | None = None,
         vdim: int | None = None,
         dropout: float = 0.0,
-        bias: bool = True,
     ):
         """Initialize the attention projections.
 
