@@ -14,6 +14,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  attestations: write
 
 concurrency:
   group: package-notebooks
@@ -62,6 +64,12 @@ jobs:
           if [ -d "dnnl/zh" ] && [ "$(find dnnl/zh -type f | wc -l)" -gt 0 ]; then
             tar -czf dnnl-zh.tar.gz -C dnnl zh
           fi
+
+      - name: Generate zh package attestation
+        if: ${{ hashFiles('dnnl-zh.tar.gz') != '' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: dnnl-zh.tar.gz
 
       - name: Upload zh artifact
         if: ${{ hashFiles('dnnl/zh/**/*.ipynb') != '' }}
@@ -112,6 +120,12 @@ jobs:
           if [ -d "dnnl/en" ] && [ "$(find dnnl/en -type f | wc -l)" -gt 0 ]; then
             tar -czf dnnl-en.tar.gz -C dnnl en
           fi
+
+      - name: Generate en package attestation
+        if: ${{ hashFiles('dnnl-en.tar.gz') != '' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: dnnl-en.tar.gz
 
       - name: Upload en artifact
         if: ${{ hashFiles('dnnl/en/**/*.ipynb') != '' }}
