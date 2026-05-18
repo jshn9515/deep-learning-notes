@@ -9,263 +9,191 @@ title: "11.1 从 CNN 到 Vision Transformer：把图像当成序列"
 order: 1
 ---
 
-在前面的章节里，我们已经从 attention 一路讲到了 Transformer。Transformer 最初主要用于自然语言处理：输入是一串 token，模型通过 self-attention 让每个 token 和其他 token 交互，从而得到上下文相关的序列表示。
-
-如果输入是文本，这件事非常自然。句子本来就是一个词接一个词，代码本来就是一个符号接一个符号，语音也可以按照时间展开成序列。
-
-但图像看起来不太一样。
-
-一张图像不是一维序列，而是一个二维网格。它有高度、宽度和通道。长期以来，处理图像最自然的模型是 CNN。CNN 用卷积核在图像上滑动，从局部区域提取模式，再通过多层堆叠逐渐形成更高层的视觉表示。
-
-Vision Transformer，简称 ViT [@dosovitskiy2021ViT]，提出了一个非常直接但也很大胆的想法：
-
-> **既然 Transformer 可以处理 token 序列，那能不能先把图像变成 token 序列，然后直接交给它？**
-
-这一节我们先不急着写代码，也不急着展开 patch embedding、class token 和 positional embedding 的实现细节。我们先回答一个更基础的问题：
-
-> **ViT 到底是如何把“看图”这件事变成“读序列”这件事的？**
-
-## 11.1.1 为什么图像一直适合用 CNN 处理
-
-一张彩色图像通常可以表示成一个三维张量：
-
-$$
-X \in \mathbb{R}^{C \times H \times W}
-$$
-
-其中 $C$ 是通道数，$H$ 是高度，$W$ 是宽度。对于 RGB 图像来说，$C = 3$。
-
-图像和文本最大的不同在于，它天然带有二维空间结构。相邻像素之间通常关系很强，远处像素之间的关系则往往更间接。比如一张猫的图片里，猫耳朵附近的像素会组成局部边缘和纹理；猫脸附近的局部区域会组成眼睛、鼻子、胡须等结构；多个局部结构再组合起来，才形成“猫”这个整体概念。
-
-CNN 正是利用了这种结构。
-
-卷积核不是一次性看完整张图，而是在图像上用一个小窗口滑动。每次只看一个局部区域，并在不同位置共享同一组卷积核参数。这给 CNN 带来了几个非常重要的归纳偏置。
-
-- **局部性（locality）**。CNN 默认图像中的局部邻域非常重要。一个 $3 \times 3$ 或 $5 \times 5$ 的卷积核只关注附近的像素，这和边缘、纹理、角点等局部模式非常匹配。
-- **参数共享（parameter sharing）**。同一个卷积核会在整张图上重复使用。如果某个卷积核学会了检测竖直边缘，那么无论这个边缘出现在左上角还是右下角，它都可以被同一个卷积核检测出来。
-- **平移等变性（translation equivariance）**。如果图像中的某个模式移动了位置，卷积特征图中对应的响应也会跟着移动，而不是完全重新学习一套检测器。
-- **层级结构（hierarchy）**。浅层卷积通常学习边缘、颜色和纹理；中间层组合这些局部模式；深层则逐渐形成物体部件甚至整体语义。
-
-所以，CNN 的成功并不只是因为它有很多参数，而是因为它把图像的一些先验结构写进了模型里。它并不是完全从零开始学习图像，而是默认图像具有局部相关性、空间共享性和层级组合性。
-
-## 11.1.2 CNN 的局部性有什么问题？
-
-CNN 的局部性非常有用。问题是，单层卷积只能直接看到有限范围内的信息。
-
-假设我们使用一个 $3 \times 3$ 的卷积核。对于输出特征图中的某个位置，它在第一层只能直接看到输入图像中 $3 \times 3$ 的局部区域。如果想让这个位置获得更大范围的信息，就需要堆叠更多层卷积，或者使用池化、步幅卷积、空洞卷积等方式扩大感受野。
-
-这不是说 CNN 不能建模长距离关系。实际上，深层 CNN 的感受野可以覆盖很大的区域。只是 CNN 通常是通过一层层局部操作，把信息从局部逐渐传到全局。
-
-也就是说，CNN 的信息流动大致是：
-
-$$
-\text{local patterns} \rightarrow
-\text{larger local patterns} \rightarrow
-\text{global semantics}
-$$
-
-两个相距很远的图像区域要相互影响，中间往往需要经过多层卷积和多次特征聚合。这个过程很有效，但它的结构仍然是从局部逐渐扩展到整体。
-
-可是有些视觉任务中，远距离关系本身就很重要。比如图像分类中，模型可能需要同时看物体的多个部件；语义分割中，图像左上角和右下角的两个区域可能属于同一个物体；目标检测中，物体的不同部分可能分布在较远的位置。
-
-这时，我们自然会想到前面学过的 self-attention。
-
-Self-attention 的特点是：**每个 token 可以在一层里直接和所有其他 token 交互。**它不是先局部聚合，再逐渐扩大范围，而是一开始就允许全局信息交换。
-
-于是问题就变成了：
-
-> **如果 Transformer 擅长处理 token 序列，而图像又不是序列，那能不能把图像改造成序列？**
-
-这就是 ViT 的出发点。
-
-## 11.1.3 ViT 的一句话理解
-
-简单来说，ViT 做了三件事：
-
-1. **把图像切成 patch**：把二维图像变成一组局部图像块；
-2. **把 patch 变成 token**：把每个 patch 映射成一个向量；
-3. **让 token 互相交流**：用 Transformer Encoder 建模 patch 之间的关系。
-
-也就是说，ViT 并不是直接在整张图像上做 attention，而是在 patch token 序列上做 attention：
-
-$$
-\text{image} \rightarrow
-\text{patches} \rightarrow
-\text{patch tokens} \rightarrow
-\text{contextualized patch tokens} \rightarrow
-\text{class prediction}
-$$
-
-如果把 NLP 里的 token 看作“词”，那么 ViT 里的 patch token 可以粗略看作“视觉词”。Transformer 不再读一个句子，而是在读一张被切成很多小块的图像。当然，这个类比并不完全一样。文本 token 通常是离散的词或子词，而 ViT 里的 patch token 是连续向量。每个 patch token 表示图像中的一个局部区域，而不是一个单独的像素，也不是一个真实的单词。
-
-但是，这个思路很重要：
-
-> **ViT 看图的方式，是先把图像翻译成一串视觉 token，再用 self-attention 让这些视觉 token 互相交换信息。**
-
-我们后面几节要讲的 patch embedding、class token、positional embedding 和 ViT Encoder，都是围绕这句话展开的。
-
-## 11.1.4 从图像到 patch 序列
-
-我们知道，Transformer 接收的是一个序列：
+在前面的章节里，我们已经看到 Transformer 如何处理序列。无论是机器翻译里的 Encoder-Decoder Transformer，还是只使用 encoder 或 decoder 的模型，它们的输入本质上都是一个 token 序列：
 
 $$
 X = [x_1, x_2, \dots, x_n]
 $$
 
-在 NLP 中，每个 $x_i$ 通常对应一个 token。由于图像不是现成的一维序列，所以 ViT 的第一步是把图像切成很多小块，每个小块叫做一个 **patch**。
+如果输入是序列，这件事非常自然。句子本来就是一个词接一个词，代码本来就是一个符号接一个符号，语音也可以按照时间展开成音频序列。所以，模型只需要把每个 token 映射成向量，再交给 self-attention 处理即可。
 
-直观来说，一张图像可以被看成很多局部小图像块组成的网格。ViT 不是把每一个像素都当成 token，而是把一个 patch 当成一个 token。
-
-假设一张图像的形状为
+但是图像不一样。一张图像通常是一个三维张量：
 
 $$
-(C, H, W)
+X \in \mathbb{R}^{C \times H \times W}
 $$
 
-其中，$C$ 是通道数，$H$ 是图像高度，$W$ 是图像宽度。
+其中，$C$ 是通道数，$H$ 和 $W$ 是图像的高度和宽度。它看起来不是一串 token，而是一个二维空间结构。每个像素既有数值，也有空间位置；相邻像素之间通常高度相关，物体也往往由局部纹理、边缘、部件逐渐组合而成。
 
-现在，我们使用大小为 $P \times P$ 的 patch 来切分图像。假设 $H$ 和 $W$ 都能被 $P$ 整除，那么图像在高度方向会被切成 $\frac{H}{P}$ 份，在宽度方向会被切成 $\frac{W}{P}$ 份。所以，总的 patch 的数量就是：
+所以，如果我们想把 Transformer 用到图像上，面对的第一个问题就是：
+
+> **Transformer 只能处理 token 序列，图像又不是序列，那我们该怎么办？**
+
+Vision Transformer，简称 ViT [@dosovitskiy2021ViT]，正是从这个问题出发的。它的想法其实很简单：既然 Transformer 擅长处理 token 序列，那我们不如就把一张图像切成一组小块，把每个小块当成一个 token，然后用 Transformer 来建模这些图像 token 之间的关系，不就行了么？
+
+这一节我们先不急着写完整的 ViT 结构，而是先理解它为什么会这样设计。也就是说，我们要从 CNN 的图像建模方式出发，逐步走到 ViT 的基本想法：**把图像当成序列来处理。**
+
+## 11.1.1 为什么图像一直适合用 CNN 处理
+
+在 ViT 出现之前，卷积神经网络（Convolutional Neural Network, CNN）长期是视觉任务中的主流架构。CNN 之所以适合图像，并不是偶然的，而是因为它的结构里内置了一些非常符合图像特点的假设。
+
+第一个假设是**局部性（locality）**。图像里的一个像素通常和它周围的像素关系密切，而不是和很远处的像素关系密切。比如边缘、纹理、角点，往往都可以通过局部区域识别出来。因此，CNN 使用小的卷积核，例如 $3 \times 3$ 或 $5 \times 5$，先从局部区域提取特征。
+
+第二个假设是**平移等变性（translation equivariance）**。在 CNN 里，同一个卷积核会在整张图像上滑动。也就是说，模型用同一组参数去检测不同位置上的相似模式。如果一个卷积核学会了检测垂直边缘，那么它不只可以在左上角检测垂直边缘，也可以在右下角检测垂直边缘。这符合图像任务中的一个直觉：同一种视觉模式可能出现在图像的不同位置。这也是 CNN 的参数共享机制。
+
+第三个假设是**层级结构（hierarchical structure）**。浅层卷积通常学习边缘、颜色、纹理等低级特征；更深的层逐渐组合这些低级特征，形成部件、物体甚至场景级别的表示。随着网络加深，每个位置的感受野逐渐扩大，模型也就可以从局部信息逐步整合出全局语义。比如，在一张猫的图片里，猫耳朵附近的像素会组成局部边缘和纹理；猫脸附近的局部区域会组成眼睛、鼻子、胡须等结构；多个局部结构再组合起来，才形成“猫”这个整体概念。
+
+因此，CNN 看图像的方式大致可以理解为：
+
+> **先看局部，再通过层层堆叠逐渐扩大视野。**
+
+这套设计非常适合图像，也非常高效。卷积层不需要让每个位置从一开始就和所有位置交互，而是先关注附近区域，再通过多层网络逐步传播信息。很多经典视觉模型，例如 AlexNet、VGG、ResNet，都建立在这个思路之上。
+
+但是，这也带来了一个自然的问题：如果图像中的两个区域相距很远，但它们在语义上高度相关，CNN 需要经过很多层才能让它们充分交换信息。那么，有没有一种结构，可以让图像中的任意两个区域从一开始就直接交互？
+
+这正是 self-attention 擅长的事情。
+
+## 11.1.2 Self-Attention：另一种图像建模方式
+
+在 Transformer 里，self-attention 的核心作用是让序列中的每个 token 都可以根据当前需要，从其他 token 中检索信息。对于一个长度为 $n$ 的序列，每个 token 理论上都可以直接关注序列中的任意其他 token。
+
+如果把这个思想搬到图像上，就会得到一个很有吸引力的想法：图像中的每个区域不一定非要先通过局部卷积逐层扩大感受野，它也可以直接和其他区域建立关系。
+
+比如，在一张动物图片里，头部、身体和尾巴可能相隔较远。CNN 通常需要通过多层卷积逐渐把这些部件的信息整合起来。而如果使用 self-attention，表示头部的图像 token 可以直接关注表示身体或尾巴的 token。模型不必等到很多层之后才获得全局信息，而是在每一层中都可以进行全局的信息交互。
+
+当然，这就又绕回了我们最开始的问题：
+
+> **Self-attention 的输入是 token 序列，可图像不是现成的 token 序列。**
+
+如果我们想让图像进入 Transformer，就必须先搞清楚一个事儿：图像里的 token 到底是什么？
+
+可能有的人就会说了，token 是一个句子最基本的组成单元，像素是图像的基本组成单元。那我们直接把每个像素当成一个 token 不就行了？
+
+想法是好的。可是，如果这样，一张 $224 \times 224$ 的图像就会变成 $224 \times 224 = 50176$ 个 token。我们知道，self-attention 需要计算所有 token 两两之间的关系，attention 矩阵大小会随着 token 数量平方增长。如果有 50176 个 token，那么 attention 矩阵会非常巨大，计算和显存开销都难以接受。以 `float32` 类型为例，这个 attention 矩阵大约需要 10GB 内存。这还只是一个 attention 矩阵，更别说我们还要堆叠多个层了。
+
+所以，ViT 没有把单个像素当成 token。它采用了一个折中的选择：把图像切成一组小块（通常是正方形），每个小块叫做一个 **patch**，然后把每个 patch 当成一个 token。
+
+这一步非常关键。它把图像从二维网格变成了一个 token 序列，既不让 token 数量过多，也让 Transformer 可以直接接手后面的建模。
+
+## 11.1.3 把图像切成 Patch
+
+假设我们有一张图像：
+
+$$
+X \in \mathbb{R}^{C \times H \times W}
+$$
+
+假设 patch size 为 $P$，也就是每个 patch 的大小是 $P \times P$。如果 $H$ 和 $W$ 都可以被 $P$ 整除，那么整张图像可以被切成
 
 $$
 N = \frac{H}{P} \times \frac{W}{P}
 $$
 
-每个 patch 是一个大小为 $(C, P, P)$ 的局部图像块。
+个 patch。
 
-也就是说，一张图像可以先被看成下面这样的二维 patch 网格：
-
-$$
-\begin{bmatrix}
-\text{patch}_1 & \text{patch}_2 & \cdots & \text{patch}_m \\
-\text{patch}_{m+1} & \text{patch}_{m+2} & \cdots & \text{patch}_{2m} \\
-\vdots & \vdots & \ddots & \vdots \\
-\text{patch}_{(k-1)m+1} & \text{patch}_{(k-1)m+2} & \cdots & \text{patch}_{km}
-\end{bmatrix}
-$$
-
-只要我们按照某种固定顺序排列这些 patch，例如从左到右、从上到下，就可以得到一个序列：
+例如，一张 $224 \times 224$ 的 RGB 图像，如果设置 $16 \times 16$ 的 patch，那么 patch 数量就是：
 
 $$
-\text{image} \rightarrow
-[\text{patch}_1, \text{patch}_2, \dots, \text{patch}_{km}]
+N = \frac{224}{16} \times \frac{224}{16} = 14 \times 14 = 196
 $$
 
-这样，我们就完成了最关键的形式转换：
-$$
-\text{image as grid}
-\quad \longrightarrow \quad
-\text{image as patch sequence}
-$$
+这样，原本有 50176 个像素位置的图像，就被转换成了 196 个 patch token。这个序列长度对 Transformer 来说就合理得多。
 
-不过，此时 patch 本身仍然是小图像块。Transformer 并不能直接处理一个形状为 $(C, P, P)$ 的图像块，它需要的是一个 $D$ 维向量。因此，我们还要把每个 patch 展平，并把它们拼接起来。
-
-假设输入图像形状是：
+此时，每个 patch 本身仍然是一个小图像块。对于 RGB 图像，一个 patch 的形状是：
 
 $$
-(B, C, H, W)
+(C, P, P)
 $$
 
-切 patch 展平以后，图像就变成了：
+如果把它展平成一个向量，我们就会得到：
 
 $$
-(B, C, H, W) \rightarrow (B, N, C \times P^2)
+x_i \in \mathbb{R}^{C \times P^2}
 $$
 
-其中，$N$ 是 patch token 的数量，$P$ 是 patch size 的大小。
-
-但是在 ViT 中，我们通常不会直接把 $C \times P^2$ 维的 patch 向量送入 Transformer。更常见的做法是再接一个线性层，把每个 patch 向量投影到统一的 embedding 维度 $D$：
-$$
-(B, N, C \times P^2) \rightarrow (B, N, D)
-$$
-
-其中，$D$ 是每个 token 的 embedding 维度。
-
-到此，我们就可以把这一个个的 patch token，送入 ViT 网络里了。
-
-## 11.1.5 为什么不是把每个像素当成一个 token？
-
-前面我们都在讲 patch token，怎么把图像切成 patch，怎么把 patch 展平投影成 token embedding。可是，既然图像是由一个个像素组成的，为什么不直接把每个像素当成一个 token 呢？为什么一定要先切成 patch？
-
-原因主要是序列太长。
-
-假设输入图像大小是 $224 \times 224$。如果把每个像素当成一个 token，那么序列长度就是：
+于是，一张图像可以表示成一组 patch 向量：
 
 $$
-224 \times 224 = 50176
+\text{image} \rightarrow [x_1, x_2, \dots, x_N]
 $$
 
-而 self-attention 的注意力矩阵大小和序列长度的平方成正比。如果序列长度是 $N$，那么 attention 需要考虑大约 $N^2$ 对 token 之间的关系。
+到这里，图像终于变成了一个序列。只不过，这个序列里的 token 不是词，而是图像 patch。
 
-对于 50176 个像素 token 来说，attention 矩阵大约有
+从直觉上说，ViT 做了一件很简单但很关键的事情：
 
-$$
-50176^2 \approx 2.5 \times 10^9
-$$
+> **把图像中的局部区域当成视觉 token。**
 
-个元素。假设数据类型是 `float32`，那么这个 attention 矩阵大约有 10GB。这在计算和内存上都非常昂贵，更何况这还只是一个 attention 矩阵。更重要的是，单个像素本身携带的信息太少。一个像素只是一个颜色值，通常不足以表示有意义的视觉模式。
+这样一来，Transformer 就不再只能处理语言序列。只要我们能把输入拆成一组 token，它就可以用 self-attention 去建模 token 之间的关系。我们后面几节要讲的 patch embedding、class token、positional embedding 和 ViT Encoder，都是围绕这句话展开的。
 
-相比之下，patch 是一个更合适的折中。一个 patch 包含一小块局部区域，里面已经有一些边缘、纹理和局部结构。同时，patch 的数量又远少于像素数量。例如，ViT 常见设置会把 $224 \times 224$ 的图像切成 $16 \times 16$ 的 patch。这样，patch 网格是 $14 \times 14$，序列长度变成 $14 \times 14 = 196$。从 50176 个像素 token 到 196 个 patch token，序列长度大幅缩短，attention 的计算量也大幅降低。
+## 11.1.4 Patch 序列和词序列有什么不同？
 
-所以，ViT 不是把图像中的每个像素都当成 token，而是把局部区域当成 token。这既保留了一定的局部图像结构，又把输入转换成了 Transformer 可以处理的序列形式。
+虽然 ViT 把图像变成了 token 序列，但图像 patch 序列和自然语言词序列并不完全一样。
 
-## 11.1.6 有了 patch token 以后，还缺什么？
+在语言中，token 的顺序通常具有很强的一维结构。一个词的前后顺序会直接影响句子的含义。例如 “dog bites man” 和 “man bites dog” 的词相同，但顺序不同，语义就不同。
 
-到目前为止，我们解决了第一个问题：
+图像也有位置结构，但它原本是二维的。一个 patch 不仅有前后关系，还有上下左右关系。把二维 patch 网格展平成一维序列以后，原来的空间结构会被弱化。比如左上角和右下角的 patch，在序列里只是两个位置；模型如果没有额外信息，并不知道它们原本在图像中的具体空间关系。
 
-> **图像不是序列，怎么变成序列？**
+这会带来一个新的问题：
 
-答案是：把图像切成 patch，再把每个 patch 映射成 token embedding。
+> **如果图像被展平成序列，模型还知道每个 patch 原本在哪里吗？**
 
-但这还不够。一个完整的 ViT 输入还需要继续解决几个问题。
+答案是：只靠 patch 内容本身是不够的。两个 patch 即使内容相同，如果一个来自图像左上角，另一个来自图像右下角，它们在视觉语义上也可能扮演不同角色。因此，ViT 后面还需要加入位置编码，把 patch 的空间位置信息补回来。
 
-第一个问题是：**谁来代表整张图？**
+不过，在进入位置编码之前，我们还要先解决另一个问题：展平后的 patch 向量只是原始像素的排列，它还不是 Transformer 真正使用的 token embedding。
 
-经过 patch embedding 以后，每个 token 只对应图像中的一个局部区域。如果任务是图像分类，模型最后需要的是整张图像的表示，而不是某一个局部 patch 的表示。ViT 的做法是在 patch token 前面加入一个额外的 **class token**。这个 token 一开始只是一个可学习向量，但经过多层 self-attention 以后，它可以从所有 patch token 中收集信息，最后作为整张图像的表示。
+在 NLP 中，token ID 会先经过 embedding 层，变成一个固定维度的向量。类似地，图像 patch 展平以后，也需要经过一个可学习的线性投影，变成 Transformer 使用的 patch embedding。
 
-第二个问题是：**模型怎么知道每个 patch 来自哪里？**
+为什么要这样做呢？因为展平只是把像素重新排列成一个向量，它本身并没有学习能力。比如一个 $(3, 16, 16)$ 的 patch 展平以后得到 768 维向量，但这个向量只是原始像素值的排列形式，并没有经过特征变换。所以，我们要把它投影到特征空间，让模型更好地捕捉 patch 之间的语义关系，而不是被原始像素值的排列所限制。
 
-把二维 patch 网格拉平成一维序列以后，空间结构会被弱化。左上角的 patch、中心的 patch 和右下角的 patch 都只是序列里的向量。Transformer 本身并不会天然知道它们来自图像中的哪个位置。因此，ViT 需要给每个 token 加上 positional embedding，用来告诉模型 patch 的空间位置。
+总的来说，ViT 的输入构造大致包含三步：
 
-第三个问题是：**patch token 之间如何真正交换信息？**
+1. 把图像切成 patch，并把每个 patch 展平成向量；
+2. 把每个 patch 向量投影到 Transformer 的隐藏维度，得到 patch embedding；
+3. 给每个 patch embedding 加上位置编码，让模型知道它们来自图像中的哪里。
 
-当 patch token、class token 和 positional embedding 都准备好以后，这个序列才会被送入 Transformer Encoder。在每一层 self-attention 中，每个 patch token 都可以关注其他 patch token；class token 也可以关注所有 patch token，并逐渐汇聚全局信息。
+这就是我们后面几节要详细讨论的内容。
 
-所以，ViT 的完整数据流可以概括为：
+## 11.1.5 ViT 的整体思路
+
+现在，我们可以先从整体上看一下 ViT 的结构。它并不是为图像重新发明一套完全不同的 Transformer，而是尽量复用标准 Transformer Encoder。真正关键的变化发生在输入端：ViT 先把图像转换成一个 patch token 序列。
+
+整体流程可以概括为：
 
 $$
 \begin{aligned}
 \text{image}
-&\rightarrow \text{patches} \\
-&\rightarrow \text{patch embeddings} \\
-&\rightarrow \text{add class token} \\
-&\rightarrow \text{add positional embeddings} \\
-&\rightarrow \text{Transformer Encoder} \\
-&\rightarrow \text{class token output} \\
-&\rightarrow \text{classification head}
+& \rightarrow \text{patches} \\
+& \rightarrow \text{patch embeddings} \\
+& \rightarrow \text{add class token} \\
+& \rightarrow \text{add positional embeddings} \\
+& \rightarrow \text{Transformer Encoder} \\
+& \rightarrow \text{class token output} \\
+& \rightarrow \text{classification head}
 \end{aligned}
 $$
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch11.1-vit.png" style="width: 70%;" />
-  <figcaption>图 1：ViT 模型结构 [@dosovitskiy2021ViT]</figcaption>
+  <img src="figures/ch11.1-vit.png" style="width: 70%;">
+  <figcaption>图 1：ViT 模型结构 [@dosovitskiy2021ViT, fig. 1]</figcaption>
 </figure>
 
-后面几节，我们就依次展开这条数据流：
+给定一张图像，ViT 会先把它切成多个 patch；然后把每个 patch 展平，并通过线性层映射成一个固定维度的向量；接着加入位置编码，让模型知道每个 patch 来自哪里；最后，把这些 patch embedding 输入 Transformer Encoder，通过 self-attention 建模不同 patch 之间的关系。
 
-- Patch Embedding 解决“图像如何变成 token”；
-- Class Token 解决“谁代表整张图”；
-- Positional Embedding 解决“patch 来自哪里”；
-- ViT Encoder 解决“patch token 如何交换信息”。
+如果任务是图像分类，模型还需要得到一个整张图像的表示。原始 ViT 的做法是加入一个额外的 class token，让这个 token 在多层 self-attention 中和所有 patch token 交互，最后用它的输出表示进行分类。当然，也可以不使用 class token，直接对所有 patch token 的输出进行平均池化，也是可以的。
 
-## 11.1.7 ViT 和 CNN 的思想差异
+所以，ViT 的核心模块可以按下面的问题依次理解：
 
-从解决问题的思路看，ViT 和 CNN 的区别不只是一个用卷积，一个用 attention。更重要的是，它们对图像结构的假设不同。
+- 图像怎么变成 token 序列？切成 patch。
+- 每个 patch 怎么变成 Transformer 能处理的向量？做 patch embedding。
+- 展平成序列后，模型怎么知道 patch 的位置？加入 positional embedding。
+- 怎样得到整张图像的表示？加入 class token 或使用 average pooling。
+- Patch 之间如何交换信息？使用 Transformer Encoder 中的 self-attention。
 
-CNN 把很多图像先验写进了模型结构里。它默认局部邻域很重要，默认同一个模式可以在不同位置共享参数，默认视觉表示应该从局部逐渐组合成整体。
+可以看到，ViT 的设计并不是一堆模块的简单堆叠。每个模块都是为了解决“把图像交给 Transformer”过程中遇到的具体问题。
 
-ViT 则更加接近一种通用序列建模方式。它先把图像变成 patch 序列，然后让 self-attention 学习 patch 之间的关系。模型没有像 CNN 那样强制每一层都只看局部窗口，而是允许任意两个 patch 在同一层里直接交互。
+## 11.1.6 CNN 和 ViT 的核心差异
 
-我们可以用下面的方式来概括这种差异：
+理解 ViT 时，一个常见误区是把它简单看成直接用 Transformer 替换 CNN。这样说虽然不算完全错，但太简单了。更准确地说，CNN 和 ViT 对图像结构的假设不同。
 
 ::: {.list-table}
 表 1：CNN 和 ViT 的基本对比
@@ -286,34 +214,18 @@ ViT 则更加接近一种通用序列建模方式。它先把图像变成 patch 
   - 更弱的视觉先验，更直接的全局交互
 :::
 
-这种差异带来了两方面结果。
+CNN 的图像建模方式更依赖视觉先验。它假设局部邻域很重要，假设相同模式可以出现在不同位置，也假设复杂语义可以由简单局部特征逐层组合出来。这些先验让 CNN 在数据量不那么大的情况下也能训练得很好，因为模型不需要从零开始学习所有图像结构。
 
-一方面，ViT 可以更直接地建模全局关系。每个 patch 都可以在 self-attention 中关注其他 patch，因此远距离区域之间的信息交换更加直接。
+ViT 的先验更弱。它不直接规定每个 patch 只能先看附近的 patch，也不强制使用局部卷积来逐层扩大感受野。它把图像切成 patch 序列后，让 self-attention 自己学习 patch 之间应该如何交互。这样做更灵活，也更容易扩展到大规模数据和大模型，但同时也意味着模型需要从数据中学到更多视觉规律。
 
-另一方面，ViT 也少了一些 CNN 天然具备的图像先验。CNN 一开始就知道相邻像素更相关、局部模式可以平移复用；而 ViT 则需要更多地从数据中学习这些规律。因此，原始 ViT 往往更依赖较大的数据规模和较强的训练策略。
+这也是为什么原始 ViT 在大规模数据上表现很好，但在较小数据集上不一定天然优于 CNN。ViT 的优势来自更通用的序列建模方式和更好的可扩展性。但是，它也需要大量数据和适当的训练策略来充分发挥潜力。
 
-这也是理解 ViT 时很重要的一点：
+## 11.1.7 本章小结
 
-> **ViT 不是简单地把 CNN 换成 Transformer，而是把图像建模从局部卷积归纳偏置转向了 patch 序列上的全局 self-attention。**
+这一节，我们从 CNN 的图像建模方式出发，讨论了 Vision Transformer 的基本动机。
 
-## 11.1.8 本章小结
+CNN 非常适合图像，因为它利用了局部性、权重共享和层级结构等视觉先验。它通常从局部区域开始提取特征，再通过多层堆叠逐渐扩大感受野，整合全局信息。Self-attention 则提供了另一种思路：让不同位置的表示可以直接交互，从而更灵活地建模长距离关系。
 
-这一节，我们先建立了 ViT 的整体思维模型。
+但是，Transformer 的输入是 token 序列，而图像原本是二维网格。ViT 的关键一步，就是把图像切成 patch，并把每个 patch 当成一个视觉 token。这样，图像就可以被表示为一个 patch 序列，再交给 Transformer Encoder 处理。
 
-CNN 适合图像，是因为它内置了局部性、参数共享和层级结构等视觉归纳偏置。它从局部区域开始提取特征，再通过多层堆叠逐渐形成全局语义。但 CNN 的信息交互通常是从局部逐渐扩展到全局的。相比之下，self-attention 允许 token 之间直接进行全局交互。如果我们能把图像转换成 token 序列，就可以把 Transformer 用到视觉任务中。
-
-ViT 的核心做法就是：先把图像切成 patch，把每个 patch 映射成 patch token，再让这些 patch token 通过 Transformer Encoder 互相交换信息。最后，class token 汇聚整张图像的信息，并用于分类。
-
-所以，理解 ViT 的关键不是先记住所有模块名称，而是抓住这条主线：
-
-$$
-\text{image}
-\rightarrow
-\text{patch tokens}
-\rightarrow
-\text{global interaction}
-\rightarrow
-\text{image representation}
-$$
-
-下一节，我们会具体实现第一步：把形状为 $(B, C, H, W)$ 的输入图像变成 Transformer 可以处理的 patch token 序列。
+因此，ViT 的核心不是简单地把 CNN 换成 Transformer，而是先把图像重新组织成序列，再用 self-attention 建模 patch 之间的关系。接下来，我们会详细讨论第一步：**patch embedding**。也就是，我们该如何把图像中的 patch 转换成 Transformer 可以处理的 token embedding。
