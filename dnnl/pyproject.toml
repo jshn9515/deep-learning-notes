@@ -27,3 +27,11 @@ test = ['pytest>=9.0.0']
 
 [project.urls]
 Homepage = "https://github.com/jshn9515/deep-learning-notes"
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
