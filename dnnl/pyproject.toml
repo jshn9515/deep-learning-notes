@@ -9,9 +9,11 @@ license = "MIT"
 requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Framework :: Jupyter :: JupyterLab :: 4",
-    "Intended Audience :: Education",
     "Operating System :: OS Independent",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
