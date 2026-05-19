@@ -166,13 +166,9 @@ def patchify(x: Tensor, patch_size: int) -> Tensor:
 我们用一个小例子来看一下输出形状：
 
 ```{python}
-batch_size = 2
-channels = 3
-height = 32
-width = 32
 patch_size = 8
 
-x = torch.randn(batch_size, channels, height, width)
+x = torch.randn(2, 3, 32, 32)
 patches = patchify(x, patch_size)
 
 print('Input shape:', x.shape)
