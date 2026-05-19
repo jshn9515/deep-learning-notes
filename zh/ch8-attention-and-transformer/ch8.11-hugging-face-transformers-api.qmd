@@ -44,7 +44,7 @@ print('PyTorch version:', torch.__version__)
 print('Transformers version:', transformers.__version__)
 ```
 
-## 8.12.1 Transformers API 的基本思路
+## 8.11.1 Transformers API 的基本思路
 
 使用 Hugging Face Transformers 时，最常见的流程是：
 
@@ -81,7 +81,7 @@ print('Model output keys:', list(outputs.keys()))
 
 `outputs` 也是一个结构化对象，包含了模型前向传播的结果。常见字段包括 `last_hidden_state`、`logits`、`pooler_output`、`attentions`、`past_key_values` 等。但这些字段不一定都会出现，具体取决于模型类型、任务头，以及你在调用时设置的参数。
 
-## 8.12.2 AutoTokenizer：从文本到 token ids
+### 8.11.1.1 AutoTokenizer：从文本到 Token IDs
 
 Transformer 不能直接处理字符串，它需要的是 token id。比如：
 
@@ -127,7 +127,7 @@ pprint(inputs)
 
 这其实就是前面讲的 `key_padding_mask`。它用来告诉模型哪些位置可以看，哪些位置不应该参与 attention。
 
-## 8.12.3 AutoModel：只要 Transformer 主体
+### 8.11.1.2 AutoModel：Transformer 的主体
 
 `AutoModel` 会加载模型的基础 Transformer 主体，不包含特定任务头。例如：
 
@@ -165,7 +165,40 @@ $$
 
 所以，如果你只想拿到句子或 token 的表示，`AutoModel` 就很合适。
 
-## 8.12.4 SequenceClassification：Encoder + 分类头
+### 8.11.1.3 ModelOutput：为什么不是普通 Tuple
+
+调用模型后，我们经常看到：
+
+```python
+outputs = model(**inputs)
+```
+
+然后可以用：
+
+```python
+outputs.last_hidden_state
+outputs.logits
+outputs.attentions
+outputs.past_key_values
+```
+
+这是因为 Hugging Face Transformers 的模型输出通常是 `ModelOutput` 的子类。它有点像字典，也有点像 tuple，但更推荐使用属性名访问。比如，`outputs.logits` 比 `outputs[0]` 更清楚地表达了我们想要的是什么。不同模型、不同任务头会返回不同字段。
+
+- `AutoModel` 常见字段是 `last_hidden_state`；
+- `AutoModelForSequenceClassification` 常见字段是 `logits`；
+- `AutoModelForCausalLM` 常见字段是 `logits` 和 `past_key_values`；
+- 设置 `output_attentions=True` 后，会额外返回 `attentions`；
+- 设置 `output_hidden_states=True` 后，会额外返回 `hidden_states`。
+
+所以，看到 `outputs` 时，不要把它想成一个神秘对象，它只是把模型前向传播的结果整理成了一个结构化输出。
+
+## 8.11.2 Encoder-only 模型：理解输入序列
+
+前面我们已经看到，`AutoModel` 可以加载一个 Transformer 主体，并返回每个 token 的上下文表示。对于 encoder-only 模型来说，这正是它最核心的用途：通过双向 self-attention，让序列中的每个位置都能同时看到左右上下文，从而得到更适合理解任务的表示。
+
+不过，只有上下文表示还不够。真实任务通常还需要在这些表示之上做进一步预测：如果是文本分类，我们希望给整段文本预测一个类别；如果是命名实体识别，我们希望给每个 token 预测一个标签。因此，在 Transformers 库中，除了 `AutoModel` 之外，还提供了许多带任务头的模型。
+
+### 8.11.2.1 SequenceClassification：Encoder + 分类头
 
 如果我们要做文本分类，通常不会只用 `AutoModel`，而是使用带任务头的模型：
 
@@ -222,7 +255,7 @@ print(logits.shape)
 
 这就是 Hugging Face API 命名里 `For...` 的含义：它表示这个模型是为某个具体任务准备的。
 
-## 8.12.5 TokenClassification：每个 token 一个预测
+### 8.11.2.2 TokenClassification：每个 Token 一个预测
 
 如果任务是命名实体识别，或者其他 token-level 分类，就可以使用：
 
@@ -268,7 +301,64 @@ $$
 \hat{y}_i = \mathrm{Classifier}(h_i)
 $$
 
-## 8.12.6 CausalLM：Decoder-only 语言模型
+### 8.11.2.3 一个完整的 Encoder-only 示例
+
+下面是一个 BERT 风格文本表示例子：
+
+```{python}
+import torch
+from transformers import AutoTokenizer, AutoModel
+
+model_id = 'bert-base-uncased'
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModel.from_pretrained(model_id)
+ipy.clear_output()
+
+texts = [
+    'I love deep learning.',
+    'Transformers are powerful models.',
+]
+
+inputs = tokenizer(
+    texts,
+    return_tensors='pt',
+    padding=True,
+    truncation=True,
+)
+
+with torch.inference_mode():
+    outputs = model(**inputs)
+
+last_hidden_state = outputs.last_hidden_state
+sentence_embedding = last_hidden_state.mean(dim=1)
+
+print('Last hidden state shape:', last_hidden_state.shape)
+print('Sentence embedding shape:', sentence_embedding.shape)
+```
+
+这里的 `last_hidden_state` 是每个 token 的上下文表示。
+
+如果输入 batch 里有 padding，更严谨的平均池化应该结合 `attention_mask`，只对真实 token 求平均：
+
+```{python}
+mask = inputs['attention_mask'].unsqueeze(-1)
+masked_hidden = last_hidden_state * mask
+
+sentence_embedding = masked_hidden.sum(dim=1) / mask.sum(dim=1)
+```
+
+这对应 encoder-only 的核心用途：
+
+> **把输入文本编码成上下文表示。**
+
+## 8.11.3 Decoder-only 模型：自回归生成
+
+如果说 encoder-only 模型更擅长理解已经给定的输入，那么 decoder-only 模型更擅长根据已有内容继续生成。它使用 masked self-attention，让当前位置只能看到自己之前的 token，然后一步一步预测下一个 token。
+
+不过，模型每次前向传播并不会直接生成完整文本，而是输出每个位置的 logits，用来预测下一个 token。完整的自回归生成需要反复执行预测下一个 token + 拼回输入序列的过程。Transformers 库既允许我们直接查看 logits，也提供了 `generate` 接口来封装这个生成循环。
+
+### 8.11.3.1 CausalLM：Decoder-only 语言模型
 
 如果我们要加载 GPT 风格的 decoder-only 模型，通常使用：
 
@@ -324,7 +414,7 @@ $$
 p(x_{t+1} \mid x_{\le t})
 $$
 
-## 8.12.7 `generate`：自回归生成的封装
+### 8.11.3.2 `generate`：自回归生成的封装
 
 虽然我们可以手动取 `logits[:, -1, :]`，然后一步一步采样，但实际使用中通常直接调用：
 
@@ -377,7 +467,7 @@ print(text)
 
 你看，调整了采样参数后，生成的文本就会更有多样性，起码不会当一个复读机。`generate()` 的参数非常多，我们后面会专门讲一讲它的使用技巧。
 
-## 8.12.8 `use_cache`：KV Cache 的接口
+### 8.11.3.3 `use_cache`：KV Cache 的接口
 
 前面我们讲过 KV cache。它的核心思想是：推理时缓存过去 token 的 key 和 value，避免每一步都重新计算完整前缀。在 Hugging Face Transformers 里，这通常和 `use_cache=True` 这个参数相关。
 
@@ -413,7 +503,51 @@ next_outputs = model(
 
 这正好对应前面 8.9 节讲的内容。
 
-## 8.12.9 AutoModelForSeq2SeqLM：Encoder-Decoder 生成模型
+### 8.11.3.4 一个完整的 Decoder-only 示例
+
+下面是一个最小的 GPT 风格生成例子：
+
+```{python}
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+model_id = 'gpt2'
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(model_id)
+ipy.clear_output()
+
+text = 'I love deep learning because'
+inputs = tokenizer(text, return_tensors='pt')
+
+with torch.inference_mode():
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=100,
+        do_sample=True,
+        temperature=0.8,
+        top_p=0.9,
+    )
+
+output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+print(output_text)
+```
+
+这段代码背后发生的是：
+
+1. Tokenizer 把文本变成 `input_ids`；
+2. Decoder-only Transformer 对前缀做 causal self-attention；
+3. LM head 输出下一个 token 的 logits；
+4. `generate()` 根据采样策略选出下一个 token；
+5. 新 token 接回输入；
+6. 重复直到生成结束。
+
+这就是 8.8 和 8.9 讲过的自回归生成和 KV cache 在实际 API 中的体现。
+
+## 8.11.4 Encoder-Decoder 模型：输入输出序列转换
+
+和 decoder-only 模型不同，encoder-decoder 模型不是单纯根据前文继续生成，而是先理解一个输入序列，再根据这个输入生成另一个输出序列。典型任务包括机器翻译、文本摘要和文本改写。这类模型通常通过 `Seq2SeqLM` 接口调用。
+
+### 8.11.4.1 Seq2SeqLM：Encoder-Decoder 生成模型
 
 如果我们要加载 T5、BART 这类 encoder-decoder 模型，通常使用：
 
@@ -460,11 +594,56 @@ $$
 p(y_t \mid y_{<t}, X) = \operatorname{Decoder}(y_{<t}, \operatorname{Encoder}(X))
 $$
 
-## 8.12.10 `output_attentions`：取出 Attention Weights
+### 8.11.4.2 一个完整的 Encoder-Decoder 示例
+
+下面是一个 T5 风格的 text-to-text 示例：
+
+```{python}
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+model_id = 't5-small'
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
+ipy.clear_output()
+
+text = 'Translate English to German: I love deep learning.'
+inputs = tokenizer(text, return_tensors='pt')
+
+with torch.inference_mode():
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=50,
+    )
+
+output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+print(output_text)
+```
+
+这段代码背后发生的是：
+
+1. Tokenizer 处理输入文本；
+2. Encoder 双向编码完整输入；
+3. Decoder 从起始 token 开始自回归生成；
+4. Decoder self-attention 使用 causal mask；
+5. Decoder cross-attention 读取 encoder 输出；
+6. `generate()` 返回生成结果。
+
+这正好对应 encoder-decoder 的结构：
+
+$$
+X \rightarrow \operatorname{Encoder} \rightarrow H \rightarrow \operatorname{Decoder} \rightarrow Y
+$$
+
+## 8.11.5 模型内部信息：Attention 与 Hidden States
+
+前面我们讲过，Transformer 内部有很多重要的结构信息，比如 attention weights、hidden states、KV cache 等等。这些信息对于理解模型行为、调试模型、可视化分析都非常有用。对于 Transformers 库，我们可以通过设置一些参数来取出这些内部信息。
+
+### 8.11.5.1 `output_attentions`：取出 Attention Weights
 
 如果我们要可视化 attention map，首先需要拿到模型内部的 attention weights。在 Hugging Face Transformers 中，可以在调用模型时设置 `output_attentions=True`：
 
-::: {.callout-note}
+::: {.callout-warning}
 在较新的 Transformers 版本中，部分模型可能默认使用 SDPA 或 FlashAttention 等高效 attention 实现，这些实现有时不会返回 attention weights。如果需要可视化 attention，可以在加载模型时设置 `attn_implementation='eager'`，但这通常会牺牲一部分性能。
 :::
 
@@ -538,7 +717,7 @@ cross_attentions
 
 其中，cross-attention 最适合用来观察输入和输出之间的对齐关系。
 
-## 8.12.11 `hidden_states`：取出每一层表示
+### 8.11.5.2 `hidden_states`：取出每一层表示
 
 除了 attention weights，有时我们还想看每一层的 hidden states。这时候，我们可以这样设置：
 
@@ -572,34 +751,49 @@ $$
 
 如果我们想研究模型在不同层学到了什么，`hidden_states` 很有用。
 
-## 8.12.12 ModelOutput：为什么不是普通 tuple
+### 8.11.5.3 一个 Attention Visualization 的接口示例
 
-调用模型后，我们经常看到：
+如果想取出 attention weights，可以这样写：
 
-```python
-outputs = model(**inputs)
+```{python}
+from transformers import AutoTokenizer, AutoModel
+
+model_id = 'bert-base-uncased'
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModel.from_pretrained(
+    model_id,
+    attn_implementation='eager',
+)
+ipy.clear_output()
+
+text = 'The animal did not cross the street because it was tired.'
+inputs = tokenizer(text, return_tensors='pt')
+
+with torch.inference_mode():
+    outputs = model(
+        **inputs,
+        output_attentions=True,
+    )
+
+attentions = outputs.attentions
+tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
+
+layer_idx = 0
+head_idx = 0
+attn = attentions[layer_idx][0, head_idx]
+
+print('Attention weights shape:', attn.shape)
+print('Tokens:', tokens)
 ```
 
-然后可以用：
+此时 `attn` 的形状是 `(seq_len, seq_len)`，它就可以用来画 heatmap，观察这个 head 在这一层对输入 token 的 attention 权重分布。不过要注意：
 
-```python
-outputs.last_hidden_state
-outputs.logits
-outputs.attentions
-outputs.past_key_values
-```
+> **这张图展示的是某一层某个 head 的 attention 权重，不是模型最终预测的完整解释。**
 
-这是因为 Hugging Face Transformers 的模型输出通常是 `ModelOutput` 的子类。它有点像字典，也有点像 tuple，但更推荐使用属性名访问。比如，`outputs.logits` 比 `outputs[0]` 更清楚地表达了我们想要的是什么。不同模型、不同任务头会返回不同字段。
+在后面我们会讲这是为什么。
 
-- `AutoModel` 常见字段是 `last_hidden_state`；
-- `AutoModelForSequenceClassification` 常见字段是 `logits`；
-- `AutoModelForCausalLM` 常见字段是 `logits` 和 `past_key_values`；
-- 设置 `output_attentions=True` 后，会额外返回 `attentions`；
-- 设置 `output_hidden_states=True` 后，会额外返回 `hidden_states`。
-
-所以，看到 `outputs` 时，不要把它想成一个神秘对象，它只是把模型前向传播的结果整理成了一个结构化输出。
-
-## 8.12.13 `labels`：训练时的损失怎么来
+## 8.11.6 `labels`：训练时的损失怎么来
 
 很多 `For...` 模型在 forward 时可以传入 `labels=...`。如果传入 labels，模型会自动计算 loss。
 
@@ -661,7 +855,7 @@ print('Loss:', loss.item())
 
 > **训练时完整目标序列已知，模型可以并行计算每个位置的预测，再和 labels 对齐计算 loss。**
 
-## 8.12.14 一张结构到 API 的对应表
+## 8.11.7 一张结构到 API 的对应表
 
 可以把前面讲过的概念和 Hugging Face API 对应起来：
 
@@ -720,181 +914,7 @@ print('Loss:', loss.item())
 
 这样就不容易把接口当成黑箱。
 
-## 8.12.15 一个完整的 Decoder-only 示例
-
-下面是一个最小的 GPT 风格生成例子：
-
-```{python}
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-model_id = 'gpt2'
-
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(model_id)
-ipy.clear_output()
-
-text = 'I love deep learning because'
-inputs = tokenizer(text, return_tensors='pt')
-
-with torch.inference_mode():
-    output_ids = model.generate(
-        **inputs,
-        max_new_tokens=100,
-        do_sample=True,
-        temperature=0.8,
-        top_p=0.9,
-    )
-
-output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-print(output_text)
-```
-
-这段代码背后发生的是：
-
-1. Tokenizer 把文本变成 `input_ids`；
-2. Decoder-only Transformer 对前缀做 causal self-attention；
-3. LM head 输出下一个 token 的 logits；
-4. `generate()` 根据采样策略选出下一个 token；
-5. 新 token 接回输入；
-6. 重复直到生成结束。
-
-这就是 8.8 和 8.9 讲过的自回归生成和 KV cache 在实际 API 中的体现。
-
-## 8.12.16 一个完整的 Encoder-only 示例
-
-下面是一个 BERT 风格文本表示例子：
-
-```{python}
-import torch
-from transformers import AutoTokenizer, AutoModel
-
-model_id = 'bert-base-uncased'
-
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModel.from_pretrained(model_id)
-ipy.clear_output()
-
-texts = [
-    'I love deep learning.',
-    'Transformers are powerful models.',
-]
-
-inputs = tokenizer(
-    texts,
-    return_tensors='pt',
-    padding=True,
-    truncation=True,
-)
-
-with torch.inference_mode():
-    outputs = model(**inputs)
-
-last_hidden_state = outputs.last_hidden_state
-sentence_embedding = last_hidden_state.mean(dim=1)
-
-print('Last hidden state shape:', last_hidden_state.shape)
-print('Sentence embedding shape:', sentence_embedding.shape)
-```
-
-这里的 `last_hidden_state` 是每个 token 的上下文表示。
-
-如果输入 batch 里有 padding，更严谨的平均池化应该结合 `attention_mask`，只对真实 token 求平均：
-
-```{python}
-mask = inputs['attention_mask'].unsqueeze(-1)
-masked_hidden = last_hidden_state * mask
-
-sentence_embedding = masked_hidden.sum(dim=1) / mask.sum(dim=1)
-```
-
-这对应 encoder-only 的核心用途：
-
-> **把输入文本编码成上下文表示。**
-
-## 8.12.17 一个完整的 Encoder-Decoder 示例
-
-下面是一个 T5 风格的 text-to-text 示例：
-
-```{python}
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-
-model_id = 't5-small'
-
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
-ipy.clear_output()
-
-text = 'Translate English to German: I love deep learning.'
-inputs = tokenizer(text, return_tensors='pt')
-
-with torch.inference_mode():
-    output_ids = model.generate(
-        **inputs,
-        max_new_tokens=50,
-    )
-
-output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-print(output_text)
-```
-
-这段代码背后发生的是：
-
-1. Tokenizer 处理输入文本；
-2. Encoder 双向编码完整输入；
-3. Decoder 从起始 token 开始自回归生成；
-4. Decoder self-attention 使用 causal mask；
-5. Decoder cross-attention 读取 encoder 输出；
-6. `generate()` 返回生成结果。
-
-这正好对应 encoder-decoder 的结构：
-
-$$
-X \rightarrow \operatorname{Encoder} \rightarrow H \rightarrow \operatorname{Decoder} \rightarrow Y
-$$
-
-## 8.12.18 一个 Attention Visualization 的接口示例
-
-如果想取出 attention weights，可以这样写：
-
-```{python}
-from transformers import AutoTokenizer, AutoModel
-
-model_id = 'bert-base-uncased'
-
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModel.from_pretrained(
-    model_id,
-    attn_implementation='eager',
-)
-ipy.clear_output()
-
-text = 'The animal did not cross the street because it was tired.'
-inputs = tokenizer(text, return_tensors='pt')
-
-with torch.inference_mode():
-    outputs = model(
-        **inputs,
-        output_attentions=True,
-    )
-
-attentions = outputs.attentions
-tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
-
-layer_idx = 0
-head_idx = 0
-attn = attentions[layer_idx][0, head_idx]
-
-print('Attention weights shape:', attn.shape)
-print('Tokens:', tokens)
-```
-
-此时 `attn` 的形状是 `(seq_len, seq_len)`，它就可以用来画 heatmap，观察这个 head 在这一层对输入 token 的 attention 权重分布。不过要注意：
-
-> **这张图展示的是某一层某个 head 的 attention 权重，不是模型最终预测的完整解释。**
-
-在后面我们会讲这是为什么。
-
-## 8.12.19 本章小结
+## 8.11.8 本章小结
 
 这一节里，我们把 Transformer 的结构和 Hugging Face Transformers 的常用 API 对应了起来。
 
