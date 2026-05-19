@@ -2,9 +2,14 @@ import pytest
 import torch
 
 from dnnl.models.vit import (
+    VisionTransformer,
+    ViTClassificationHead,
     ViTConvPatchEmbedding,
     ViTEmbedding,
+    ViTEncoder,
+    ViTEncoderLayer,
     ViTLinearPatchEmbedding,
+    ViTMLP,
     ViTPositionalEmbedding,
     patchify,
 )
@@ -118,3 +123,82 @@ def test_vit_embedding_returns_patch_and_class_tokens():
 
     assert output.shape == (2, 5, 6)
     assert resized_pos_embed.shape == (1, 10, 6)
+
+
+def test_vit_mlp_uses_default_hidden_dimension():
+    module = ViTMLP(embed_dim=6, dropout=0.0)
+    x = torch.randn(2, 5, 6)
+
+    output = module(x)
+
+    assert module.net[0].out_features == 24
+    assert output.shape == x.shape
+
+
+def test_vit_encoder_layer_returns_token_sequence():
+    module = ViTEncoderLayer(
+        embed_dim=6,
+        num_heads=2,
+        hidden_dim=12,
+        dropout=0.0,
+        attn_dropout=0.0,
+    )
+    x = torch.randn(2, 5, 6)
+
+    output = module(x)
+
+    assert output.shape == x.shape
+
+
+def test_vit_encoder_stacks_layers_and_normalizes_output():
+    module = ViTEncoder(
+        embed_dim=6,
+        num_heads=2,
+        num_layers=2,
+        hidden_dim=12,
+        dropout=0.0,
+        attn_dropout=0.0,
+    )
+    x = torch.randn(2, 5, 6)
+
+    output = module(x)
+
+    assert len(module.layers) == 2
+    assert output.shape == x.shape
+
+
+def test_vit_classification_head_uses_class_token():
+    module = ViTClassificationHead(embed_dim=3, num_classes=2)
+    with torch.no_grad():
+        module.head.weight.copy_(torch.tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]))
+        module.head.bias.zero_()
+    x = torch.tensor(
+        [
+            [[2.0, 3.0, 4.0], [10.0, 20.0, 30.0]],
+            [[5.0, 7.0, 11.0], [13.0, 17.0, 19.0]],
+        ]
+    )
+
+    output = module(x)
+
+    assert torch.equal(output, torch.tensor([[2.0, 3.0], [5.0, 7.0]]))
+
+
+def test_vision_transformer_returns_class_logits():
+    module = VisionTransformer(
+        image_size=8,
+        patch_size=4,
+        in_channels=3,
+        num_classes=7,
+        embed_dim=6,
+        num_heads=2,
+        num_layers=2,
+        hidden_dim=12,
+        dropout=0.0,
+        attn_dropout=0.0,
+    )
+    x = torch.randn(2, 3, 8, 8)
+
+    output = module(x)
+
+    assert output.shape == (2, 7)
