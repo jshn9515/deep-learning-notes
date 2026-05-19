@@ -15,17 +15,17 @@ $$
 (B, C, H, W)
 $$
 
-转换成了 patch token 序列：
+转换成了 patch token 序列
 
 $$
 (B, N, D)
 $$
 
-其中 $N$ 是 patch 数量，$D$ 是每个 token 的 embedding 维度。
+其中，$N$ 是 patch 数量，$D$ 是每个 token 的 embedding 维度。
 
-到这一步，图像已经可以被看成一串视觉 token，并且可以送入 Transformer Encoder。但是，这还不是 ViT 的完整输入。
+到这一步，图像已经可以被看成一串视觉 token，并且可以送入 Transformer Encoder。
 
-原因有两个。
+但是，这还不是 ViT 的完整输入。我们还有两个问题没有解决。
 
 第一个问题是：如果要做图像分类，最后应该用哪个 token 表示整张图？Patch token 本身表示的是局部图像块，而分类任务需要的是整张图像的语义表示。
 
@@ -56,7 +56,7 @@ $$
 X = [x_1, x_2, \dots, x_N]
 $$
 
-其中每个 $x_i \in \mathbb{R}^D$ 表示一个图像 patch。
+其中，每个 $x_i \in \mathbb{R}^D$ 表示一个图像 patch。
 
 如果后面接的是 Transformer Encoder，那么输出仍然是一个序列：
 
@@ -158,9 +158,9 @@ print('Output shape:', out.shape)
 
 输入形状是 `(B, N, D)`，输出形状变成 `(B, N + 1, D)`。多出来的第一个 token 就是 class token。
 
-## 11.3.4 为什么还需要 Positional Embedding？
+## 11.3.4  Positional Embedding：让模型知道 Token 的位置
 
-加入 class token 以后，序列已经可以表示整张图了。但还有一个更基础的问题：patch token 的位置信息在哪里？
+加入 class token 以后，序列已经可以表示整张图了。但我们还有另外一个问题：patch token 的位置信息在哪里？
 
 Patch embedding 得到的是一串向量：
 
@@ -281,11 +281,6 @@ $$
 为什么通常是先加 class token，再加 positional embedding？
 
 因为 positional embedding 需要和最终输入序列中的每个 token 一一对应。如果先给 patch token 加位置，再拼接 class token，那么 class token 还需要单独处理自己的位置嵌入。先把 class token 拼进去，再统一加一个长度为 $N+1$ 的 position embedding，会更直接。
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch11.4-vit.png" style="width: 70%;" />
-  <figcaption>图 1：ViT 模型结构 [@dosovitskiy2021ViT]</figcaption>
-</figure>
 
 下面我们把上一节的 patch embedding 和这一节讲的 class token、positional embedding 合在一起，得到一个完整的 ViT 输入模块。
 
@@ -417,7 +412,7 @@ print('New positional embedding shape:', new_pos_embed.shape)
 
 ## 11.3.8 本章小结
 
-这一节我们补上了 ViT 输入模块中的两个关键设计：class token 和 position embedding。
+这一节我们补上了 ViT 输入模块中的两个关键设计：**class token** 和 **position embedding**。
 
 Patch embedding 只能把图像变成 patch token 序列：
 
@@ -441,13 +436,16 @@ $$
 
 这样，模型不仅知道每个 token 表示哪个 patch 的内容，也能通过 positional embedding 感知这个 patch 在图像中的位置。
 
-到这里，ViT 的输入已经准备好了：
+所以，完整的 ViT 输入模块的构建流程就是：
 
 $$
-\text{image} \rightarrow
-\text{patch embedding} \rightarrow
-\text{class token} \rightarrow
+\text{image}
+\rightarrow
+\text{patch embedding}
+\rightarrow
+\text{class token}
+\rightarrow
 \text{positional embedding}
 $$
 
-到这里，我们就完成了 ViT 输入模块的构建。下一节我们将进入 Transformer Encoder 的实现，看看 ViT 是如何通过 self-attention 来融合 patch token 和 class token 的信息，从而得到整张图像的表示的。
+到这里，我们就完成了 ViT 输入模块的构建。下一节我们将进入 ViT Encoder 的实现，利用 self-attention，把 patch token 和 class token 的信息融合在一起，得到整张图像的表示。
