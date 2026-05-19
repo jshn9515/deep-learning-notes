@@ -1,0 +1,30 @@
+---
+config:
+  theme: base
+  themeVariables:
+    fontSize: "18px"
+    primaryColor: "#e9f2fc"
+    primaryBorderColor: "#296bb7"
+    secondaryBorderColor: "#296bb7"
+  flowchart:
+    wrappingWidth: 250
+---
+
+flowchart TD
+  X[Input]
+
+  X --> LN1[LayerNorm]
+  LN1 --> MSA[Multihead Self-Attention]
+  MSA --> ADD1((+))
+
+  X -. Residual .-> ADD1
+
+  ADD1 --> H[Hidden H]
+
+  H --> LN2[LayerNorm]
+  LN2 --> MLP[MLP]
+  MLP --> ADD2((+))
+
+  H -. Residual .-> ADD2
+
+  ADD2 --> OUT[Output]
