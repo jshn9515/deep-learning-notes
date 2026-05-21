@@ -5,7 +5,22 @@
 
 version: 2
 updates:
-  - package-ecosystem: "uv"
+  - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    assignees: 
+      - jshn9515
+
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    versioning-strategy: increase-if-necessary
+    assignees: 
+      - jshn9515
