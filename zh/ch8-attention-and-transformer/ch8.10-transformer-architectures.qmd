@@ -1,7 +1,7 @@
 ---
 author: jshn9515
 date: 2026-05-08
-date-modified: 2026-05-08
+date-modified: 2026-05-20
 open-graph:
   title: ch8.10-transformer-architectures
   description: "8.10 Three Different Architectures of Transformer: Understanding, Generation, and Input-Output Conversion"
@@ -22,7 +22,7 @@ order: 10
 
 这一节，我们就把这三种结构放在一起比较一下。
 
-## 8.11.1 从原始 Transformer 说起
+## 8.10.1 从原始 Transformer 说起
 
 原始 Transformer 是为机器翻译设计的。机器翻译有一个输入句子，也有一个输出句子。比如：
 
@@ -67,7 +67,7 @@ $$
 
 如果任务是给一个输入，生成另一个输出，这种结构非常自然。但是后来人们发现，Transformer 的 encoder 和 decoder 本身也可以单独拿出来使用。
 
-## 8.11.2 Encoder-only：更适合理解
+## 8.10.2 Encoder-only：更适合理解
 
 Encoder-only 模型只保留 Transformer Encoder，不使用 decoder。它的结构可以简单写成：
 
@@ -171,7 +171,7 @@ $$
 
 所以，encoder-only 模型的输出不是直接生成文本，而是提供一组高质量的上下文表示。后面接什么任务头，取决于具体任务。
 
-## 8.11.3 Decoder-only：更适合生成
+## 8.10.3 Decoder-only：更适合生成
 
 Decoder-only 模型只保留 Transformer Decoder 里的 masked self-attention 部分。不过要注意，由于模型是 decoder-only，所以通常没有 encoder，也就没有 cross-attention。它只使用 masked self-attention 和 feed-forward network。结构可以简单写成：
 
@@ -259,7 +259,7 @@ Question: What is the capital of France? Answer:
 
 当模型生成 `Paris` 时，它已经可以观察到前面整个 question。因此，对答案位置来说，它确实看到了完整输入。这就是 decoder-only 模型用于理解任务的基本方式：不是让输入内部每个 token 双向交互，而是把任务组织成一个前缀，让答案在后面生成。
 
-## 8.11.4 Encoder-Decoder：更适合输入到输出的转换
+## 8.10.4 Encoder-Decoder：更适合输入到输出的转换
 
 Encoder-decoder 模型同时使用 encoder 和 decoder。结构可以写成：
 
@@ -327,7 +327,7 @@ $$
 
 相比 decoder-only 模型，encoder-decoder 模型在处理“给定输入，生成输出”的任务时有一个结构上的优势：输入部分可以被 encoder 双向建模，而输出部分仍然由 decoder 自回归生成。也就是说，输入文本内部不需要遵守从左到右的生成限制，encoder 可以充分理解整个输入。
 
-## 8.11.5 三种架构的核心区别
+## 8.10.5 三种架构的核心区别
 
 我们可以从 attention mask 的角度理解三种架构。Encoder-only 使用双向 self-attention：
 
@@ -391,7 +391,31 @@ $$
 
 这张表只是一个大致总结。现实中，不同模型还会有很多变体，但基本思想是一样的。
 
-## 8.11.6 为什么现在 Decoder-only 很流行
+## 8.10.6 什么时候用哪种结构
+
+如果任务主要是理解已有输入，并输出一个类别、标签或向量表示，通常采用 encoder-only。例如：
+
+> 给一段文本，判断情感是正面还是负面。
+
+这类任务可以用 BERT 风格模型，把输入编码成上下文表示，再接分类头。
+
+如果任务是开放式生成，通常采用 decoder-only。例如：
+
+> 给一个开头，续写一段文本。
+
+这类任务本来就是从左到右生成，GPT 风格模型非常适合。
+
+如果任务是明确的输入到输出转换，通常是 encoder-decoder。例如：
+
+> 给一篇文章，生成摘要。\
+> 给一句英文，翻译成中文。\
+> 给一段自然语言问题，生成 SQL 查询。
+
+这类任务有一个完整输入，也有一个需要生成的输出。Encoder 先双向理解输入，decoder 再基于输入自回归生成输出。
+
+不过，在现代大模型里，这些边界并不绝对。Decoder-only 模型也可以通过 prompt 做分类、翻译、摘要；encoder-decoder 模型也可以做很多生成任务；encoder-only 模型也可以通过特殊设计用于检索或匹配。所以更准确地说，架构不是任务能力的唯一决定因素，它只是给某些任务提供了更自然的计算形式。
+
+## 8.10.7 为什么现在 Decoder-only 很流行
 
 从传统 NLP 任务看，encoder-only 和 encoder-decoder 都很自然。BERT 很适合理解任务，T5 很适合 text-to-text 任务。但近年来，大语言模型中 decoder-only 架构非常流行。
 
@@ -407,7 +431,9 @@ $$
 
 这样，我们不需要为每个样本人工标注具体任务标签，也不需要把数据整理成特定输入输出格式。
 
-同时，decoder-only 模型在推理时的形式也很统一：给一个 prompt，继续生成。很多任务都可以被写成 prompt completion：问答是给问题生成答案，翻译是给翻译指令和源句生成目标句，分类是给文本和标签说明生成标签，代码任务是给需求或前缀生成代码，对话则是给聊天历史生成下一轮回复。也就是说，decoder-only 模型把大量任务统一到了同一个接口：
+同时，decoder-only 模型在推理时也很简单：输入一段文本，它接着往后写。很多任务都可以改写成这种形式。比如，问答就是输入问题，让模型生成答案；翻译就是输入翻译要求和原句，让模型生成译文；分类也可以写成“请判断下面文本属于哪个类别”，然后让模型生成类别名称；代码任务则可以输入需求描述或已有代码，让模型继续补全。
+
+因此，虽然这些任务表面上很不一样，但在 decoder-only 模型看来，它们都可以归结为同一件事：
 
 $$
 \text{prompt} \rightarrow \text{completion}
@@ -415,33 +441,9 @@ $$
 
 这种统一性非常适合大规模预训练和指令微调。当然，这并不意味着 decoder-only 在所有任务上都天然优于 encoder-only 或 encoder-decoder。架构选择仍然和任务形式、数据规模、训练方式、推理需求有关。
 
-## 8.11.7 什么时候用哪种结构
+## 8.10.8 本章小结
 
-如果任务主要是理解已有输入，并输出一个类别、标签或向量表示，encoder-only 通常很自然。例如：
-
-> 给一段文本，判断情感是正面还是负面。
-
-这类任务可以用 BERT 风格模型，把输入编码成上下文表示，再接分类头。
-
-如果任务是开放式生成，decoder-only 通常很自然。例如：
-
-> 给一个开头，续写一段文本。
-
-这类任务本来就是从左到右生成，GPT 风格模型非常适合。
-
-如果任务是明确的输入到输出转换，encoder-decoder 通常很自然。例如：
-
-> 给一篇文章，生成摘要。\
-> 给一句英文，翻译成中文。\
-> 给一段自然语言问题，生成 SQL 查询。
-
-这类任务有一个完整输入，也有一个需要生成的输出。Encoder 先双向理解输入，decoder 再基于输入自回归生成输出。
-
-不过，在现代大模型里，这些边界并不绝对。Decoder-only 模型也可以通过 prompt 做分类、翻译、摘要；encoder-decoder 模型也可以做很多生成任务；encoder-only 模型也可以通过特殊设计用于检索或匹配。所以更准确地说，架构不是任务能力的唯一决定因素，它只是给某些任务提供了更自然的计算形式。
-
-## 8.11.8 小结
-
-这一节里，我们把 Transformer 的三种常见架构放在一起比较了。
+这一节里，我们把 Transformer 的三种常见架构放在一起比较了一下。
 
 Encoder-only 只使用 Transformer Encoder，核心是双向 self-attention。它让每个 token 都能看到整个输入序列，因此很适合文本理解、分类、抽取和表示学习。BERT 是最典型的 encoder-only 模型。
 
