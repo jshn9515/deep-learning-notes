@@ -163,9 +163,9 @@ $$
 \begin{aligned}
 \text{image}
 & \rightarrow \text{patches} \\
-& \rightarrow \text{patch embeddings} \\
+& \rightarrow \text{patch embedding} \\
 & \rightarrow \text{add class token} \\
-& \rightarrow \text{add positional embeddings} \\
+& \rightarrow \text{add positional embedding} \\
 & \rightarrow \text{Transformer Encoder} \\
 & \rightarrow \text{class token output} \\
 & \rightarrow \text{classification head}
