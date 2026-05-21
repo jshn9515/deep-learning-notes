@@ -47,14 +47,13 @@ jobs:
       - name: Install dependencies
         run: |
           uv python install 3.14
-          uv venv --python 3.14
-          uv pip install "./dnnl[test]"
+          uv sync --python 3.14 --package dnnl --extra test
 
       - name: Test dnnl package
-        run: uv run --python 3.14 python -m pytest dnnl/tests
+        run: uv run --python 3.14 --package dnnl -m pytest dnnl/tests
 
       - name: Build dnnl package
-        run: uv build --python 3.14 --out-dir dist --clear ./dnnl
+        run: uv build --python 3.14  --package dnnl --out-dir dist
 
       - name: Generate package attestation
         uses: actions/attest@v4
