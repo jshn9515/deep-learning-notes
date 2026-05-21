@@ -35,7 +35,7 @@ jobs:
         with:
           args: format --check --diff
           src: >-
-            dnnl/dnnl
+            dnnl/src
             dnnl/tests
 
       - name: Set up uv
@@ -51,7 +51,7 @@ jobs:
           uv pip install "./dnnl[test]"
 
       - name: Test dnnl package
-        run: uv run python -m pytest dnnl/tests
+        run: uv run --python 3.14 python -m pytest dnnl/tests
 
       - name: Build dnnl package
         run: uv build --python 3.14 --out-dir dist --clear ./dnnl
@@ -67,5 +67,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: dnnl-package-py314
-          path: dist/*
+          path: |
+            dist/*.tar.gz
+            dist/*.whl
           if-no-files-found: error
