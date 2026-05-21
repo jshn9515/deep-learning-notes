@@ -124,7 +124,7 @@ $$
 从模块顺序上看，一个 encoder block 的计算流程是：
 
 <figure class="figure" style="text-align: center;">
-  <img src="figures/ch11.4-vit-encoder.svg" style="height: 750px;" />
+  <img src="figures/ch11.4-vit-encoder.svg" style="height: 750px;">
   <figcaption>图 1：ViT Encoder 模型结构</figcaption>
 </figure>
 
@@ -471,7 +471,7 @@ $$
 我们用 PyTorch 实现一个完整的简化版 ViT：
 
 ```{python}
-class VisionTransformer(nn.Module):
+class ViTForImageClassification(nn.Module):
     def __init__(
         self,
         image_size: int = 224,
@@ -516,7 +516,7 @@ class VisionTransformer(nn.Module):
 测试一下完整模型的输出形状：
 
 ```{python}
-model = VisionTransformer(
+model = ViTForImageClassification(
     image_size=32,
     patch_size=16,
     in_channels=3,
