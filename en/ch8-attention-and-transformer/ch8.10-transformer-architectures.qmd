@@ -1,7 +1,7 @@
 ---
 author: jshn9515
 date: 2026-05-08
-date-modified: 2026-05-08
+date-modified: 2026-05-20
 open-graph:
   title: ch8.10-transformer-architectures
   description: "8.10 Three Different Transformer Architectures: Understanding, Generation, and Input-Output Conversion"
@@ -391,7 +391,31 @@ Table 1: Core differences between the three Transformer architectures
 
 This table is only a broad summary. In reality, different models have many variants, but the basic idea is the same.
 
-## 8.10.6 Why Decoder-Only Is So Popular Today
+## 8.10.6 When to Use Which Structure
+
+If the task is mainly to understand an existing input and output a class, label, or vector representation, encoder-only is usually used. For example:
+
+> Given a piece of text, decide whether its sentiment is positive or negative.
+
+This kind of task can use a BERT-style model: encode the input into contextual representations, then attach a classification head.
+
+If the task is open-ended generation, decoder-only is usually used. For example:
+
+> Given a beginning, continue writing a piece of text.
+
+This kind of task is inherently left-to-right generation, so GPT-style models are very suitable.
+
+If the task is a clear input-to-output conversion, encoder-decoder is usually used. For example:
+
+> Given an article, generate a summary.\
+> Given an English sentence, translate it into Chinese.\
+> Given a natural-language question, generate an SQL query.
+
+This kind of task has a complete input and an output that needs to be generated. The encoder first understands the input bidirectionally, and then the decoder generates the output autoregressively based on the input.
+
+However, in modern large models, these boundaries are not absolute. Decoder-only models can also perform classification, translation, and summarization through prompts; encoder-decoder models can also do many generation tasks; encoder-only models can also be specially designed for retrieval or matching. So more precisely, architecture is not the only determinant of task capability. It simply provides a more natural computational form for certain tasks.
+
+## 8.10.7 Why Decoder-Only Is So Popular Today
 
 From the perspective of traditional NLP tasks, encoder-only and encoder-decoder are both natural. BERT is well suited for understanding tasks, and T5 is well suited for text-to-text tasks. But in recent years, decoder-only architectures have become very popular in large language models.
 
@@ -407,7 +431,9 @@ $$
 
 This means we do not need to manually annotate task-specific labels for every sample, and we do not need to organize the data into a specific input-output format.
 
-At the same time, decoder-only models also have a unified inference form: give a prompt and continue generating. Many tasks can be written as prompt completion: question answering gives a question and generates an answer; translation gives an instruction and source sentence and generates the target sentence; classification gives text and label descriptions and generates the label; code tasks give requirements or a prefix and generate code; dialogue gives chat history and generates the next response. In other words, decoder-only models unify many tasks under the same interface:
+At the same time, decoder-only models are also simple during inference: input a piece of text, and the model continues writing from it. Many tasks can be rewritten into this form. For example, question answering means inputting a question and letting the model generate the answer; translation means inputting a translation request and source sentence, then letting the model generate the translation; classification can also be written as “please decide which category the following text belongs to,” then letting the model generate the category name; code tasks can input a requirement description or existing code and let the model continue completing it.
+
+Therefore, although these tasks look very different on the surface, to a decoder-only model they can all be reduced to the same thing:
 
 $$
 \text{prompt} \rightarrow \text{completion}
@@ -415,33 +441,9 @@ $$
 
 This uniformity is very suitable for large-scale pretraining and instruction tuning. Of course, this does not mean decoder-only is naturally better than encoder-only or encoder-decoder on every task. Architecture choice still depends on the task form, data scale, training method, and inference requirements.
 
-## 8.10.7 When to Use Which Structure
+## 8.10.8 Chapter Summary
 
-If the task is mainly to understand an existing input and output a class, label, or vector representation, encoder-only is usually very natural. For example:
-
-> Given a piece of text, decide whether its sentiment is positive or negative.
-
-This kind of task can use a BERT-style model: encode the input into contextual representations, then attach a classification head.
-
-If the task is open-ended generation, decoder-only is usually very natural. For example:
-
-> Given a beginning, continue writing a piece of text.
-
-This kind of task is inherently left-to-right generation, so GPT-style models are very suitable.
-
-If the task is a clear input-to-output conversion, encoder-decoder is usually very natural. For example:
-
-> Given an article, generate a summary.\
-> Given an English sentence, translate it into Chinese.\
-> Given a natural-language question, generate an SQL query.
-
-This kind of task has a complete input and an output that needs to be generated. The encoder first understands the input bidirectionally, and then the decoder generates the output autoregressively based on the input.
-
-However, in modern large models, these boundaries are not absolute. Decoder-only models can also perform classification, translation, and summarization through prompts; encoder-decoder models can also do many generation tasks; encoder-only models can also be specially designed for retrieval or matching. So more precisely, architecture is not the only determinant of task capability. It simply provides a more natural computational form for certain tasks.
-
-## 8.10.8 Summary
-
-In this section, we compared the three common Transformer architectures.
+In this section, we made a side-by-side comparison of the three common Transformer architectures.
 
 Encoder-only uses only the Transformer Encoder, and its core is bidirectional self-attention. It lets every token see the entire input sequence, so it is well suited for text understanding, classification, extraction, and representation learning. BERT is the most typical encoder-only model.
 
