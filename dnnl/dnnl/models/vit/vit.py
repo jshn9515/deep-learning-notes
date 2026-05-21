@@ -9,8 +9,9 @@ __all__ = [
     'ViTMLP',
     'ViTEncoderLayer',
     'ViTEncoder',
+    'ViTModel',
     'ViTClassificationHead',
-    'VisionTransformer',
+    'ViTForImageClassification',
 ]
 
 
@@ -150,6 +151,61 @@ class ViTEncoder(nn.Module):
         return x
 
 
+class ViTModel(nn.Module):
+    """Vision Transformer backbone that outputs encoded token representations."""
+
+    def __init__(
+        self,
+        image_size: int = 224,
+        patch_size: int = 16,
+        in_channels: int = 3,
+        embed_dim: int = 768,
+        num_heads: int = 12,
+        num_layers: int = 12,
+        hidden_dim: int | None = None,
+        dropout: float = 0.0,
+        attn_dropout: float = 0.0,
+    ):
+        """Initialize a ViT backbone.
+
+        Args:
+            image_size (int, default: 224): Height and width of the square input image.
+            patch_size (int, default: 16): Height and width of each square patch.
+            in_channels (int, default: 3): Number of input image channels.
+            embed_dim (int, default: 768): Token embedding dimension.
+            num_heads (int, default: 12): Number of attention heads per layer.
+            num_layers (int, default: 12): Number of encoder layers.
+            hidden_dim (int | None, default: None): Hidden dimension of each
+                feed-forward layer. Defaults to ``4 * embed_dim``.
+            dropout (float, default: 0.0): Dropout probability for residual paths
+                and feed-forward blocks.
+            attn_dropout (float, default: 0.0): Dropout probability inside
+                multi-head self-attention.
+        """
+        super().__init__()
+        self.embedding = ViTEmbedding(
+            image_size=image_size,
+            patch_size=patch_size,
+            in_channels=in_channels,
+            embed_dim=embed_dim,
+            dropout=dropout,
+        )
+        self.encoder = ViTEncoder(
+            embed_dim=embed_dim,
+            num_heads=num_heads,
+            num_layers=num_layers,
+            hidden_dim=hidden_dim,
+            dropout=dropout,
+            attn_dropout=attn_dropout,
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Return encoded token representations for a batch of images."""
+        x = self.embedding(x)
+        x = self.encoder(x)
+        return x
+
+
 class ViTClassificationHead(nn.Module):
     """Classification head that predicts logits from the class token."""
 
@@ -170,7 +226,7 @@ class ViTClassificationHead(nn.Module):
         return logits
 
 
-class VisionTransformer(nn.Module):
+class ViTForImageClassification(nn.Module):
     """Vision Transformer image classifier."""
 
     def __init__(
@@ -204,14 +260,10 @@ class VisionTransformer(nn.Module):
                 multi-head self-attention.
         """
         super().__init__()
-        self.embedding = ViTEmbedding(
+        self.backbone = ViTModel(
             image_size=image_size,
             patch_size=patch_size,
             in_channels=in_channels,
-            embed_dim=embed_dim,
-            dropout=dropout,
-        )
-        self.encoder = ViTEncoder(
             embed_dim=embed_dim,
             num_heads=num_heads,
             num_layers=num_layers,
@@ -226,7 +278,6 @@ class VisionTransformer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """Return image-class logits for a batch of images."""
-        x = self.embedding(x)
-        x = self.encoder(x)
+        x = self.backbone(x)
         logits = self.head(x)
         return logits
