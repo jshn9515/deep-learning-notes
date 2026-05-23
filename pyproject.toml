@@ -32,5 +32,17 @@ dependencies = [
     "opencv-contrib-python~=4.13.0",
 ]
 
+[tool.uv.sources]
+torch = { index = "pytorch" }
+torchvision = { index = "pytorch" }
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[project.urls]
+Homepage = "https://github.com/jshn9515/deep-learning-notes"
+
 [tool.uv.workspace]
 members = ["dnnl"]
