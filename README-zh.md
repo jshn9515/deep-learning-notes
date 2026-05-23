@@ -1,5 +1,11 @@
 # 深度学习笔记
 
+[![publish](https://github.com/jshn9515/deep-learning-notes/actions/workflows/publish.yml/badge.svg)](https://github.com/jshn9515/deep-learning-notes/actions/workflows/publish.yml)
+[![build](https://github.com/jshn9515/deep-learning-notes/actions/workflows/dnnl-ci.yml/badge.svg)](https://github.com/jshn9515/deep-learning-notes/actions/workflows/dnnl-ci.yml)
+![Python](https://img.shields.io/badge/python-3.14-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.12.0-ee4c2c?logo=pytorch)
+![Transformers](https://img.shields.io/badge/Transformers-5.9.0-ffcc00?logo=huggingface)
+
 [English](README.md) | **简体中文**
 
 ![dnnl-title](assets/dnnl-title.png)
