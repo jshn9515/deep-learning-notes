@@ -4,8 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "zh/**/*.qmd"
-      - "en/**/*.qmd"
+      - "zh/**"
+      - "en/**"
+      - "ref-*.bib"
       - "_freeze/**"
       - "index.qmd"
       - "_quarto.yml"
@@ -19,7 +20,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: publish-website
   cancel-in-progress: true
 
 jobs:
