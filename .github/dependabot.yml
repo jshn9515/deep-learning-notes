@@ -14,13 +14,13 @@ updates:
         update-types:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
-    assignees: 
+    assignees:
       - jshn9515
 
-  - package-ecosystem: pip
+  - package-ecosystem: pip # TODO: consider using uv
     directory: "/"
     schedule:
       interval: weekly
     versioning-strategy: increase-if-necessary
-    assignees: 
+    assignees:
       - jshn9515
