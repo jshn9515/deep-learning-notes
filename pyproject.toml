@@ -13,7 +13,7 @@ dependencies = [
     "torchvision~=0.27.0",
     "torchmetrics~=1.9.0",
     "transformers~=5.8.0",
-    "diffusers~=0.37.0",
+    "diffusers~=0.37.0",  # pin due to safetensors 0.8.0rc0
     "tokenizers~=0.22.0",  # pin due to transformers 5.8.0 compatibility
     "datasets~=4.8.0",
 
