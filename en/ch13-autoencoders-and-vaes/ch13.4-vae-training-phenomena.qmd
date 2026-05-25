@@ -63,8 +63,6 @@ print(f'Using device: {device}')
 
 ## 13.4.1 Train a Minimal VAE
 
-### 13.4.1.1 Dataset Preparation
-
 Here we create the MNIST dataset.
 
 ```{python}
@@ -77,17 +75,13 @@ test_ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 train_dl = utils.DataLoader(train_ds, batch_size=256, shuffle=True, drop_last=True)
 ```
 
-### 13.4.1.2 Define the VAE and the Loss Function
-
-Here we directly use the VAE model and ELBO loss function defined in the previous sections. At the same time, to avoid making the value of the loss function too large, we sum up the loss function values and then divide by the number of samples in the current batch.
+We directly use the VAE model and ELBO loss function defined in the previous sections. At the same time, to avoid making the value of the loss function too large, we sum up the loss function values and then divide by the number of samples in the current batch.
 
 ```{python}
 input_shape = (1, 28, 28)
 model = VAE(input_shape).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 ```
-
-### 13.4.1.3 Train the VAE Model
 
 Here we separately record the total loss:
 
@@ -311,7 +305,7 @@ plt.close(fig)
 
 You will find that the interpolation result changes smoothly, rather than suddenly jumping. As the interpolation coefficient changes from 0 to 1, the digit shape slowly changes, and the strokes gradually move, bend, or merge. Although the intermediate states are not necessarily standard digits, they usually do not look like noise. This shows that the latent space is not a pile of unrelated discrete points, but is more like a continuous semantic space.
 
-## 13.4.6 What Happens When the KL Term Is Too Strong or Too Weak
+## 13.4.6 What Happens When the KL Term Is Too Strong or Too Weak?
 
 Now let us look at a very key point in VAE training: the weight of the KL term significantly affects the model behavior.
 
