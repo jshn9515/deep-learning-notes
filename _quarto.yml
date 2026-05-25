@@ -74,7 +74,7 @@ website:
         - section: "Part 5: 现代计算机视觉"
           contents:
             - section: "Chapter 11: Vision Transformer：从图像分类到视觉序列建模"
-              contents: "zh/ch11-vision-transformer/*.qmd"
+              contents: "zh/ch11-vision-transformers/*.qmd"
         - section: "Part 6: 生成模型"
           contents:
             - section: "Chapter 12: GAN：在对抗中学习生成"
