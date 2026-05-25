@@ -175,7 +175,7 @@ $$
 
 但是，只有 masked self-attention 还不够。
 
-如果 fecoder 只看自己已经生成的 token，它就像一个普通语言模型，只能根据前文继续写下去。但机器翻译、摘要生成这类任务不是自由续写，而是要根据输入内容生成输出。因此，fecoder 还必须能动态读取 encoder 的输出。这一步就是 **cross-attention**。
+如果 decoder 只看自己已经生成的 token，它就像一个普通语言模型，只能根据前文继续写下去。但机器翻译、摘要生成这类任务不是自由续写，而是要根据输入内容生成输出。因此，decoder 还必须能动态读取 encoder 的输出。这一步就是 **cross-attention**。
 
 在 cross-attention 中，我们有：
 
