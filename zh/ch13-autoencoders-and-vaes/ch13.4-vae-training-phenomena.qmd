@@ -63,8 +63,6 @@ print(f'Using device: {device}')
 
 ## 13.4.1 训练一个最小 VAE
 
-### 13.4.1.1 数据集准备
-
 这里我们创建 MNIST 数据集。
 
 ```{python}
@@ -77,17 +75,13 @@ test_ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 train_dl = utils.DataLoader(train_ds, batch_size=256, shuffle=True, drop_last=True)
 ```
 
-### 13.4.1.2 定义 VAE 和损失函数
-
-这里我们直接利用前面章节定义的 VAE 模型和 ELBO 损失函数。同时，为了避免损失函数的值过大，我们把损失函数的值求和汇总后除以当前批次的样本数量。
+我们直接利用前面章节定义的 VAE 模型和 ELBO 损失函数。同时，为了避免损失函数的值过大，我们把损失函数的值求和汇总后除以当前批次的样本数量。
 
 ```{python}
 input_shape = (1, 28, 28)
 model = VAE(input_shape).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 ```
-
-### 13.4.1.3 训练 VAE 模型
 
 这里我们把总损失拆开记录：
 
@@ -311,7 +305,7 @@ plt.close(fig)
 
 你会发现插值结果是平滑变化的，而不是突然跳变的。随着插值系数从 0 变到 1，数字形状会慢慢变化，笔画会逐渐移动、弯曲或合并。虽然中间态不一定是标准数字，但通常不像噪声。这说明 latent space 不是一堆毫无关系的离散点，而更像一个连续的语义空间。
 
-## 13.4.6 KL 项太强或太弱，会发生什么
+## 13.4.6 KL 项太强或太弱，会发生什么？
 
 现在我们来看 VAE 训练中非常关键的一点：KL 项的权重，会显著影响模型行为。
 
