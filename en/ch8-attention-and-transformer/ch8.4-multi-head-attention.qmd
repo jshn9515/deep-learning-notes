@@ -266,9 +266,9 @@ class MultiheadAttention(nn.Module):
         k = self.k_proj(key)
         v = self.v_proj(value)
 
-        q = query.view(batch_size, q_len, self.num_heads, self.head_dim)
-        k = key.view(batch_size, k_len, self.num_heads, self.head_dim)
-        v = value.view(batch_size, v_len, self.num_heads, self.head_dim)
+        q = q.view(batch_size, q_len, self.num_heads, self.head_dim)
+        k = k.view(batch_size, k_len, self.num_heads, self.head_dim)
+        v = v.view(batch_size, v_len, self.num_heads, self.head_dim)
 
         q = q.transpose(1, 2)
         k = k.transpose(1, 2)
