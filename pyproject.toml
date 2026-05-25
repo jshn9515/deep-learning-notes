@@ -13,7 +13,7 @@ dependencies = [
     "torchvision~=0.27.0",
     "torchmetrics~=1.9.0",
     "transformers~=5.9.0",
-    "diffusers~=0.37.0",  # pin due to safetensors 0.8.0rc0
+    "diffusers~=0.37.0",   # pin due to safetensors 0.8.0rc0
     "datasets~=4.8.0",
 
     # Jupyter and related tools
@@ -31,6 +31,9 @@ dependencies = [
     "opencv-contrib-python~=4.13.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/jshn9515/deep-learning-notes"
+
 [tool.uv.sources]
 torch = { index = "pytorch" }
 torchvision = { index = "pytorch" }
@@ -39,9 +42,6 @@ torchvision = { index = "pytorch" }
 name = "pytorch"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
-
-[project.urls]
-Homepage = "https://github.com/jshn9515/deep-learning-notes"
 
 [tool.uv.workspace]
 members = ["dnnl"]
