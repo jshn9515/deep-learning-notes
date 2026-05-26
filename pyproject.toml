@@ -16,6 +16,7 @@ dependencies = [
     "transformers>=5.9.0,<5.10.0",
     "diffusers>=0.37.0,<0.38.0",   # pin due to safetensors 0.8.0rc0
     "datasets>=4.8.0,<4.9.0",
+    "evaluate>=0.4.0,<0.5.0",
 
     # Jupyter and related tools
     "ipython>=9.10.0",
