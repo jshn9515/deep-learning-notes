@@ -52,10 +52,10 @@ jobs:
           uv sync --python 3.14 --package dnnl --extra test
 
       - name: Test dnnl package
-        run: uv run --python 3.14 --package dnnl -m pytest dnnl/tests
+        run: uv run --package dnnl -m pytest dnnl/tests
 
       - name: Build dnnl package
-        run: uv build --python 3.14  --package dnnl --out-dir dist
+        run: uv build --package dnnl --out-dir dist
 
       - name: Generate package attestation
         uses: actions/attest@v4
