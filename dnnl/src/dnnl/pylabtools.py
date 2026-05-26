@@ -75,7 +75,7 @@ def print_figure(
     return data
 
 
-def highdpi_figure(fig, dpi_ratio: int = 3, base64: bool = False) -> Any:
+def highdpi_figure(fig: Figure, dpi_ratio: int = 3, base64: bool = False) -> Any:
     """format a figure as a high-dpi png."""
     pngdata = print_figure(fig, fmt='highdpi', dpi_ratio=dpi_ratio)
     if pngdata is None:
