@@ -1,26 +1,26 @@
 /* make quarto title metadata in the same line */
 .quarto-title-meta {
-  display: grid !important;
+  display: grid;
   grid-template-columns: repeat(3, 1fr) !important;
   column-gap: 1.5rem;
   row-gap: 0.75rem;
 }
 
 .quarto-title-meta > div {
-  display: flex !important;
+  display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  width: auto !important;
-  max-width: none !important;
-  flex: none !important;
-  margin: 0 !important;
+  width: auto;
+  max-width: none;
+  flex: none;
+  margin: 0;
 }
 
 .quarto-title-meta-heading,
 .quarto-title-meta-contents,
 .quarto-title-meta-contents p {
-  display: inline !important;
-  margin: 0 !important;
+  display: inline;
+  margin: 0;
 }
 
 .quarto-title-block .quarto-title-banner,
@@ -85,8 +85,8 @@ blockquote strong {
 /* center table content */
 table th,
 table td {
-  text-align: center !important;
-  vertical-align: middle !important;
+  text-align: center;
+  vertical-align: middle;
 }
 
 /* style for plaintext blocks */
