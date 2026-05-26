@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 QUARTO_CONFIG = ROOT / '_quarto.yml'
 TITLE = 'Deep Learning Notes'
 
