@@ -77,6 +77,10 @@ jobs:
       - name: Install Mermaid CLI
         run: npm install -g @mermaid-js/mermaid-cli
 
+      - name: Set Chrome path for Puppeteer
+        if: runner.os == 'Linux'
+        run: echo "PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
+
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
