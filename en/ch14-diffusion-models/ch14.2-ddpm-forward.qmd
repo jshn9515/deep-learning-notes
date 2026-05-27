@@ -18,16 +18,18 @@ In the previous section, we first understood the core idea of DDPM from an intui
 In this section, we will make the forward diffusion process clear. This part is very important, because it almost determines the entire modeling framework of DDPM.
 
 ```{python}
+import os
 import random
 import time
 
+import dnnl
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
 from torch import Tensor
 
-plt.rc('savefig', dpi=300, bbox='tight')
+plt.rc('figure', dpi=100)
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -79,8 +81,7 @@ In this way, we can understand each step as a kind of controlled interpolation. 
 So this design ensures that while noise is continuously added, the overall numerical scale will not go out of control. It also makes the training and inference processes of the network more stable and easier to analyze.
 
 ```{python}
-# Change the root path to your local directory if needed
-root = 'D:/Workspaces/Python Project/datasets'
+root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -116,13 +117,9 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-fig.savefig('figures/ch14.2-add-noise-v1.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.2-add-noise-v1.png" style="width: 806px; height: auto;">
-</figure>
 
 We perform 1000 such noising operations on the original image $x_0$, and choose 8 different time points from steps 1 to 1000 to observe how the image changes. We will find that in the first few steps, the structure of the image is very clear; as the number of steps increases, the image gradually becomes blurry; after 300 steps, the original structure is already completely submerged in noise. The more noising steps there are, the closer the final image is to a Gaussian distribution, and the better the images obtained by reverse sampling will be.
 
@@ -169,13 +166,9 @@ ax.plot(sqrt_cosine.betas, label='cosine')
 ax.set_yscale('log')
 ax.set_title('Cosine Schedule')
 fig.tight_layout()
-fig.savefig('figures/ch14.2-beta-schedules.svg')
-plt.close(fig)
+dnnl.set_matplotlib_format('svg')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.2-beta-schedules.svg">
-</figure>
 
 ## 14.2.4 Multi-step Expansion: $x_t$ Can Be Written Directly as a Combination of $x_0$ and Noise
 
@@ -224,8 +217,7 @@ The first half of this formula, namely $\sqrt{\bar{\alpha}_t}\,x_0$, represents 
 This corresponds exactly to the effect we want: the later the time step, the less original structure remains in the image, and the more noise there is.
 
 ```{python}
-# Change the root path to your local directory if needed
-root = 'D:/Workspaces/Python Project/datasets'
+root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -262,13 +254,9 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-fig.savefig('figures/ch14.2-add-noise-v2.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.2-add-noise-v2.png" style="width: 806px; height: auto;">
-</figure>
 
 This piece of code does not generate $x_t$ through step-by-step recursion. Instead, it directly uses the closed-form formula:
 

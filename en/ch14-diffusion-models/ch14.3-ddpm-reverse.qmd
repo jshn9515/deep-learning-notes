@@ -31,16 +31,19 @@ In this section, we will clarify three things:
 
 
 ```{python}
+import os
 import random
 
 import dnnl.models.ddpm.utils as utils
+import dnnl
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
 from torch import Tensor
 
-plt.rc('savefig', dpi=300, bbox='tight')
+plt.rc('figure', dpi=100)
+dnnl.set_matplotlib_format('highdpi')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -133,8 +136,7 @@ For the full proof, see [@luo2022UnderstandingDiffusionModels, eq. 71-84]. Note 
 Now let's do an experiment. Using the MNIST dataset, suppose we have the original image $x_0$. We first add noise to one image according to the forward formula until it becomes Gaussian noise, and then walk back step by step from Gaussian noise. Let's see how the image changes during this process.
 
 ```{python}
-# Change the root path to your local directory if needed
-root = 'D:/Workspaces/Python Project/datasets'
+root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -182,13 +184,8 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-fig.savefig('figures/ch14.3-denoise-v1.png')
-plt.close(fig)
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.3-denoise-v1.png" style="width: 806px; height: auto;">
-</figure>
 
 You see, we successfully recovered the original image! However, there is another problem here: during the process of recovering the image, we used the original image $x_0$. But generating images is exactly about generating $x_0$. If we already know $x_0$, then what are we still generating?
 

@@ -21,9 +21,11 @@ In this section, we explain the overall running process of DDPM from the perspec
 
 ```{python}
 import math
+import os
 import random
 
 import dnnl.models.ddpm.utils as dutils
+import dnnl
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -35,7 +37,7 @@ import torchvision.transforms.v2 as v2
 from dnnl.models.ddpm import DDPMScheduler, UNet2DModel
 from torch import Tensor
 
-plt.rc('savefig', dpi=300, bbox='tight')
+plt.rc('figure', dpi=100)
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -136,13 +138,9 @@ ax.set_yticks(yticks + 0.5, timesteps.tolist())
 ax.set_xlabel('Embedding Dimension')
 ax.set_title('Illustration of sinusoidal time embedding')
 fig.colorbar(im)
-fig.savefig('figures/ch14.4-time-embedding.svg')
-plt.close(fig)
+dnnl.set_matplotlib_format('svg')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.4-time-embedding.svg">
-</figure>
 
 Each row in this figure represents the encoding result of one timestep, and each column represents the value change of one encoding dimension across different timesteps. Some columns change color quickly, which means these dimensions correspond to higher frequencies and are more sensitive to small changes in the timestep; some columns change more slowly, which means these dimensions correspond to lower frequencies and can provide smoother, coarser-grained time information.
 
@@ -237,8 +235,7 @@ If there is no randomness at all, the sampling path may become too rigid. Proper
 Of course, later there were also many variants, such as DDIM, that rewrote the random sampling process of DDPM into an update process that can be deterministic. But in the most basic DDPM, **step-by-step sampling + a little randomness at each step** is the standard practice.
 
 ```{python}
-# Change the root path to your local directory if needed
-root = 'D:/Workspaces/Python Project/datasets'
+root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -288,13 +285,9 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-fig.savefig('figures/ch14.4-denoise-v2.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.4-denoise-v2.png" style="width: 806px; height: auto;">
-</figure>
 
 ## 14.4.5 Simplified code for DDPM training and sampling
 
