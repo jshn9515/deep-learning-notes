@@ -26,12 +26,9 @@ In deep learning, what we need to do is very simple: make the loss function $L$ 
 
 And **gradient** is used to answer these two questions.
 
-I believe everyone has learned partial derivatives. If we have a function $f(x, y)$, when we want to know "how $f$ changes if only $x$ is changed", we look at $
-rac{\partial f}{\partial x}$; when we want to know "how $f$ changes if only $y$ is changed", we look at $
-rac{\partial f}{\partial y}$. The magnitude of a partial derivative can be understood as a kind of "sensitivity". The larger the absolute value of the partial derivative is, the more a slight change in this parameter will make $f$ change a lot; conversely, the smaller the absolute value of the partial derivative is, the smaller the influence of a slight change in this parameter on $f$.
+I believe everyone has learned partial derivatives. If we have a function $f(x, y)$, when we want to know "how $f$ changes if only $x$ is changed", we look at $\frac{\partial f}{\partial x}$; when we want to know "how $f$ changes if only $y$ is changed", we look at $\frac{\partial f}{\partial y}$. The magnitude of a partial derivative can be understood as a kind of "sensitivity". The larger the absolute value of the partial derivative is, the more a slight change in this parameter will make $f$ change a lot; conversely, the smaller the absolute value of the partial derivative is, the smaller the influence of a slight change in this parameter on $f$.
 
-When there is more than one parameter, we can "package" the partial derivatives of these parameters into a vector, and this vector is the gradient. For the function $f(x, y)$, its gradient is $
-abla f = \left(\frac{\partial f}{\partial x}, \frac{\partial f}{\partial y} \right)$. We can imagine the gradient as an arrow. The direction of the arrow indicates the direction in which the function value increases the fastest (not decreases!), and the length of the arrow indicates the speed at which the function value increases.
+When there is more than one parameter, we can "package" the partial derivatives of these parameters into a vector, and this vector is the gradient. For the function $f(x, y)$, its gradient is $\nabla f = \left(\frac{\partial f}{\partial x}, \frac{\partial f}{\partial y} \right)$. We can imagine the gradient as an arrow. The direction of the arrow indicates the direction in which the function value increases the fastest (not decreases!), and the length of the arrow indicates the speed at which the function value increases.
 
 More generally, if the model parameters are a high-dimensional vector:
 
@@ -125,9 +122,7 @@ That is, the value of each node is computed from its input nodes. Therefore, for
 
 **Backward Propagation** refers to the process of starting from the final output and gradually computing the gradient of each variable with respect to the loss function in the reverse direction of the computational graph. The core of backpropagation is the **Chain Rule**. The influence of a variable on the final result can be decomposed into the product of multiple local influences.
 
-Assume the loss function is $L = L(f)$, and we want to compute the gradients of the input variables $x$ and $y$ with respect to the loss function, $
-rac{\partial L}{\partial x}$ and $
-rac{\partial L}{\partial y}$. According to the chain rule, we can compute the gradient of each node step by step along the reverse direction of the computational graph:
+Assume the loss function is $L = L(f)$, and we want to compute the gradients of the input variables $x$ and $y$ with respect to the loss function, $\frac{\partial L}{\partial x}$ and $\frac{\partial L}{\partial y}$. According to the chain rule, we can compute the gradient of each node step by step along the reverse direction of the computational graph:
 
 $$
 \begin{aligned}
