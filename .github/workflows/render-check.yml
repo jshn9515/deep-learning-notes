@@ -3,16 +3,20 @@ name: Check Quarto Website Rendering
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "zh/**"
-      - "en/**"
-      - "ref-*.bib"
-      - "_freeze/**"
-      - "index.qmd"
-      - "_quarto.yml"
-      - "styles.css"
-      - "pyproject.toml"
-      - ".github/workflows/render-check.yml"
+    paths-ignore:
+      - "assets/**"
+      - "**/LICENSE.*"
+      - "**/*.md"
+      - "**/ruff.toml"
+      - "**/.git*"
+      - "**/.github/*.json"
+      - "**/.github/workflows/dnnl-ci.yml"
+      - "**/.github/workflows/manual-publish.yml"
+      - "**/.github/workflows/package-notebooks.yml"
+      - "**/.github/workflows/publish.yml"
+
+env:
+  DNNL_DATA_ROOT: ${{ github.workspace }}/datasets
 
 permissions:
   contents: read
@@ -25,9 +29,32 @@ jobs:
   render-check:
     name: Check Quarto Website Rendering
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect external invalidation
+        id: changes
+        shell: bash
+        run: |
+          changed_files=$(git diff --name-only \
+            ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
+
+          echo "$changed_files"
+
+          if echo "$changed_files" | grep -Eq '^(dnnl/|pyproject\.toml)'; then
+            echo "external_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "external_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Remove freeze cache if external files changed
+        if: steps.changes.outputs.external_changed == 'true'
+        shell: bash
+        run: rm -rf _freeze
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.0.0
@@ -42,8 +69,29 @@ jobs:
           uv python install 3.14
           uv sync --python 3.14 --all-packages
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Mermaid CLI
+        run: npm install -g @mermaid-js/mermaid-cli
+
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Download Caltech101 from Google Drive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$DNNL_DATA_ROOT/caltech101"
+          cd "$DNNL_DATA_ROOT/caltech101"
+
+          uv run gdown 19qo4t_YR0RGILU_nmpXHbo1mMGOvn3iH
+
+      - name: Download datasets for notebooks
+        run: uv run python utils/download_datasets.py
 
       - name: Render site
         env:
