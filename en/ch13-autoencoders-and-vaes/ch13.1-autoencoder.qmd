@@ -21,7 +21,9 @@ This process looks simple, but it is important. Because it tells us that neural 
 
 ```{python}
 import math
+import os
 
+import dnnl
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -34,7 +36,7 @@ from torch import Tensor
 from torchmetrics import MeanMetric
 from torchvision.utils import make_grid
 
-plt.rc('savefig', dpi=300, bbox='tight')
+plt.rc('figure', dpi=100)
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -221,8 +223,7 @@ You can see that the whole training process only does three things:
 This is the core training logic of AutoEncoder.
 
 ```{python}
-# Change the root path to your local directory where you want to store the MNIST dataset
-root = 'D:/Workspaces/Python Project/datasets'
+root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 
 train_ds = datasets.MNIST(root, train=True, download=True, transform=transform)
@@ -277,13 +278,9 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Original (top) vs Reconstructed (bottom)')
-fig.savefig('figures/ch13.1-reconstructed.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.1-reconstructed.png" style="width: 640px; height: auto;">
-</figure>
 
 ## 13.1.5 Limitations of AutoEncoder
 
@@ -313,13 +310,9 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Randomly Generated Images from Latent Space')
-fig.savefig('figures/ch13.1-random-generate.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.1-randomly-generated.png" style="width: 640px; height: auto;">
-</figure>
 
 You can see that the images generated from these randomly sampled $z$ are mostly blurry images with chaotic structure, rather than clear digits. This is because during training, the decoder only learned how to reconstruct the part of latent representations output by the encoder, but did not learn how to handle arbitrary points in the entire latent space. Therefore, when the input is a randomly sampled $z$, these points often fall in regions that were not covered or rarely covered during training. The decoder cannot map them stably into real images, so it can only output distorted results.
 
@@ -346,15 +339,11 @@ ax = fig.add_subplot(1, 1, 1)
 scatter = ax.scatter(z_2d[:, 0], z_2d[:, 1], c=label_list, s=8, alpha=0.7)
 ax.set_xlabel('z1')
 ax.set_ylabel('z2')
-ax.set_title('Latent means of test samples')
+ax.set_title('Latent Means of Test Samples')
 fig.colorbar(scatter)
-fig.savefig('figures/ch13.1-latent-space.svg')
-plt.close(fig)
+dnnl.set_matplotlib_format('svg')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.1-latent-space.svg">
-</figure>
 
 You will find that the distribution of points in the latent space is very irregular, and may even form some discrete clusters. These clusters correspond to samples of different categories in the training data, but there may be large holes between them. In other words, many regions in the latent space are not covered by training data. When we sample $z$ from these regions, the decoder cannot correctly map them into valid images, so the generated results are often blurry or meaningless.
 

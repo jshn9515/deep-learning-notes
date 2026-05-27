@@ -32,8 +32,10 @@ But just looking at the formula is not enough. To really understand VAE, the mos
 In this section, we do not only talk about conclusions. Instead, we directly observe these phenomena through code. To make it easier to observe the distribution of the latent space, we use t-SNE to visualize the latent space and train a small VAE on MNIST.
 
 ```{python}
+import os
 from collections import defaultdict
 
+import dnnl
 import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
@@ -45,7 +47,7 @@ from sklearn.manifold import TSNE
 from torchmetrics.aggregation import MeanMetric
 from torchvision.utils import make_grid
 
-plt.rc('savefig', dpi=300, bbox='tight')
+plt.rc('figure', dpi=100)
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -66,8 +68,7 @@ print(f'Using device: {device}')
 Here we create the MNIST dataset.
 
 ```{python}
-# Change the path to your dataset directory if needed
-root = 'D:/Workspaces/Python Project/datasets'
+root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 train_ds = datasets.MNIST(root, train=True, download=True, transform=transform)
 test_ds = datasets.MNIST(root, train=False, download=True, transform=transform)
@@ -146,13 +147,9 @@ for ax in axes:
 axes[0].legend(loc='upper right')
 axes[1].legend(loc='lower right')
 axes[1].set_yscale('log')
-fig.savefig('figures/ch13.4-vae-training-curves.svg')
-plt.close(fig)
+dnnl.set_matplotlib_format('svg')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.4-vae-training-curves.svg">
-</figure>
 
 The left side of the figure above is the loss curve on the original scale, and the right side is on the logarithmic scale. At the beginning, the reconstruction loss is large, but as training proceeds, the reconstruction loss drops quickly. The KL loss is very small at the beginning and oscillates back and forth in the first few steps, but as training proceeds, it gradually increases and finally becomes stable. The overall trend of the total loss is the same as the reconstruction loss, but because the KL loss increases, it decreases a bit more slowly than the reconstruction loss. The model converges after about 2000 steps.
 
@@ -185,13 +182,9 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Original (top) vs Reconstructed (bottom)')
-fig.savefig('figures/ch13.4-reconstructed.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.4-reconstructed.png" style="width: 640px; height: auto;">
-</figure>
 
 If you compare it with a normal AutoEncoder, you will find that the reconstruction of AutoEncoder is usually sharper, because it does not need to obey a prior probability. The reconstruction of VAE is often smoother, because it must keep the latent space continuous and sampleable. This is also why many people, when they first look at the generation results of VAE, feel that it is a little blurry. This blur does not necessarily mean that the model failed to learn. Instead, it is the price it pays for a latent space that is generatable, interpolatable, and sampleable.
 
@@ -215,13 +208,9 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Randomly Generated Images from Latent Space')
-fig.savefig('figures/ch13.4-randomly-generated.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.4-randomly-generated.png" style="width: 640px; height: auto;">
-</figure>
 
 The results generated in this step still look quite like handwritten digits. Although they are still blurry, at least they already have obvious digit shapes. This shows that the KL term indeed pulls the latent space toward the neighborhood of the standard normal distribution, and the decoder has indeed learned how to interpret this latent space as data. This is exactly what a normal AutoEncoder has difficulty doing stably. The latent space of a normal AE is often very scattered. Just like the experiment in Section 13.1, if we randomly sample a point, the decoder often outputs a very strange result.
 
@@ -252,13 +241,9 @@ fig.colorbar(scatter)
 ax.set_xlabel('z1')
 ax.set_ylabel('z2')
 ax.set_title('Latent means of test samples')
-fig.savefig('figures/ch13.4-latent-space.svg')
-plt.close(fig)
+dnnl.set_matplotlib_format('svg')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.4-latent-space.svg">
-</figure>
 
 We can see that digits of the same class form relatively nearby regions in the latent space. Different digits are not completely separated, but have some continuous transitions. The overall distribution of the latent space will not diverge without bound, but will be pulled by the KL term near the center. The latent space learned by VAE can not only encode data, but also often has a geometric structure.
 
@@ -295,13 +280,9 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(x_hat, cmap='gray')
 ax.axis('off')
 ax.set_title('Interpolation in Latent Space')
-fig.savefig('figures/ch13.4-interpolation.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.4-interpolation.png" style="width: 795px; height: auto;">
-</figure>
 
 You will find that the interpolation result changes smoothly, rather than suddenly jumping. As the interpolation coefficient changes from 0 to 1, the digit shape slowly changes, and the strokes gradually move, bend, or merge. Although the intermediate states are not necessarily standard digits, they usually do not look like noise. This shows that the latent space is not a pile of unrelated discrete points, but is more like a continuous semantic space.
 
@@ -369,13 +350,9 @@ for i, label in enumerate(row_labels):
 
 ax.axis('off')
 ax.set_title('Original vs Reconstructions with Different β Values')
-fig.savefig('figures/ch13.4-beta-comparison.png')
-plt.close(fig)
+dnnl.set_matplotlib_format('highdpi')
+plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.4-beta-comparison.png" style="width: 499px; height: auto;">
-</figure>
 
 In the figure, the first row is the original image, the second row is the reconstruction with $\beta=0.1$, the third row is the reconstruction with $\beta=1.0$, and the fourth row is the reconstruction with $\beta=4.0$.
 
