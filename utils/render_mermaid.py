@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 NPX = 'npx.cmd' if platform.system() == 'Windows' else 'npx'
+PUPPETEER_CONFIG = ROOT / 'utils' / 'puppeteer-config.json'
 
 
 def render_mmd(input_path: Path):
@@ -11,7 +12,16 @@ def render_mmd(input_path: Path):
     print(f'Rendering {input_path.name} -> {output_path.name}', flush=True)
 
     subprocess.run(
-        [NPX, 'mmdc', '-i', str(input_path), '-o', str(output_path)],
+        [
+            NPX,
+            'mmdc',
+            '-i',
+            str(input_path),
+            '-o',
+            str(output_path),
+            '-p',
+            str(PUPPETEER_CONFIG),
+        ],
         check=True,
     )
 
