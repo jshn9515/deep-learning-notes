@@ -91,6 +91,8 @@ def main() -> None:
     for language, output in outputs.items():
         output.write_text(build_toc(read_chapters(language)), encoding='utf-8')
 
+    print('TOC files generated successfully.', flush=True)
+
 
 if __name__ == '__main__':
     main()
