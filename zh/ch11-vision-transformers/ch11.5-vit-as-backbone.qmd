@@ -40,6 +40,7 @@ import evaluate
 import IPython.display as ipy
 import numpy as np
 import torch
+import torch.accelerator as accl
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
