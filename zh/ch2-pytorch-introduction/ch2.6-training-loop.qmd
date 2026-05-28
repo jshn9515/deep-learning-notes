@@ -1,0 +1,572 @@
+---
+author: jshn9515
+date: 2026-05-23
+date-modified: 2026-05-23
+open-graph:
+  title: ch2.6-training-loop
+  description: "2.6 Training Loop in PyTorch"
+title: "2.6 PyTorch 中的训练循环"
+order: 6
+---
+
+前面几节里，我们已经分别认识了训练神经网络需要的几个核心部件：
+
+- Dataset / DataLoader：负责提供一批一批的数据；
+- nn.Module：负责组织模型参数和前向计算；
+- Loss function：负责衡量预测和目标之间的差距；
+- Optimizer：负责根据梯度更新参数。
+
+但这些东西单独存在时，还不是一个训练过程。真正训练一个模型时，我们需要把它们连接成一个循环：
+
+1. 取出一个 batch 的数据；
+2. 送进模型得到预测；
+3. 计算 loss；
+4. 反向传播得到梯度；
+5. 优化器更新参数；
+6. 进入下一个 batch。
+
+这一节我们就把前面学过的零件组装起来，写一下 PyTorch 中最常见的训练循环。
+
+```{python}
+import os
+
+import torch
+import torch.accelerator as accl
+import torch.nn as nn
+import torch.optim as optim
+import torch.utils.data as utils
+import torchvision.datasets as datasets
+import torchvision.transforms.v2 as v2
+from torch import Tensor
+from torch.types import Device
+
+print('PyTorch version:', torch.__version__)
+```
+
+## 2.6.1 先准备一个简单任务
+
+我们构造一个 MNIST 手写数字分类数据集。MNIST 是一个经典的图像分类数据集，包含 60000 张训练图像和 10000 张测试图像，每张图像都是一个 28x28 的灰度图，代表一个手写数字（0-9）。
+
+```{python}
+root = os.getenv('DATA_ROOT', os.path.expanduser('~/datasets'))
+transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
+train_ds = datasets.MNIST(root, train=True, transform=transform, download=True)
+```
+
+这里的 `transform` 负责把 PIL Image 转成 PyTorch Tensor，并且把像素值从 $[0, 255]$ 归一化到 $[0.0, 1.0]$。同时，`dataset` 里每个元素是一个 `(image, label)` 二元组，`image` 是一个 28x28 的灰度图像张量，`label` 是一个整数，表示这个图像对应的数字类别。
+
+接着，我们把图像数据组织成 mini-batch：
+
+```{python}
+train_dl = utils.DataLoader(train_ds, batch_size=64, shuffle=True)
+```
+
+到这里，数据已经准备好了。
+
+## 2.6.2 一个最小的训练步骤
+
+接下来，我们定义一个很小的模型：
+
+```{python}
+model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(28 * 28, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10),
+)
+```
+
+因为这是多分类任务，模型最后输出 10 个 logit，对应 10 个类别。
+
+损失函数使用 `nn.CrossEntropyLoss`，优化器使用 `optim.SGD`：
+
+```{python}
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+```
+
+现在我们只看一个 batch 的训练步骤：
+
+```{python}
+X_batch, y_batch = next(iter(train_dl))
+
+model.train()
+logits = model(X_batch)
+loss = loss_fn(logits, y_batch)
+
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+
+print('Loss:', loss.item())
+```
+
+这几行就是训练循环的核心。我们可以把它拆成几个动作：
+
+```text
+model.train()          -> 让模型进入训练模式
+model(X_batch)         -> 前向传播，得到预测
+loss_fn(...)           -> 计算损失
+optimizer.zero_grad()  -> 清空旧梯度
+loss.backward()        -> 反向传播，计算新梯度
+optimizer.step()       -> 根据梯度更新参数
+```
+
+其中最常见的三行是：
+
+```python
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+```
+
+这三行其实是标准训练流程的固定模板。首先清掉上一次留下的梯度，然后根据当前 batch 的 loss 计算梯度，最后让优化器根据梯度修改参数。代码看似简单，但每一步都很重要，缺一不可。
+
+如果你去看网上的教程，有些教程可能会写成：
+
+```python
+loss.backward()
+optimizer.step()
+optimizer.zero_grad()
+```
+
+就是把 `optimizer.zero_grad()` 放到最后。当然，这样也没问题，相当于提前为下一次反向传播清空梯度。不过在训练代码里，我更推荐先写成第一种，因为它更符合直觉：我要根据当前 batch 计算梯度，所以先把旧梯度清掉。这样也更容易避免忘记清梯度的问题。
+
+## 2.6.3 写成一个完整 epoch
+
+前面我们只是手动取出了一个 batch，并用它完成了一次参数更新。通常来说，模型每处理一个 batch 并更新一次参数，我们就把它叫做一个 step。
+
+但是，训练不可能只看一个 batch 就结束。一个 batch 只包含训练集中的一小部分样本，它只能提供一次局部的更新。为了让模型看到更多数据，我们通常会把整个训练集切分成很多个 batch，然后依次送进模型。
+
+当模型完整遍历一遍训练集时，我们就说它完成了一个 epoch。
+
+所以，真正写训练代码时，我们不再手动取某一个 batch，而是直接遍历整个 DataLoader。每次循环取出一个 batch，完成前向传播、计算损失、反向传播和参数更新。这样循环一轮，就完成了一个完整的 epoch。
+
+```{python}
+def train_one_epoch(
+    model: nn.Module,
+    dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+    optimizer: optim.Optimizer,
+) -> float:
+    model.train()
+
+    total_loss = 0.0
+    total_samples = 0
+
+    for X_batch, y_batch in dataloader:
+        logits = model(X_batch)
+        loss = loss_fn(logits, y_batch)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        batch_size = X_batch.size(0)
+        total_loss += loss.item() * batch_size
+        total_samples += batch_size
+
+    return total_loss / total_samples
+```
+
+这里有一个细节：我们没有直接把每个 batch 的 `loss.item()` 简单平均，而是乘上了 `batch_size`：
+
+```python
+total_loss += loss.item() * batch_size
+```
+
+这是因为最后一个 batch 可能比前面的 batch 小。如果简单地平均每个 batch 的 loss，就会让小 batch 和大 batch 拥有一样的权重。比如，我有 100 个样本，batch_size 是 32，那么前面三个 batch 都是 32 个样本，最后一个 batch 只有 4 个样本。如果我直接平均四个 batch 的 loss，每个 batch 的权重都是 1/4，但实际上前三个 batch 各占了 32/100 的权重，而最后一个 batch 只占了 4/100 的权重。
+
+更准确的平均 loss 应该是：
+
+$$
+\frac{\sum_i \text{loss}_i \times \text{batch\_size}_i}{\sum_i \text{batch\_size}_i}
+$$
+
+现在训练几个 epoch 看看：
+
+```{python}
+model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(28 * 28, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10),
+)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+num_epochs = 5
+for epoch in range(1, num_epochs + 1):
+    train_loss = train_one_epoch(model, train_dl, loss_fn, optimizer)
+    print(f'Epoch [{epoch}/{num_epochs}] | loss: {train_loss:.4f}')
+```
+
+你看，loss 在逐渐下降，说明训练循环已经在正常工作。
+
+## 2.6.4 验证循环和训练循环有什么不同
+
+前面我们提到，训练时，我们需要计算梯度，并更新参数。而验证时，我们只想知道模型效果，不想修改模型。所以验证循环和训练循环有两个关键区别：
+
+- 训练循环需要 `model.train()`，而验证循环需要 `model.eval()`；
+- 训练循环需要 `backward()` 和 `optimizer.step()`，而验证循环不需要。
+
+此外，验证时通常也不需要记录计算图，所以要配合 `torch.no_grad()` 或 `torch.inference_mode()`。
+
+我们先划分训练集和验证集：
+
+```{python}
+train_ds, val_ds = utils.random_split(train_ds, [50000, 10000])
+test_ds = datasets.MNIST(root, train=False, transform=transform, download=True)
+
+val_dl = utils.DataLoader(val_ds, batch_size=64, shuffle=False)
+test_dl = utils.DataLoader(test_ds, batch_size=64, shuffle=False)
+```
+
+注意这里，在验证集和测试集的 DataLoader 中，我们把 `shuffle` 设置成了 `False`。因为验证和测试时，我们通常不需要打乱数据顺序，保持原始顺序更方便分析结果。
+
+然后我们写一个验证函数：
+
+```{python}
+def evaluate(
+    model: nn.Module,
+    dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+) -> tuple[float, float]:
+    model.eval()
+
+    total_loss = 0.0
+    total_correct_samples = 0
+    total_samples = 0
+
+    with torch.no_grad():
+        for X_batch, y_batch in dataloader:
+            logits = model(X_batch)
+            loss = loss_fn(logits, y_batch)
+
+            y_preds = logits.argmax(dim=1)
+            correct_samples = (y_preds == y_batch).sum().item()
+
+            batch_size = X_batch.size(0)
+            total_loss += loss.item() * batch_size
+            total_correct_samples += correct_samples
+            total_samples += batch_size
+
+    avg_loss = total_loss / total_samples
+    accuracy = total_correct_samples / total_samples
+    return avg_loss, accuracy
+```
+
+这里没有 `backward()` 和 `optimizer.step()`，因为验证不是为了更新参数，而是为了观察模型的效果。
+
+完整训练时，我们可以在每个 epoch 后面跑一次验证：
+
+```{python}
+model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(28 * 28, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10),
+)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+num_epochs = 5
+for epoch in range(1, num_epochs + 1):
+    loss = train_one_epoch(model, train_dl, loss_fn, optimizer)
+    val_loss, val_acc = evaluate(model, val_dl, loss_fn)
+
+    print(
+        f'Epoch [{epoch}/{num_epochs}] '
+        f'| loss: {loss:.4f} '
+        f'| val_loss: {val_loss:.4f} '
+        f'| val_acc: {val_acc:.4f}'
+    )
+```
+
+这就是最经典的训练—验证结构。
+
+## 2.6.5 把模型和数据放到同一个设备上
+
+到目前为止，我们的例子都默认在 CPU 上运行。但实际训练中，我们通常希望把模型和数据放到加速设备上，比如 NVIDIA CUDA、Intel XPU 或其他后端。
+
+在很多老 PyTorch 教程里，你会看到类似这样的写法：
+
+```{python}
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+```
+
+这个写法很常见，也很好理解。但它只考虑了 CUDA 和 CPU。
+
+在新版 PyTorch 中（v2.6 起），可以使用更统一的 `torch.accelerate` 接口：
+
+```{python}
+device = accl.current_accelerator(check_available=True)
+if device is None:
+    device = torch.device('cpu')
+print(f'Using device: {device}')
+```
+
+这段代码的意思是：如果当前环境有可用的加速器，就优先使用它；否则退回到 CPU。相比于之前手动判断 CUDA，这个接口更通用，也更适合未来可能出现的其他加速器。
+
+拿到设备之后，模型和数据都需要移动过去：
+
+```python
+model = model.to(device)
+X_batch = X_batch.to(device)
+y_batch = y_batch.to(device)
+```
+
+::: {.callout-warning}
+注意，**模型和输入必须在同一个设备上。**如果模型在 GPU 上，而输入还在 CPU 上，就会报错。
+:::
+
+我们可以把设备迁移加进训练函数：
+
+```{python}
+def train_one_epoch_on_device(
+    model: nn.Module,
+    dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+    optimizer: optim.Optimizer,
+    device: torch.device,
+) -> float:
+    model.train()
+
+    total_loss = 0.0
+    total_samples = 0
+
+    for X_batch, y_batch in dataloader:
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device)
+
+        logits = model(X_batch)
+        loss = loss_fn(logits, y_batch)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        batch_size = X_batch.size(0)
+        total_loss += loss.item() * batch_size
+        total_samples += batch_size
+
+    return total_loss / total_samples
+```
+
+验证函数也一样：
+
+```{python}
+def evaluate_on_device(
+    model: nn.Module,
+    dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+    device: torch.device,
+) -> tuple[float, float]:
+    model.eval()
+
+    total_loss = 0.0
+    total_correct_samples = 0
+    total_samples = 0
+
+    with torch.no_grad():
+        for X_batch, y_batch in dataloader:
+            X_batch = X_batch.to(device)
+            y_batch = y_batch.to(device)
+
+            logits = model(X_batch)
+            loss = loss_fn(logits, y_batch)
+
+            preds = logits.argmax(dim=1)
+            correct_samples = (preds == y_batch).sum().item()
+
+            batch_size = X_batch.size(0)
+            total_loss += loss.item() * batch_size
+            total_correct_samples += correct_samples
+            total_samples += batch_size
+
+    avg_loss = total_loss / total_samples
+    accuracy = total_correct_samples / total_samples
+    return avg_loss, accuracy
+```
+
+然后完整运行：
+
+```{python}
+model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(28 * 28, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10),
+).to(device)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+num_epochs = 5
+for epoch in range(1, num_epochs + 1):
+    loss = train_one_epoch_on_device(model, train_dl, loss_fn, optimizer, device)
+    val_loss, val_acc = evaluate_on_device(model, val_dl, loss_fn, device)
+
+    print(
+        f'Epoch [{epoch}/{num_epochs}] '
+        f'| loss: {loss:.4f} '
+        f'| val_loss: {val_loss:.4f} '
+        f'| val_acc: {val_acc:.4f}'
+    )
+```
+
+设备迁移这件事可以先记住一句话：
+
+> **模型在哪里，数据就要在哪里。**
+
+## 2.6.6 训练循环里常见的几个细节
+
+训练循环看起来很固定，但实际写代码时有几个地方很容易出错。
+
+#### **1. 不要在训练循环里忘记切回 train 模式**
+
+如果验证之后没有重新调用 `model.train()`，模型可能会一直停留在评估模式。这对包含 Dropout、BatchNorm 等模块的模型尤其重要。
+
+所以比较稳妥的写法是：
+
+```python
+def train_one_epoch(...):
+    model.train()
+    ...
+
+
+def evaluate(...):
+    model.eval()
+    ...
+```
+
+把模式切换放进函数内部，这样每次调用都会自动切换到正确的模式。
+
+#### **2. 不要用 Tensor 累积日志信息**
+
+训练时经常要记录 loss。
+
+如果写成：
+
+```python
+total_loss += loss
+```
+
+`total_loss` 可能会继续保留计算图，导致不必要的内存占用。
+
+更常见的写法是：
+
+```python
+total_loss += loss.item() * batch_size
+```
+
+`loss.item()` 会把单元素张量转换成 Python 数值，用于日志统计更合适。
+
+#### **3. 不要把验证写进梯度记录里**
+
+验证时如果不写 `torch.no_grad()`，结果通常也能算出来，但 PyTorch 会为这些前向计算保存反向传播需要的信息。这会带来额外显存和时间开销。
+
+所以验证循环一般写成：
+
+```python
+model.eval()
+with torch.no_grad():
+    ...
+```
+
+如果确定是纯推理，也可以使用更激进的 `torch.inference_mode()`。
+
+#### **4. 不要忘记 loss 是模型优化的目标，不一定是最终指标**
+
+训练时优化器根据 loss 更新参数。但我们真正关心的指标可能是 accuracy、F1、BLEU、IoU 等。
+
+所以训练循环里经常同时记录两类东西：
+
+- `loss`：用于优化；
+- `metric`：用于观察任务效果。
+
+在这个二分类例子里，loss 是 `CrossEntropyLoss`，而指标是 `accuracy`。
+
+## 2.6.7 一个完整的训练模板
+
+最后，我们把这一节的内容合到一个模板里。
+
+```{python}
+def fit(
+    model: nn.Module,
+    train_dl: utils.DataLoader[tuple[Tensor, Tensor]],
+    val_dl: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+    optimizer: optim.Optimizer,
+    num_epochs: int,
+    device: Device = None,
+    checkpoint_path: str | None = None,
+) -> None:
+    if device is None:
+        device = accl.current_accelerator(check_available=True)
+    model.to(device)
+
+    for epoch in range(1, num_epochs + 1):
+        loss = train_one_epoch_on_device(
+            model=model,
+            dataloader=train_dl,
+            loss_fn=loss_fn,
+            optimizer=optimizer,
+            device=device,
+        )
+
+        val_loss, val_acc = evaluate_on_device(
+            model=model,
+            dataloader=val_dl,
+            loss_fn=loss_fn,
+            device=device,
+        )
+
+        print(
+            f'Epoch [{epoch}/{num_epochs}] '
+            f'| loss: {loss:.4f} '
+            f'| val_loss: {val_loss:.4f} '
+            f'| val_acc: {val_acc:.4f}'
+        )
+
+    if checkpoint_path is not None:
+        torch.save(model.state_dict(), checkpoint_path)
+```
+
+运行这个模板：
+
+```{python}
+model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(28 * 28, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10),
+)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+checkpoint_path = 'mnist_model.pth'
+
+fit(
+    model=model,
+    train_dl=train_dl,
+    val_dl=val_dl,
+    loss_fn=loss_fn,
+    optimizer=optimizer,
+    device=device,
+    num_epochs=5,
+    checkpoint_path=checkpoint_path,
+)
+```
+
+这不是唯一正确的训练模板，但它已经包含了 PyTorch 训练中最核心的结构。后面无论训练 CNN、RNN、Transformer 还是更复杂的模型，基本训练流程都会在这个框架上继续扩展。
+
+## 2.6.8 本章小结
+
+这一节，我们把前面几节学到的 PyTorch 组件连接成了一个完整训练循环。
+
+DataLoader 负责提供 mini-batch，nn.Module 负责前向计算，损失函数把预测和目标变成一个标量 loss，`loss.backward()` 负责计算梯度，而 `optimizer.step()` 负责真正更新参数。
+
+训练时通常需要先调用 `model.train()`，然后在每个 batch 中执行 `zero_grad()`、`backward()` 和 `step()`。验证时则要调用 `model.eval()`，并配合 `torch.no_grad()` 或 `torch.inference_mode()`，避免记录不必要的计算图。
+
+在使用不同设备训练模型时，一定要记得把模型和数据放在同一个设备上。对于 torch v2.6 以上版本，可以用新的 `torch.accelerate` API 获取当前可用加速器；对于旧版，可以继续使用传统的 CUDA / CPU 判断。
+
+所以，一个训练循环本质上就是在反复做同一件事：让数据经过模型，得到 loss，用 loss 产生梯度，再让优化器根据梯度更新模型。理解了这个循环，后面再学习更复杂的模型时，重点就可以放在模型结构和训练策略本身，而不是被 PyTorch 的基本流程卡住。
