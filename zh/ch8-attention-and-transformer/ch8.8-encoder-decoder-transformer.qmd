@@ -22,12 +22,12 @@ order: 8
 ```{python}
 import math
 
+import dnnl.nn as dnn
+import dnnl.nn.functional as dF
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-import dnnl.nn as dnn
-import dnnl.nn.functional as dF
 
 print('PyTorch version:', torch.__version__)
 ```
