@@ -24,11 +24,12 @@ import math
 import os
 import random
 
-import dnnl.models.ddpm.utils as dutils
 import dnnl
+import dnnl.models.ddpm as ddpm
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.accelerator as accl
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as utils
@@ -42,7 +43,7 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-device = torch.accelerator.current_accelerator(check_available=True)
+device = accl.current_accelerator(check_available=True)
 if device is None:
     device = torch.device('cpu')
 print('Using device:', device)
@@ -185,6 +186,33 @@ U-Net 这个名字来自它的形状。它一般分成两部分：
 
 当然，在更现代的扩散模型里，除了时间嵌入，还常常会加入类别条件、文本条件，或者通过交叉注意力把外部信息融入到网络中。但在最基础的 DDPM 场景里，时间嵌入 + U-Net 就已经是非常经典的组合了。
 
+```python
+class UNet2DModel(nn.Module):
+    def __init__(
+        self,
+        in_channels: int = 3,
+        out_channels: int = 3,
+        block_out_channels: tuple[int, ...] = (64, 128, 256, 512),
+        time_emb_dim: int = 256,
+    ):
+        super().__init__()
+        self.time_embedding = nn.Sequential(
+            SinusoidalTimestepEmbedding(time_emb_dim),
+            nn.Linear(time_emb_dim, time_emb_dim),
+            nn.SiLU(),
+            nn.Linear(time_emb_dim, time_emb_dim),
+        )
+        ...
+
+    def forward(self, x: Tensor, timesteps: Tensor) -> Tensor:
+        time_emb = self.time_embedding(timesteps)
+        ...
+```
+
+我们省略了 U-Net 里具体的卷积层、下采样层、上采样层等细节实现，但核心就是在 `forward()` 方法里，先把时间步通过 `time_embedding` 转换成一个向量，然后在 U-Net 的各个阶段把这个向量融入到特征中去。
+
+我们来测试一下我们写的 `UNet2DModel`：
+
 ```{python}
 unet = UNet2DModel().to(device)
 x = torch.randn(1, 3, 64, 64, device=device)
@@ -267,7 +295,7 @@ def denoise_v2(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
 
 T = 1000
 betas = torch.linspace(0.0001, 0.02, steps=T)
-xt = dutils.add_noise(x0, betas, T - 1)
+xt = ddpm.add_noise(x0, betas, T - 1)
 trajectory = [xt.clone()]
 
 for t in range(T - 1, -1, -1):
