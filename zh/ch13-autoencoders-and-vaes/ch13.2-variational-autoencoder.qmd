@@ -351,9 +351,23 @@ class VAE(nn.Module):
         return x_hat, mu, logvar
 ```
 
+我们来测试一下：
+
+```{python}
+vae = VAE(input_shape=(1, 28, 28), hidden_dim=256, latent_dim=32)
+
+x = torch.randn(16, 1, 28, 28)
+with torch.inference_mode():
+    x_hat, mu, logvar = vae(x)
+
+print('x_hat.shape:', x_hat.shape)
+print('mu.shape:', mu.shape)
+print('logvar.shape:', logvar.shape)
+```
+
 这里有几个关键点：
 
-- encoder 最后不只输出一个 latent vector，而是输出 `mu` 和 `logvar`；
+- Encoder 最后不只输出一个 latent vector，而是输出 `mu` 和 `logvar`；
 - `reparameterize()` 函数中实现了 $z = \mu + \sigma \odot \epsilon$。
 
 对于 `std = torch.exp(0.5 * logvar)` 这一行，我们有：

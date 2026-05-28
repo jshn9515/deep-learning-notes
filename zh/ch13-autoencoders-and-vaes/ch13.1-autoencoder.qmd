@@ -26,6 +26,7 @@ import os
 import dnnl
 import matplotlib.pyplot as plt
 import torch
+import torch.accelerator as accl
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as utils
@@ -46,7 +47,7 @@ torch.use_deterministic_algorithms(False)
 torch.backends.cudnn.deterministic = False
 torch.backends.cudnn.benchmark = True
 
-device = torch.accelerator.current_accelerator(check_available=True)
+device = accl.current_accelerator(check_available=True)
 if device is None:
     device = torch.device('cpu')
 print(f'Using device: {device}')
@@ -314,10 +315,6 @@ ax.set_title('Randomly Generated Images from Latent Space')
 dnnl.set_matplotlib_format('highdpi')
 plt.show()
 ```
-
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.1-randomly-generated.png" style="width: 640px; height: auto;">
-</figure>
 
 你看，这些随机采样的 $z$ 生成的图像多是结构混乱的模糊图像，而不是清晰的数字。因为训练过程中，decoder 只学习如何对 encoder 输出的那部分潜在表示进行重建，而没有学习如何处理整个潜在空间中的任意点。因此，当输入随机采样得到的 $z$ 时，这些点往往落在训练时未覆盖或很少覆盖的区域，decoder 无法将其稳定映射为真实图像，只能输出失真的结果。
 
