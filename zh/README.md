@@ -9,7 +9,10 @@
 
 - 2.1 PyTorch 中的自动微分
 - 2.2 PyTorch 中的梯度记录与控制
-- 2.3 Dataset 与 DataLoader：从样本到小批量数据
+- 2.3 PyTorch 中的 Dataset 与 DataLoader
+- 2.4 PyTorch 中的 nn.Module
+- 2.5 PyTorch 中的优化器
+- 2.6 PyTorch 中的训练循环
 
 ## Chapter 8: Attention 与 Transformer：从动态检索到序列建模
 
