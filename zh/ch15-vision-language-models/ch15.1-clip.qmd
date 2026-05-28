@@ -23,12 +23,13 @@ CLIP (Contrastive Language-Image Pretraining) [@radford2021CLIP] 给出的答案
 import os
 import random
 
-import IPython.display as ipy
 import dnnl
+import IPython.display as ipy
 import matplotlib.pyplot as plt
 import PIL.Image as Image
 import seaborn as sns
 import torch
+import torch.accelerator as accl
 import torch.nn.functional as F
 import torchvision.datasets as datasets
 import transformers
@@ -41,7 +42,7 @@ print('Transformers version:', transformers.__version__)
 ```
 
 ```{python}
-device = torch.accelerator.current_accelerator(check_available=True)
+device = accl.current_accelerator(check_available=True)
 if device is None:
     device = torch.device('cpu')
 print('Using device:', device)
