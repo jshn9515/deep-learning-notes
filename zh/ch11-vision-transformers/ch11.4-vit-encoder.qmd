@@ -35,10 +35,10 @@ ViT 的答案很直接：使用标准 Transformer Encoder。每一层 encoder bl
 
 ```{python}
 import dnnl.nn as dnn
-import dnnl.models.vit as vit
 import torch
 import torch.nn as nn
 from torch import Tensor
+from dnnl.models.vit import ViTEmbedding
 
 print('PyTorch version:', torch.__version__)
 ```
@@ -486,7 +486,7 @@ class ViTForImageClassification(nn.Module):
         attn_dropout: float = 0.0,
     ):
         super().__init__()
-        self.embedding = vit.ViTEmbedding(
+        self.embedding = ViTEmbedding(
             image_size=image_size,
             patch_size=patch_size,
             in_channels=in_channels,
