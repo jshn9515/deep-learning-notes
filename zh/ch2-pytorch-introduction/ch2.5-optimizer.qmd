@@ -4,8 +4,8 @@ date: 2026-05-23
 date-modified: 2026-05-23
 open-graph:
   title: ch2.5-optimizer
-  description: "2.5 Optimizer in PyTorch"
-title: "2.5 PyTorch 中的优化器"
+  description: "2.5 Optimizer in PyTorch: From Manual Updates to Parameter Groups and State Management"
+title: "2.5 PyTorch 中的优化器：从手动更新到参数组与状态管理"
 order: 5
 ---
 
