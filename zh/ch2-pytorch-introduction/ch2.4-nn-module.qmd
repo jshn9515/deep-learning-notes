@@ -4,8 +4,8 @@ date: 2026-05-23
 date-modified: 2026-05-23
 open-graph:
   title: ch2.4-nn-module
-  description: "2.4 nn.Module in PyTorch"
-title: "2.4 PyTorch 中的 nn.Module"
+  description: "2.4 nn.Module in PyTorch: Organizing Models, Parameters, and State"
+title: "2.4 PyTorch 中的 nn.Module：组织模型、参数与状态"
 order: 4
 ---
 
