@@ -36,11 +36,11 @@ $$
 import math
 from pprint import pprint
 
+import dnnl
 import evaluate
 import IPython.display as ipy
 import numpy as np
 import torch
-import torch.accelerator as accl
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
@@ -51,15 +51,9 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-torch.manual_seed(42)
-torch.use_deterministic_algorithms(False)
-torch.backends.cudnn.deterministic = False
-torch.backends.cudnn.benchmark = True
-
-device = torch.accelerator.current_accelerator(check_available=True)
-if device is None:
-    device = torch.device('cpu')
-print(f'Using device: {device}')
+dnnl.set_seed(42)
+device = dnnl.get_default_device()
+print('Using device:', device)
 ```
 
 ## 11.5.1 从分类模型到视觉 Backbone
