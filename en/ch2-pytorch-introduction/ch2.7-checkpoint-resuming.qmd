@@ -1,0 +1,415 @@
+---
+author: jshn9515
+date: 2026-05-28
+date-modified: 2026-05-28
+open-graph:
+  title: ch2.7-checkpoint-resuming
+  description: "2.7 Checkpoint and Resume Training in PyTorch"
+title: "2.7 Checkpoints in PyTorch: Resuming Training After Interruptions"
+order: 7
+---
+
+The training template is useful, but real training jobs can be interrupted by notebook restarts, server disconnects, errors, time limits, or manual pauses.
+
+A checkpoint saves the current training state so that training can continue rather than restart from scratch.
+
+This notebook demonstrates the minimal checkpoint workflow with MNIST: save model state, optimizer state, epoch number, and history; then recreate objects and load the saved state.
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+import os
+import signal
+from pathlib import Path
+
+import dnnl
+import dnnl.trainingtools as dt
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.utils.data as utils
+import torchvision.datasets as datasets
+import torchvision.transforms.v2 as v2
+from torch import Tensor
+from torchmetrics.classification import MulticlassAccuracy
+
+print('PyTorch version:', torch.__version__)
+```
+
+## 2.7.1 Why Saving Only Model Parameters Is Not Enough
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+checkpoint = model.state_dict()
+torch.save(checkpoint, 'model.pt')
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+model = MyModel()
+model.load_state_dict(torch.load('model.pt'))
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+checkpoint = {
+    'epoch': epoch,
+    'model': model.state_dict(),
+    'optimizer': optimizer.state_dict(),
+}
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.7.2 Training a Simple MLP
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+dnnl.set_seed(42)
+device = dnnl.get_default_device()
+print('Using device:', device)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+root = dnnl.get_data_root()
+transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
+ds_rng = torch.Generator().manual_seed(42)
+
+train_ds = datasets.MNIST(root, train=True, transform=transform, download=True)
+train_ds, val_ds = utils.random_split(train_ds, [50000, 10000], generator=ds_rng)
+test_ds = datasets.MNIST(root, train=False, transform=transform, download=True)
+
+train_dl = utils.DataLoader(train_ds, batch_size=64, shuffle=True)
+val_dl = utils.DataLoader(val_ds, batch_size=128, shuffle=False)
+test_dl = utils.DataLoader(test_ds, batch_size=128, shuffle=False)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+class MLP(nn.Module):
+    def __init__(self, num_classes: int = 10):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(28 * 28, 256),
+            nn.ReLU(),
+            nn.Linear(256, num_classes),
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.net(x)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+def create_training_objects(
+    lr: float = 1e-3,
+) -> tuple[
+    nn.Module,
+    nn.Module,
+    optim.Optimizer,
+    MulticlassAccuracy,
+    MulticlassAccuracy,
+]:
+    model = MLP(num_classes=10).to(device)
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    metric = MulticlassAccuracy(num_classes=10).to(device)
+    val_metric = MulticlassAccuracy(num_classes=10).to(device)
+    return model, loss_fn, optimizer, metric, val_metric
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.7.3 Saving a Checkpoint
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+def save_checkpoint(
+    path: str | Path,
+    epoch: int,
+    model: nn.Module,
+    optimizer: optim.Optimizer,
+    history: list[dict[str, float]],
+) -> None:
+    checkpoint = {
+        'epoch': epoch,
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'history': history,
+    }
+    torch.save(checkpoint, path)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+## 2.7.4 Loading a Checkpoint
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+def load_checkpoint(
+    path: str | Path,
+    model: nn.Module,
+    optimizer: optim.Optimizer,
+    device: torch.device | None = None,
+) -> tuple[int, list[dict[str, float]]]:
+    checkpoint = torch.load(
+        path,
+        map_location=device,
+        weights_only=True,
+    )
+
+    model.load_state_dict(checkpoint['model'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+
+    epoch = checkpoint['epoch']
+    history = checkpoint['history']
+    return epoch, history
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+map_location=device
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+weights_only=True
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+## 2.7.5 First Training Run: Simulating a Crash
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+checkpoint_path = 'mnist-mlp-checkpoint.pt'
+device = dnnl.get_default_device()
+
+model = MLP(num_classes=10).to(device)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+metric = MulticlassAccuracy(num_classes=10).to(device)
+val_metric = MulticlassAccuracy(num_classes=10).to(device)
+
+history = []
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+num_epochs = 5
+crash_after_epoch = 3
+
+for epoch in range(1, num_epochs + 1):
+    loss, acc = dt.train_one_epoch(
+        model=model,
+        dataloader=train_dl,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        metric=metric,
+        device=device,
+    )
+    val_loss, val_acc = dt.evaluate_on_epoch(
+        model=model,
+        dataloader=val_dl,
+        loss_fn=loss_fn,
+        metric=metric,
+        device=device,
+    )
+
+    record = {
+        'epoch': epoch,
+        'loss': loss,
+        'acc': acc,
+        'val_loss': val_loss,
+        'val_acc': val_acc,
+    }
+    history.append(record)
+
+    width = len(str(num_epochs))
+    print(
+        f'Epoch [{epoch:0{width}d}/{num_epochs:0{width}d}] '
+        f'| loss: {loss:.4f} '
+        f'| acc: {acc:.4f} '
+        f'| val_loss: {val_loss:.4f} '
+        f'| val_acc: {val_acc:.4f}'
+    )
+
+    save_checkpoint(
+        checkpoint_path,
+        epoch=epoch,
+        model=model,
+        optimizer=optimizer,
+        history=history,
+    )
+
+    if epoch == crash_after_epoch:
+        try:
+            signal.raise_signal(signal.SIGINT)
+        except KeyboardInterrupt:
+            print('ERROR - Kernel died while waiting for execute reply.')
+            break
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+## 2.7.6 Recreating the Model and Optimizer
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+model = MLP(num_classes=10).to(device)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+metric = MulticlassAccuracy(num_classes=10).to(device)
+val_metric = MulticlassAccuracy(num_classes=10).to(device)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+last_epoch, history = load_checkpoint(
+    checkpoint_path,
+    model=model,
+    optimizer=optimizer,
+    device=device,
+)
+
+print('Last finished epoch:', last_epoch)
+print('Number of history records:', len(history))
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+## 2.7.7 Continuing Training from a Checkpoint
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+for epoch in range(last_epoch + 1, num_epochs + 1):
+    train_loss, train_acc = dt.train_one_epoch(
+        model=model,
+        dataloader=train_dl,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        metric=metric,
+        device=device,
+    )
+    val_loss, val_acc = dt.evaluate_on_epoch(
+        model=model,
+        dataloader=val_dl,
+        loss_fn=loss_fn,
+        metric=val_metric,
+        device=device,
+    )
+
+    record = {
+        'epoch': epoch,
+        'train_loss': train_loss,
+        'train_acc': train_acc,
+        'val_loss': val_loss,
+        'val_acc': val_acc,
+    }
+    history.append(record)
+
+    width = len(str(num_epochs))
+    print(
+        f'Epoch [{epoch:0{width}d}/{num_epochs:0{width}d}] '
+        f'| train_loss: {train_loss:.4f} '
+        f'| train_acc: {train_acc:.4f} '
+        f'| val_loss: {val_loss:.4f} '
+        f'| val_acc: {val_acc:.4f}'
+    )
+
+    save_checkpoint(
+        checkpoint_path,
+        epoch=epoch,
+        model=model,
+        optimizer=optimizer,
+        history=history,
+    )
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+test_metric = MulticlassAccuracy(num_classes=10).to(device)
+test_loss, test_acc = dt.evaluate_on_epoch(
+    model=model,
+    dataloader=test_dl,
+    loss_fn=loss_fn,
+    metric=test_metric,
+    device=device,
+)
+model_name = type(model).__name__
+print(f'[{model_name}] | test_loss: {test_loss:.4f} | test_acc: {test_acc:.4f}')
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.7.8 What Happens If Only the Model Is Loaded
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+model.load_state_dict(checkpoint['model'])
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+optimizer.load_state_dict(checkpoint['optimizer'])
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+## 2.7.9 What Else Can Be Saved
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+checkpoint = {
+    'epoch': epoch,
+    'model': model.state_dict(),
+    'optimizer': optimizer.state_dict(),
+    'history': history,
+}
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.7.10 Summary
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+checkpoint = {
+    'epoch': epoch,
+    'model': model.state_dict(),
+    'optimizer': optimizer.state_dict(),
+}
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+model.load_state_dict(checkpoint['model'])
+optimizer.load_state_dict(checkpoint['optimizer'])
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+

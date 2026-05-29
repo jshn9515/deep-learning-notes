@@ -1,0 +1,435 @@
+---
+author: jshn9515
+date: 2026-05-23
+date-modified: 2026-05-23
+open-graph:
+  title: ch2.3-dataset-and-dataloader
+  description: "2.3 Data Loading in PyTorch: Dataset, DataLoader, and Batching"
+title: "2.3 Data Loading in PyTorch: Dataset, DataLoader, and Batching"
+order: 3
+---
+
+A complete training process needs more than a model and gradients: it also needs a data pipeline.
+
+PyTorch separates this pipeline into `Dataset`, which defines individual samples, and `DataLoader`, which batches, shuffles, collates, and optionally prefetches those samples.
+
+The examples start with tensor data and then move toward the practical issues that appear in real training scripts.
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+X = torch.randn(1000, 10)
+y = torch.randn(1000, 1)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+batch_size = 32
+
+X_batch = X[:batch_size]
+y_batch = y[:batch_size]
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+from collections.abc import Iterator
+
+import torch
+import torch.utils.data as utils
+from torch import Tensor
+
+print('PyTorch version:', torch.__version__)
+```
+
+```{python}
+device = torch.accelerator.current_accelerator(check_available=True)
+if device is None:
+    device = torch.device('cpu')
+print('Using device:', device)
+```
+
+## 2.3.1 Dataset: Accessing Samples Through a Unified Interface
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```text
+dataset -> mini-batch -> model -> loss -> backward -> optimizer step
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```text
+cat_001.jpg -> label 0
+dog_001.jpg -> label 1
+cat_002.jpg -> label 0
+...
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+sample = dataset[index]
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+class SimpleTensorDataset(utils.Dataset):
+    def __init__(self, X: Tensor, y: Tensor):
+        if len(X) != len(y):
+            raise ValueError('X and y must have the same length.')
+        self.X = X
+        self.y = y
+
+    def __len__(self) -> int:
+        return len(self.X)
+
+    def __getitem__(self, index: int) -> tuple[Tensor, Tensor]:
+        X = self.X[index]
+        y = self.y[index]
+        return X, y
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+X = torch.randn(1000, 10)
+y = torch.randn(1000, 1)
+
+dataset = SimpleTensorDataset(X, y)
+x0, y0 = dataset[0]
+
+print('Dataset length:', len(dataset))
+print('First input shape:', x0.shape)
+print('First target shape:', y0.shape)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+dataset = utils.TensorDataset(X, y)
+x0, y0 = dataset[0]
+
+print('First input shape:', x0.shape)
+print('First target shape:', y0.shape)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.3.2 DataLoader: Organizing Samples into Mini-Batches
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+dataloader = utils.DataLoader(
+    dataset,
+    batch_size=32,
+    shuffle=True,
+)
+
+X, y = next(iter(dataloader))
+print('Input batch shape:', X.shape)
+print('Target batch shape:', y.shape)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+for X, y in dataloader:
+    y_pred = model(X)
+    loss = loss_fn(y_pred, y)
+    loss.backward()
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```text
+Dataset:    index -> sample
+DataLoader: samples -> batch
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+## 2.3.3 collate_fn: How Samples Are Packed into a Batch
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```text
+x: (32, 10)
+y: (32, 1)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+class VariableLengthDataset(utils.Dataset):
+    def __init__(self):
+        self.samples = [
+            torch.tensor([1, 2, 3]),
+            torch.tensor([4, 5]),
+            torch.tensor([6, 7, 8, 9]),
+            torch.tensor([10]),
+        ]
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def __getitem__(self, index: int) -> Tensor:
+        return self.samples[index]
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+dataset = VariableLengthDataset()
+dataloader = utils.DataLoader(dataset, batch_size=2)
+
+try:
+    batch = next(iter(dataloader))
+except RuntimeError as err:
+    print('RuntimeError:', err)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+def pad_collate_fn(batch: list[Tensor]) -> tuple[Tensor, Tensor]:
+    lengths = torch.tensor([len(x) for x in batch])
+    max_len = lengths.max().item()
+
+    padded = torch.zeros(len(batch), max_len, dtype=torch.long)
+    for i, x in enumerate(batch):
+        padded[i, : len(x)] = x
+
+    return padded, lengths
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+dataloader = utils.DataLoader(
+    dataset,
+    batch_size=2,
+    collate_fn=pad_collate_fn,
+)
+
+for tokens, lengths in dataloader:
+    print(f'tokens:\n{tokens}')
+    print(f'lengths: {lengths}\n')
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.3.4 num_workers: Parallelizing Data Loading and Model Computation
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```text
+read batch -> train one step -> read batch -> train one step -> ...
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+dataloader = utils.DataLoader(
+    dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=0,
+)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```text
+worker 0 -> prepare batch
+worker 1 -> prepare batch
+worker 2 -> prepare batch
+main process -> train model
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+if __name__ == '__main__':
+    main()
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+::: {.callout-warning}
+
+:::
+
+## 2.3.5 persistent_workers: Avoid Restarting Workers Every Epoch
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+dataloader = utils.DataLoader(
+    dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=2,
+    persistent_workers=True,
+)
+```
+
+::: {.callout-warning}
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+:::
+
+## 2.3.6 pin_memory: Whether to Put Batches in Page-Locked Memory
+
+::: {.callout-tip}
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+:::
+
+```python
+X = X.to(device)
+y = y.to(device)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+dataloader = utils.DataLoader(
+    dataset,
+    batch_size=32,
+    shuffle=True,
+    pin_memory=device.type == 'cuda',
+)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+pin_memory=True
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+X = X.to('cuda', non_blocking=True)
+y = y.to('cuda', non_blocking=True)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+## 2.3.7 IterableDataset: When Data Cannot Be Randomly Accessed
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+sample = dataset[index]
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```text
+sample_1 -> sample_2 -> sample_3 -> ...
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+class SimpleCountingDataset(utils.IterableDataset):
+    def __init__(self, end: int):
+        self.end = end
+
+    def __iter__(self) -> Iterator[Tensor]:
+        for i in range(self.end):
+            yield torch.tensor(i)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+dataset = SimpleCountingDataset(end=10)
+dataloader = utils.DataLoader(dataset, batch_size=4)
+
+for i, batch in enumerate(dataloader, start=1):
+    print(f'Batch {i}: {batch}')
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+::: {.list-table tbl-colwidths="[20,20,30,45]"}
+
+:::
+
+```{python}
+class ShardedCountingDataset(utils.IterableDataset):
+    def __init__(self, end: int):
+        self.end = end
+
+    def __iter__(self) -> Iterator[Tensor]:
+        worker_info = utils.get_worker_info()
+
+        if worker_info is None:
+            start = 0
+            step = 1
+        else:
+            start = worker_info.id
+            step = worker_info.num_workers
+
+        for i in range(start, self.end, step):
+            yield torch.tensor(i)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+::: {.callout-tip}
+
+:::
+
+## 2.3.8 A DataLoader Configuration Closer to a Training Script
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+::: {.callout-note}
+
+:::
+
+```{python}
+device = torch.accelerator.current_accelerator(check_available=True)
+if device is None:
+    device = torch.device('cpu')
+
+dataset = utils.TensorDataset(X, y)
+dataloader = utils.DataLoader(
+    dataset,
+    batch_size=64,
+    shuffle=True,
+    num_workers=2,
+    pin_memory=device.type == 'cuda',
+    persistent_workers=True,
+)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+for X, y in dataloader:
+    X = X.to(device, non_blocking=True)
+    y = y.to(device, non_blocking=True)
+
+    y_pred = model(X)
+    loss = loss_fn(y_pred, y)
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+## 2.3.9 Summary
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+

@@ -1,0 +1,899 @@
+---
+author: jshn9515
+date: 2026-05-23
+date-modified: 2026-05-23
+open-graph:
+  title: ch2.4-nn-module
+  description: "2.4 nn.Module in PyTorch: Organizing Models, Parameters, and State"
+title: "2.4 nn.Module in PyTorch: Organizing Models, Parameters, and State"
+order: 4
+---
+
+After understanding autograd and data loading, the next question is how to organize the model itself.
+
+`nn.Module` is PyTorch's central container for computation, learnable parameters, non-learnable buffers, submodules, state serialization, and train/eval behavior.
+
+This notebook builds from a small linear layer toward the module system used in real models.
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+import torch
+
+x = torch.randn(4, 3)
+weight = torch.randn(2, 3, requires_grad=True)
+bias = torch.randn(2, requires_grad=True)
+
+y = x @ weight.T + bias
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+from pprint import pprint
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch import Tensor
+
+print('PyTorch version:', torch.__version__)
+```
+
+## 2.4.1 Why nn.Module Is Needed
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+$$
+
+y = xW^\top + b
+
+$$
+
+```{python}
+in_features = 3
+out_features = 2
+
+weight = torch.randn(out_features, in_features, requires_grad=True)
+bias = torch.randn(out_features, requires_grad=True)
+
+x = torch.randn(4, in_features)
+y = x @ weight.T + bias
+
+print(y.shape)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+parameters = [weight, bias]
+pprint(parameters)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+class SimpleLinear(nn.Module):
+    def __init__(self, in_features: int, out_features: int):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(out_features, in_features))
+        self.bias = nn.Parameter(torch.randn(out_features))
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.bias.addmm(x, self.weight.T)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+linear = SimpleLinear(3, 2)
+
+for name, param in linear.named_parameters():
+    print(f'{name}: {param.shape}')
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+params = list(linear.named_parameters())
+pprint(params)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+## 2.4.2 forward(): Module Organizes Computation
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+class SimpleLinear(nn.Module):
+    ...
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.bias.addmm(x, self.weight.T)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+x = torch.randn(4, 3)
+y = linear(x)
+print(y.shape)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+linear(x)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+linear.forward(x)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```text
+Module = parameters + forward computation
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+## 2.4.3 The Relationship Between nn.Module and nn.functional
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+linear = nn.Linear(3, 2)
+y1 = linear(x)
+print(y1.shape)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+weight = torch.randn(2, 3)
+bias = torch.randn(2)
+y2 = F.linear(x, weight, bias)
+print(y2.shape)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+for name, param in linear.named_parameters():
+    print(f'{name}: {param}')
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+F.linear(input, weight, bias)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```text
+nn.Module      = stateful layer or model
+nn.functional  = stateless function
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+def forward(self, input: Tensor) -> Tensor:
+    return F.linear(input, self.weight, self.bias)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+class SimpleMLP(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int):
+        super().__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return x
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+self.relu = nn.ReLU()
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+self.dropout = nn.Dropout(p=0.5)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+## 2.4.4 Parameter: Tensors Updated by the Optimizer
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+class BadLinear(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.weight = torch.randn(2, 3, requires_grad=True)
+
+
+bad = BadLinear()
+for name, param in bad.named_parameters():
+    print(f'{name}: {param}')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+class GoodLinear(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(2, 3))
+
+
+good = GoodLinear()
+for name, param in good.named_parameters():
+    print(f'{name}: {param}')
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+class ExplicitLinear(nn.Module):
+    def __init__(self, in_features: int, out_features: int):
+        super().__init__()
+        weight = nn.Parameter(torch.randn(out_features, in_features))
+        bias = nn.Parameter(torch.randn(out_features))
+
+        self.register_parameter('weight', weight)
+        self.register_parameter('bias', bias)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return F.linear(x, self.weight, self.bias)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+self.weight = nn.Parameter(...)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+class OptionalBiasLinear(nn.Module):
+    def __init__(self, in_features: int, out_features: int, bias: bool = True):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(out_features, in_features))
+
+        if bias:
+            self.bias = nn.Parameter(torch.randn(out_features))
+        else:
+            self.register_parameter('bias', None)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return F.linear(x, self.weight, self.bias)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.4.5 Buffer: Model State That Is Not Learnable
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+class Normalize(nn.Module):
+    def __init__(self, mean: Tensor, std: Tensor):
+        super().__init__()
+        self.register_buffer('mean', mean)
+        self.register_buffer('std', std)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return (x - self.mean) / self.std
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+mean = torch.tensor([0.5, 0.5, 0.5])
+std = torch.tensor([0.2, 0.2, 0.2])
+normalize = Normalize(mean, std)
+
+print('Parameters:')
+for name, param in normalize.named_parameters():
+    print(f'{name}: {param}')
+
+print('Buffers:')
+for name, buffer in normalize.named_buffers():
+    print(f'{name}: {buffer}')
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+pprint(normalize.state_dict())
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+self.mean = mean
+self.std = std
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+print('Buffers before moving to device:', normalize.mean.device)
+
+device = torch.accelerator.current_accelerator(check_available=True)
+normalize.to(device)
+
+print('Buffers after moving to device:', normalize.mean.device)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+self.register_buffer('mean', mean, persistent=True)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+class MaskCache(nn.Module):
+    def __init__(self, max_len: int):
+        super().__init__()
+        mask = torch.tril(torch.ones(max_len, max_len, dtype=torch.bool))
+        self.register_buffer('causal_mask', mask, persistent=False)
+
+
+cache = MaskCache(max_len=4)
+print('Buffers:')
+for name, buffer in cache.named_buffers():
+    print(f'{name}: {buffer}')
+
+print('State dict keys:', cache.state_dict())
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+::: {.list-table}
+
+:::
+
+## 2.4.6 Submodules: Modules Can Contain Modules
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+class SimpleMLP(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(3, 8)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(8, 2)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        return x
+
+
+model = SimpleMLP()
+print(model)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+for name, param in model.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```text
+fc1.weight
+fc1.bias
+fc2.weight
+fc2.bias
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+for child in model.children():
+    print(child)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+for name, child in model.named_children():
+    print(f'{name}: {child}')
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+for module in model.modules():
+    print(type(module).__name__)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+for name, module in model.named_modules():
+    print(f'{repr(name)} -> {type(module).__name__}')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+for name, module in model.named_modules():
+    if isinstance(module, nn.Linear):
+        print('Linear layer:', name)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+class BadStack(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = [nn.Linear(3, 3), nn.Linear(3, 3)]
+
+
+bad_stack = BadStack()
+for name, param in bad_stack.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+class GoodStack(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.ModuleList(
+            [
+                nn.Linear(3, 3),
+                nn.Linear(3, 3),
+            ]
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
+good_stack = GoodStack()
+for name, param in good_stack.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+class BadDict(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = {'layer1': nn.Linear(3, 3), 'layer2': nn.Linear(3, 3)}
+
+    def forward(self, x: Tensor) -> Tensor:
+        for layer in self.layers.keys():
+            x = self.layers[layer](x)
+        return x
+
+
+bad_dict = BadDict()
+for name, param in bad_dict.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+class GoodDict(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.ModuleDict(
+            {
+                'layer1': nn.Linear(3, 3),
+                'layer2': nn.Linear(3, 3),
+            }
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        for layer in self.layers.keys():
+            x = self.layers[layer](x)
+        return x
+
+
+good_dict = GoodDict()
+for name, param in good_dict.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+sequential_model = nn.Sequential(
+    nn.Linear(3, 8),
+    nn.ReLU(),
+    nn.Linear(8, 2),
+)
+
+print(sequential_model)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+## 2.4.7 state_dict: A Dictionary of Model State
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+state = model.state_dict()
+
+for key, value in state.items():
+    print(f'{key}: {value.size()}')
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+state = normalize.state_dict()
+
+for key, value in state.items():
+    print(f'{key}: {value.size()}')
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+torch.save(model.state_dict(), 'model.pt')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+model = SimpleMLP()
+state_dict = torch.load('model.pt')
+flag = model.load_state_dict(state_dict)
+print(flag)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+## 2.4.8 train() and eval(): Switching Module Behavior
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+dropout = nn.Dropout(p=0.5)
+x = torch.ones(5)
+
+dropout.train()
+print('Train mode:', dropout(x))
+
+dropout.eval()
+print('Eval mode:', dropout(x))
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+model = SimpleMLP()
+print(f'Initial training mode: {model.training}')
+
+model.eval()
+print(f'After calling eval(): {model.training}')
+
+model.train()
+print(f'After calling train(): {model.training}')
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+model.eval()
+x = torch.randn(4, 3, requires_grad=True)
+y = model(x)
+print(f'y.requires_grad: {y.requires_grad}')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+model.eval()
+with torch.no_grad():
+    y_pred = model(x)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+model.eval()
+with torch.inference_mode():
+    y_pred = model(x)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+::: {.callout-warning}
+
+:::
+
+## 2.4.9 Lazy Modules: Deferring Input-Dimension Decisions
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+nn.Linear(in_features=3, out_features=2)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+$$
+
+W \in \mathbb{R}^{\text{out\_features} \times \text{in\_features}}
+
+$$
+
+```python
+x = self.features(x)
+x = x.flatten(start_dim=1)
+x = self.classifier(x)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+lazy_linear = nn.LazyLinear(out_features=2)
+print(lazy_linear)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+for name, param in lazy_linear.named_parameters():
+    print(f'{name}: {type(param).__name__}')
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+try:
+    print(lazy_linear.weight.shape)
+except RuntimeError as err:
+    print('RuntimeError:', err)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+x = torch.randn(4, 3)
+y = lazy_linear(x)
+
+print(lazy_linear)
+print('Output shape:', y.shape)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+for name, param in lazy_linear.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+$$
+
+(\text{out\_features}, \text{in\_features}) = (2, 3)
+
+$$
+
+```{python}
+class LazyCNN(nn.Module):
+    def __init__(self, num_classes: int):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.LazyConv2d(8, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            nn.LazyConv2d(16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+        )
+        self.classifier = nn.LazyLinear(num_classes)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.features(x)
+        x = x.flatten(start_dim=1)
+        x = self.classifier(x)
+        return x
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+lazy_cnn = LazyCNN(num_classes=10)
+print(lazy_cnn)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+x = torch.randn(4, 1, 28, 28)
+y = lazy_cnn(x)
+
+print(lazy_cnn.classifier)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+$$
+
+16 \times 7 \times 7 = 784
+
+$$
+
+```python
+nn.LazyConv1d(out_channels, kernel_size)
+nn.LazyConv2d(out_channels, kernel_size)
+nn.LazyConv3d(out_channels, kernel_size)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+lazy_conv = nn.LazyConv2d(out_channels=16, kernel_size=3, padding=1)
+print(lazy_conv)
+
+x = torch.randn(4, 3, 32, 32)
+y = lazy_conv(x)
+
+print(lazy_conv)
+print('Output shape:', y.shape)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+for name, param in lazy_conv.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+model = LazyCNN(num_classes=10)
+
+x = torch.randn(1, 1, 28, 28)
+y = model(x)
+
+for key, value in model.state_dict().items():
+    print(f'{key}: {value.size()}')
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+x1 = torch.randn(4, 3)
+y1 = lazy_linear(x1)
+
+try:
+    x2 = torch.randn(4, 5)
+    y2 = lazy_linear(x2)
+except RuntimeError as err:
+    print('RuntimeError:', err)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.4.10 Putting These Concepts into One Model
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+class DemoNet(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int):
+        super().__init__()
+        self.register_buffer('mean', torch.zeros(input_dim))
+        self.register_buffer('std', torch.ones(input_dim))
+        self.register_buffer(
+            'cache_mask',
+            torch.ones(input_dim, dtype=torch.bool),
+            persistent=False,
+        )
+
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.dropout = nn.Dropout(p=0.5)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = (x - self.mean) / self.std
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+demo = DemoNet(input_dim=3, hidden_dim=8, output_dim=2)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+print('Parameters:')
+for name, param in demo.named_parameters():
+    print(f'{name}: {param.size()}')
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+print('Buffers:')
+for name, buffer in demo.named_buffers():
+    print(f'{name}: {buffer.size()}')
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+print('State dict:')
+for key, value in demo.state_dict().items():
+    print(f'{key}: {value.size()}')
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+print('Submodules:')
+for name, module in demo.named_modules():
+    print(repr(name), '->', type(module).__name__)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```text
+parameters()    -> find learnable parameters
+buffers()       -> find non-parameter state
+modules()       -> find submodule structure
+state_dict()    -> export saveable model state
+train()/eval()  -> switch module behavior
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+## 2.4.11 Summary
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+

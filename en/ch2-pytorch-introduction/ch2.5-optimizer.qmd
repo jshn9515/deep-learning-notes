@@ -1,0 +1,464 @@
+---
+author: jshn9515
+date: 2026-05-23
+date-modified: 2026-05-23
+open-graph:
+  title: ch2.5-optimizer
+  description: "2.5 Optimizer in PyTorch: From Manual Updates to Parameter Groups and State Management"
+title: "2.5 Optimizers in PyTorch: From Manual Updates to Parameter Groups and State Management"
+order: 5
+---
+
+Calling `loss.backward()` computes gradients, but gradients do not update parameters by themselves.
+
+Optimizers use parameter gradients, hyperparameters, and sometimes internal history to change model parameters. This section starts from manual gradient descent and then explains `torch.optim`.
+
+The goal is to understand what `zero_grad`, `backward`, and `step` each do, and why optimizer state matters when training is resumed.
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+$$
+
+\theta \leftarrow \theta - \eta \nabla_\theta L
+
+$$
+
+```{python}
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+x = torch.randn(8, 3)
+y = torch.randn(8, 1)
+
+linear = nn.Linear(3, 1)
+
+pred = linear(x)
+loss = F.mse_loss(pred, y)
+loss.backward()
+
+lr = 0.1
+with torch.no_grad():
+    for param in linear.parameters():
+        param -= lr * param.grad
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+from pprint import pprint
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch import Tensor
+
+print('PyTorch version:', torch.__version__)
+```
+
+## 2.5.1 From Manual Updates to optimizer.step()
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+x = torch.randn(8, 3)
+y = torch.randn(8, 1)
+
+pred = model(x)
+loss = F.mse_loss(pred, y)
+
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+
+print('Loss:', loss.item())
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+before = model.weight.detach().clone()
+
+pred = model(x)
+loss = F.mse_loss(pred, y)
+
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+
+after = model.weight.detach().clone()
+
+flag = before.allclose(after)
+max_err = (before - after).abs().max().item()
+print('Is the parameter unchanged?', flag)
+print('Max absolute difference:', max_err)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+## 2.5.2 Why zero_grad Is Needed Before Each Update
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+w = torch.tensor([1.0], requires_grad=True)
+
+loss1 = w ** 2
+loss1.backward()
+print('After first backward:', w.grad)
+
+loss2 = w ** 2
+loss2.backward()
+print('After second backward:', w.grad)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+optimizer.zero_grad()
+
+for i in range(4):
+    x = torch.randn(8, 3)
+    y = torch.randn(8, 1)
+
+    pred = model(x)
+    loss = F.mse_loss(pred, y)
+    loss = loss / 4
+    loss.backward()
+
+optimizer.step()
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+## 2.5.3 What set_to_none Means
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+x = torch.randn(8, 3)
+y = torch.randn(8, 1)
+
+loss = F.mse_loss(model(x), y)
+loss.backward()
+
+flag1 = model.weight.grad is not None
+print('Whether grad is None before zero_grad?', flag1)
+
+optimizer.zero_grad(set_to_none=True)
+flag2 = model.weight.grad is None
+print('Whether grad is None after zero_grad?', flag2)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+optimizer.zero_grad(set_to_none=False)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+loss = F.mse_loss(model(x), y)
+loss.backward()
+
+optimizer.zero_grad(set_to_none=False)
+print(model.weight.grad)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+## 2.5.4 Parameter Groups: Different Parameters Can Use Different Learning Rates
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+optimizer = optim.SGD(model.parameters(), lr=1e-3)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+class TinyModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.backbone = nn.Sequential(
+            nn.Linear(10, 32),
+            nn.ReLU(),
+            nn.Linear(32, 32),
+            nn.ReLU(),
+        )
+        self.head = nn.Linear(32, 2)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.backbone(x)
+        return self.head(x)
+
+
+model = TinyModel()
+optimizer = optim.SGD(
+    [
+        {'params': model.backbone.parameters(), 'lr': 1e-4},
+        {'params': model.head.parameters(), 'lr': 1e-3},
+    ],
+    weight_decay=1e-2,
+)
+
+for i, group in enumerate(optimizer.param_groups):
+    print(
+        f'Parameter group {i}: '
+        f'learning rate = {group["lr"]}, '
+        f'weight decay = {group["weight_decay"]}'
+    )
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+def split_weight_decay_params(model: nn.Module):
+    decay = []
+    no_decay = []
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if name.endswith('bias') or 'norm' in name.lower():
+            no_decay.append(param)
+        else:
+            decay.append(param)
+
+    return [
+        {'params': decay, 'weight_decay': 1e-2},
+        {'params': no_decay, 'weight_decay': 0.0},
+    ]
+
+
+model = nn.Sequential(
+    nn.Linear(10, 32),
+    nn.LayerNorm(32),
+    nn.Linear(32, 2),
+)
+optimizer = optim.SGD(split_weight_decay_params(model), lr=1e-3)
+
+for i, group in enumerate(optimizer.param_groups):
+    print(
+        f'Parameter group {i}: '
+        f'weight decay = {group["weight_decay"]}, '
+        f'number of params = {len(group["params"])}'
+    )
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.5.5 Optimizers Are Not Just Formulas; They Also Have State
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+$$
+
+\theta \leftarrow \theta - \eta g
+
+$$
+
+$$
+
+v_t = \mu v_{t-1} + g_t
+
+$$
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+
+pprint(optimizer.state_dict(), sort_dicts=False)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+x = torch.randn(8, 3)
+y = torch.randn(8, 1)
+
+loss = F.mse_loss(model(x), y)
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+
+state_dict = optimizer.state_dict()
+pprint(state_dict, sort_dicts=False)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+checkpoint = {
+    'model': model.state_dict(),
+    'optimizer': optimizer.state_dict(),
+}
+torch.save(checkpoint, 'checkpoint.pth')
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+
+checkpoint = torch.load('checkpoint.pth')
+model.load_state_dict(checkpoint['model'])
+optimizer.load_state_dict(checkpoint['optimizer'])
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.5.6 foreach and fused: Different Implementations of the Same Optimizer
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+optimizer = optim.AdamW(
+    model.parameters(),
+    lr=1e-3,
+    foreach=True,
+)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+optimizer = optim.AdamW(
+    model.parameters(),
+    lr=1e-3,
+    fused=True,
+)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+for param in params:
+    update(param)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+::: {.callout-tip}
+
+:::
+
+```{python}
+model = nn.Linear(10, 2)
+optimizer = optim.AdamW(
+    model.parameters(),
+    lr=1e-3,
+    foreach=False,
+    fused=False,
+)
+
+print(optimizer)
+```
+
+## 2.5.7 optimizer.step() Does Not Record the Computation Graph by Default
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+with torch.no_grad():
+    param -= lr * param.grad
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+model = nn.Linear(3, 1)
+optimizer = optim.SGD(
+    model.parameters(),
+    lr=0.1,
+    differentiable=True,
+)
+
+flag = optimizer.defaults['differentiable']
+print('Is optimizer step differentiable?', flag)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+## 2.5.8 A Complete Optimization Step
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+model = nn.Sequential(
+    nn.Linear(10, 32),
+    nn.ReLU(),
+    nn.Linear(32, 1),
+)
+optimizer = optim.AdamW(
+    [
+        {'params': model[0].parameters(), 'lr': 1e-3},
+        {'params': model[2].parameters(), 'lr': 1e-2},
+    ],
+    weight_decay=1e-2,
+)
+
+x = torch.randn(16, 10)
+y = torch.randn(16, 1)
+
+model.train()
+pred = model(x)
+loss = F.mse_loss(pred, y)
+
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+print('Loss:', loss.item())
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+## 2.5.9 Summary
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+

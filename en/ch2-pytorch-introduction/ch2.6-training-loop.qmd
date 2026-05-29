@@ -1,0 +1,384 @@
+---
+author: jshn9515
+date: 2026-05-23
+date-modified: 2026-05-28
+open-graph:
+  title: ch2.6-training-template
+  description: "2.6 Training Loop in PyTorch: Connecting Data, Model and Optimizer"
+title: "2.6 Training Loops in PyTorch: Connecting Data, Models, and Optimizers"
+order: 6
+---
+
+The previous sections introduced the pieces of a PyTorch training workflow: modules, losses, optimizers, metrics, devices, and state dictionaries.
+
+This section turns those pieces into a reusable training template. The template is intentionally small, but it fixes common details such as seeding, device placement, model modes, metric state, and validation without gradient recording.
+
+Later experiments can reuse this structure while swapping in different models and datasets.
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+import random
+
+import dnnl
+import numpy as np
+import torch
+import torch.accelerator as accl
+import torch.nn as nn
+import torch.optim as optim
+import torch.utils.data as utils
+import torchvision.datasets as datasets
+import torchvision.transforms.v2 as v2
+from torch import Tensor
+from torchmetrics import Metric
+from torchmetrics.classification import MulticlassAccuracy
+
+print('PyTorch version:', torch.__version__)
+```
+
+## 2.6.1 Why a Training Template Is Useful
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+logits = model(X)
+loss = loss_fn(logits, y)
+
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+## 2.6.2 Fixing Random Seeds
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+def set_seed(
+    seed: int = 42,
+    *,
+    deterministic: bool = True,
+    benchmark: bool = False,
+    warn_only: bool = True,
+) -> torch.Generator:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch_rng = torch.manual_seed(seed)
+
+    torch.use_deterministic_algorithms(deterministic, warn_only=warn_only)
+    # These two lines will explain in the future chapter
+    torch.backends.cudnn.deterministic = deterministic
+    torch.backends.cudnn.benchmark = benchmark
+
+    return torch_rng
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+torch.use_deterministic_algorithms(True, warn_only=True)
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+torch_rng = set_seed(42)
+```
+
+## 2.6.3 Choosing a Compute Device
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+def get_default_device() -> torch.device:
+    device = accl.current_accelerator(check_available=True)
+    if device is not None:
+        return device
+    return torch.device('cpu')
+
+
+device = get_default_device()
+print('Using device:', device)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```python
+model = model.to(device)
+X = X.to(device)
+y = y.to(device)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.6.4 Preparing a Small Classification Task
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```{python}
+root = dnnl.get_data_root()
+transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
+ds_rng = torch.Generator().manual_seed(42)
+
+train_ds = datasets.MNIST(root, train=True, transform=transform, download=True)
+train_ds, val_ds = utils.random_split(train_ds, [50000, 10000], generator=ds_rng)
+
+train_dl = utils.DataLoader(train_ds, batch_size=64, shuffle=True)
+val_dl = utils.DataLoader(val_ds, batch_size=128, shuffle=False)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+generator=torch.Generator().manual_seed(42)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```{python}
+model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(28 * 28, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10),
+)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+## 2.6.5 Using TorchMetrics for Metrics
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+y_pred = logits.argmax(dim=1)
+accuracy = (y_pred == y).float().mean()
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```text
+metric.update(...)   -> accumulate the current batch into internal state
+metric.compute()     -> compute the final metric from accumulated state
+metric.reset()       -> clear state and start the next round of accumulation
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+metric = MulticlassAccuracy(num_classes=3).to(device)
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+## 2.6.6 One Training Epoch: train_one_epoch
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+def train_one_epoch(
+    model: nn.Module,
+    dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+    optimizer: optim.Optimizer,
+    metric: Metric,
+    device: torch.device,
+) -> tuple[float, float]:
+    model.train()
+    metric.reset()
+
+    total_loss = 0.0
+
+    for X, y in dataloader:
+        X = X.to(device)
+        y = y.to(device)
+
+        logits = model(X)
+        loss = loss_fn(logits, y)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+        # We use `detach()` here to avoid keeping the computation graph
+        # for the metric update.
+        metric.update(logits.detach(), y)
+
+    avg_loss = total_loss / len(dataloader)
+    avg_metric = metric.compute().item()
+    return avg_loss, avg_metric
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```python
+model.train()
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+```python
+X = X.to(device)
+y = y.to(device)
+```
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```python
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+total_loss += loss.item()
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+## 2.6.7 One Validation Epoch: evaluate_on_epoch
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+```{python}
+def evaluate_on_epoch(
+    model: nn.Module,
+    dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+    metric: Metric,
+    device: torch.device,
+) -> tuple[float, float]:
+    model.eval()
+    metric.reset()
+
+    total_loss = 0.0
+
+    with torch.inference_mode():
+        for X, y in dataloader:
+            X = X.to(device)
+            y = y.to(device)
+
+            logits = model(X)
+            loss = loss_fn(logits, y)
+
+            total_loss += loss.item()
+            metric.update(logits, y)
+
+    avg_loss = total_loss / len(dataloader)
+    avg_metric = metric.compute().item()
+    return avg_loss, avg_metric
+```
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+## 2.6.8 Connecting Training and Validation
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
+```{python}
+def train_and_evaluate(
+    model: nn.Module,
+    train_dl: utils.DataLoader[tuple[Tensor, Tensor]],
+    val_dl: utils.DataLoader[tuple[Tensor, Tensor]],
+    loss_fn: nn.Module,
+    optimizer: optim.Optimizer,
+    metric: Metric,
+    val_metric: Metric,
+    num_epochs: int,
+    device: torch.device | None = None,
+) -> None:
+    if device is None:
+        device = get_default_device()
+
+    model.to(device)
+    metric.to(device)
+    val_metric.to(device)
+
+    for epoch in range(1, num_epochs + 1):
+        loss, score = train_one_epoch(
+            model=model,
+            dataloader=train_dl,
+            loss_fn=loss_fn,
+            optimizer=optimizer,
+            metric=metric,
+            device=device,
+        )
+        val_loss, val_score = evaluate_on_epoch(
+            model=model,
+            dataloader=val_dl,
+            loss_fn=loss_fn,
+            metric=val_metric,
+            device=device,
+        )
+
+        w = len(str(num_epochs))
+        print(
+            f'Epoch [{epoch:{w}d}/{num_epochs:{w}d}] '
+            f'| loss: {loss:.4f} '
+            f'| metric: {score:.4f} '
+            f'| val_loss: {val_loss:.4f} '
+            f'| val_metric: {val_score:.4f}'
+        )
+```
+
+In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+
+```python
+metric: Metric
+val_metric: Metric
+```
+
+The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+
+```{python}
+torch_rng = set_seed(42)
+device = get_default_device()
+
+model = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(28 * 28, 128),
+    nn.ReLU(),
+    nn.Linear(128, 10),
+)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+metric = MulticlassAccuracy(num_classes=10)
+val_metric = MulticlassAccuracy(num_classes=10)
+
+train_and_evaluate(
+    model=model,
+    train_dl=train_dl,
+    val_dl=val_dl,
+    loss_fn=loss_fn,
+    optimizer=optimizer,
+    metric=metric,
+    val_metric=val_metric,
+    num_epochs=5,
+    device=device,
+)
+```
+
+These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+
+## 2.6.9 What This Template Does Not Cover
+
+This section develops the concept step by step and uses the following code to make the behavior concrete.
+
+## 2.6.10 Summary
+
+The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+
