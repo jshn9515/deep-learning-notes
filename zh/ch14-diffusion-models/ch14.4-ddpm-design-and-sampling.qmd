@@ -21,7 +21,6 @@ order: 4
 
 ```{python}
 import math
-import os
 import random
 
 import dnnl
@@ -29,7 +28,6 @@ import dnnl.models.ddpm as ddpm
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.accelerator as accl
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as utils
@@ -43,9 +41,7 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-device = accl.current_accelerator(check_available=True)
-if device is None:
-    device = torch.device('cpu')
+device = dnnl.get_default_device()
 print('Using device:', device)
 ```
 
@@ -263,7 +259,7 @@ $$
 当然，后来也有很多变体（例如 DDIM）把 DDPM 的随机采样过程改写成了一个可以是确定性的更新过程。但在最基础的 DDPM 里，**逐步采样 + 每步带一点随机性** 是标准做法。
 
 ```{python}
-root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
+root = dnnl.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
