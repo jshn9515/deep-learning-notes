@@ -21,11 +21,10 @@ In this section, we explain the overall running process of DDPM from the perspec
 
 ```{python}
 import math
-import os
 import random
 
-import dnnl.models.ddpm.utils as dutils
 import dnnl
+import dnnl.models.ddpm as ddpm
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -42,9 +41,7 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-device = torch.accelerator.current_accelerator(check_available=True)
-if device is None:
-    device = torch.device('cpu')
+device = dnnl.get_default_device()
 print('Using device:', device)
 ```
 
@@ -185,6 +182,33 @@ A common method is:
 
 Of course, in more modern diffusion models, besides time embedding, category conditions and text conditions are also often added, or external information is integrated into the network through cross-attention. But in the most basic DDPM scenario, time embedding + U-Net is already a very classic combination.
 
+```python
+class UNet2DModel(nn.Module):
+    def __init__(
+        self,
+        in_channels: int = 3,
+        out_channels: int = 3,
+        block_out_channels: tuple[int, ...] = (64, 128, 256, 512),
+        time_emb_dim: int = 256,
+    ):
+        super().__init__()
+        self.time_embedding = nn.Sequential(
+            SinusoidalTimestepEmbedding(time_emb_dim),
+            nn.Linear(time_emb_dim, time_emb_dim),
+            nn.SiLU(),
+            nn.Linear(time_emb_dim, time_emb_dim),
+        )
+        ...
+
+    def forward(self, x: Tensor, timesteps: Tensor) -> Tensor:
+        time_emb = self.time_embedding(timesteps)
+        ...
+```
+
+We omit the concrete convolution, downsampling, and upsampling layers inside U-Net here. The core idea is that in `forward()`, the timestep is first converted into a vector through `time_embedding`, and then this vector is injected into the features at different stages of U-Net.
+
+Let's test the `UNet2DModel` we wrote:
+
 ```{python}
 unet = UNet2DModel().to(device)
 x = torch.randn(1, 3, 64, 64, device=device)
@@ -235,7 +259,7 @@ If there is no randomness at all, the sampling path may become too rigid. Proper
 Of course, later there were also many variants, such as DDIM, that rewrote the random sampling process of DDPM into an update process that can be deterministic. But in the most basic DDPM, **step-by-step sampling + a little randomness at each step** is the standard practice.
 
 ```{python}
-root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
+root = dnnl.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -267,7 +291,7 @@ def denoise_v2(x0: Tensor, xt: Tensor, timestep: int, betas: Tensor) -> Tensor:
 
 T = 1000
 betas = torch.linspace(0.0001, 0.02, steps=T)
-xt = dutils.add_noise(x0, betas, T - 1)
+xt = ddpm.add_noise(x0, betas, T - 1)
 trajectory = [xt.clone()]
 
 for t in range(T - 1, -1, -1):
