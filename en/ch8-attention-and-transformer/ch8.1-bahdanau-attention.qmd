@@ -13,7 +13,9 @@ In the previous sequence models, we have already seen a very natural idea: first
 
 This method looks very reasonable. Since the input is a sentence, compressing the whole sentence into one representation and then using this representation to generate another sentence seems to be a standard "encoder-decoder" process.
 
-But the problem is exactly here: **the information of the whole input sequence must be compressed into a fixed-length vector.**
+But the problem is exactly here:
+
+> **The information of the whole input sequence must be compressed into a fixed-length vector.**
 
 For short sentences, this problem may not be obvious. But when the sentence becomes longer, the fixed-length vector can easily become an information bottleneck. The final hidden state of the encoder has to remember the overall semantics of the sentence, while also preserving local words, grammatical structures, and long-distance dependencies. We force the encoder to squeeze all information into one vector, causing the decoder, when generating each target word, to only rely on the same compressed representation.
 
