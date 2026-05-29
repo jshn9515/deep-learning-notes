@@ -23,7 +23,6 @@ Therefore, we hope to use a latent variable $z$ to capture these latent factors.
 
 This is the core idea of **VAE (Variational Autoencoder)**. Instead of directly modeling in the high-dimensional data space, we first assume that behind the data there is a lower-dimensional and more structured latent space, and let the model learn the probability distribution of this latent space, as well as the way to generate data from this space.
 
-
 ```{python}
 import math
 
@@ -285,6 +284,7 @@ That is, VAE does not directly sample hard from $\mathcal{N}(\mu, \sigma^2)$. In
 $$
 \epsilon \sim \mathcal{N}(0, I)
 $$
+
 $$
 z = \mu + \sigma \odot \epsilon
 $$
@@ -349,6 +349,20 @@ class VAE(nn.Module):
         latent = self.reparameterize(mu, logvar)
         x_hat = self.decode(latent)
         return x_hat, mu, logvar
+```
+
+Let's test it:
+
+```{python}
+vae = VAE(input_shape=(1, 28, 28), hidden_dim=256, latent_dim=32)
+
+x = torch.randn(16, 1, 28, 28)
+with torch.inference_mode():
+    x_hat, mu, logvar = vae(x)
+
+print('x_hat.shape:', x_hat.shape)
+print('mu.shape:', mu.shape)
+print('logvar.shape:', logvar.shape)
 ```
 
 There are several key points here:
