@@ -8,7 +8,7 @@ import struct
 from binascii import b2a_base64
 from functools import partial
 from io import BytesIO
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from matplotlib.backend_bases import FigureCanvasBase
 from matplotlib.figure import Figure
@@ -18,26 +18,38 @@ if TYPE_CHECKING:
 
 __all__ = ['set_matplotlib_format']
 
+type FigureFormat = Literal['png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf']
 
-def set_matplotlib_format(fmt: str, dpi_ratio: int = 3) -> None:
-    """Select figure formats for the inline backend.
 
-    Args:
-        fmt (str):
-            One figure format to enable: {'png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf'}.
-        dpi_ratio (int, default: 3):
-            The dpi ratio to use for 'highdpi' format. Default is 3, which means
-            3 times the normal dpi. Only used when fmt is 'highdpi'.
-    """
+def _get_ipython_shell() -> InteractiveShell:
+    """Return the active IPython shell for inline figure configuration."""
     try:
-        from IPython.core.interactiveshell import InteractiveShell
+        from IPython.core.getipython import get_ipython
     except ImportError as err:
         raise ImportError(
             'set_matplotlib_format() function requires IPython. '
             'Install it with `pip install ipython` if you want to use this function.'
         ) from err
 
-    shell = InteractiveShell.instance()
+    shell = get_ipython()
+    if shell is None:
+        raise RuntimeError(
+            'set_matplotlib_format() function must be called from an IPython environment.'
+        )
+    return shell
+
+
+def set_matplotlib_format(fmt: FigureFormat, dpi_ratio: int = 3) -> None:
+    """Select figure formats for the inline backend.
+
+    Args:
+        fmt (Literal['png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf']):
+            One figure format to enable: {'png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf'}.
+        dpi_ratio (int, default: 3):
+            The dpi ratio to use for 'highdpi' format. Default is 3, which means
+            3 times the normal dpi. Only used when fmt is 'highdpi'.
+    """
+    shell = _get_ipython_shell()
     set_figure_format(shell, fmt, dpi_ratio)
 
 
@@ -97,7 +109,7 @@ def highdpi_figure(fig: Figure, dpi_ratio: int = 3, base64: bool = False) -> Any
     return pngdata, metadata
 
 
-def set_figure_format(shell: 'InteractiveShell', fmt: str, dpi_ratio: int = 3) -> None:
+def set_figure_format(shell: InteractiveShell, fmt: str, dpi_ratio: int = 3) -> None:
     """Set figure format for the inline backend.
 
     Args:
