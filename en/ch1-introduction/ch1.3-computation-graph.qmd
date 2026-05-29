@@ -131,8 +131,7 @@ $$
 \end{aligned}
 $$
 
-Here, $
-rac{\partial L}{\partial f}$ is the gradient of the loss function with respect to the output $f$, and it is determined by the specific form of the loss function.
+Here, $\frac{\partial L}{\partial f}$ is the gradient of the loss function with respect to the output $f$, and it is determined by the specific form of the loss function.
 
 In backpropagation, we start from the output node, gradually compute the gradient of each node, and propagate toward the input direction along the computational graph. The gradient of each node is determined by two factors:
 
