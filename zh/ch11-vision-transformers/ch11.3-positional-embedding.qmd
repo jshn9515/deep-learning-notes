@@ -39,10 +39,10 @@ $$
 这一节我们就来讨论这两个设计。
 
 ```{python}
-import dnnl.models.vit as vit
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from dnnl.models.vit import ViTConvPatchEmbedding
 from torch import Tensor
 
 print('PyTorch version:', torch.__version__)
@@ -297,7 +297,7 @@ class ViTEmbedding(nn.Module):
         dropout: float = 0.0,
     ):
         super().__init__()
-        self.patch_embed = vit.ViTConvPatchEmbedding(
+        self.patch_embed = ViTConvPatchEmbedding(
             image_size=image_size,
             patch_size=patch_size,
             in_channels=in_channels,
