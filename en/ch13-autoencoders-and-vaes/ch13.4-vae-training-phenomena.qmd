@@ -32,7 +32,6 @@ But just looking at the formula is not enough. To really understand VAE, the mos
 In this section, we do not only talk about conclusions. Instead, we directly observe these phenomena through code. To make it easier to observe the distribution of the latent space, we use t-SNE to visualize the latent space and train a small VAE on MNIST.
 
 ```{python}
-import os
 from collections import defaultdict
 
 import dnnl
@@ -52,15 +51,9 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-torch.manual_seed(42)
-torch.use_deterministic_algorithms(False)
-torch.backends.cudnn.deterministic = False
-torch.backends.cudnn.benchmark = True
-
-device = torch.accelerator.current_accelerator(check_available=True)
-if device is None:
-    device = torch.device('cpu')
-print(f'Using device: {device}')
+dnnl.set_seed(42)
+device = dnnl.get_default_device()
+print('Using device:', device)
 ```
 
 ## 13.4.1 Train a Minimal VAE
@@ -68,7 +61,7 @@ print(f'Using device: {device}')
 Here we create the MNIST dataset.
 
 ```{python}
-root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
+root = dnnl.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 train_ds = datasets.MNIST(root, train=True, download=True, transform=transform)
 test_ds = datasets.MNIST(root, train=False, download=True, transform=transform)
@@ -127,10 +120,10 @@ for epoch in range(1, num_epochs + 1):
         global_step += 1
 
     print(
-        f'Epoch [{epoch:2d}/{num_epochs:2d}] | '
-        f'loss: {loss_metric.compute():.4f} | '
-        f'recon_loss: {recon_loss_metric.compute():.4f} | '
-        f'kl_loss: {kl_loss_metric.compute():.4f}'
+        f'Epoch [{epoch:2d}/{num_epochs:2d}] '
+        f'| loss: {loss_metric.compute():.4f} '
+        f'| recon_loss: {recon_loss_metric.compute():.4f} '
+        f'| kl_loss: {kl_loss_metric.compute():.4f}'
     )
 ```
 
