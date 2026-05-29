@@ -4,8 +4,8 @@ date: 2026-03-19
 date-modified: 2026-05-23
 open-graph:
   title: ch2.2-autograd-contexts
-  description: "2.2 Gradient Recording and Control in PyTorch"
-title: "2.2 PyTorch 中的梯度记录与控制"
+  description: "2.2 Gradient Modes in PyTorch: Controlling How Computation Graphs Are Recorded"
+title: "2.2 PyTorch 中的梯度模式：控制计算图的记录"
 order: 2
 ---
 
