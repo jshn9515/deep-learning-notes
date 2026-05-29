@@ -4,8 +4,8 @@ date: 2026-04-07
 date-modified: 2026-04-07
 open-graph:
   title: ch15.1-clip
-  description: "15.1 CLIP: Connecting Images and Language with Contrastive Learning"
-title: "15.1 CLIP: Connecting Images and Language with Contrastive Learning"
+  description: "15.1 CLIP: Mapping Images and Text into the Same Semantic Space"
+title: "15.1 CLIP: Mapping Images and Text into the Same Semantic Space"
 order: 1
 ---
 
