@@ -23,8 +23,8 @@ In this section, we will make the core idea of CLIP clear. You will see that it 
 import os
 import random
 
-import IPython.display as ipy
 import dnnl
+import IPython.display as ipy
 import matplotlib.pyplot as plt
 import PIL.Image as Image
 import seaborn as sns
@@ -41,9 +41,7 @@ print('Transformers version:', transformers.__version__)
 ```
 
 ```{python}
-device = torch.accelerator.current_accelerator(check_available=True)
-if device is None:
-    device = torch.device('cpu')
+device = dnnl.get_default_device()
 print('Using device:', device)
 ```
 
@@ -271,7 +269,7 @@ That is to say, CLIP does not use a fixed linear layer to output categories like
 Of course, there is also a very important practical detail here. The text encoder of the original OpenAI CLIP was mainly trained on English data, so in many cases English prompts work obviously better than Chinese prompts. This is not a limitation of the CLIP theory itself, but a result of the training corpus distribution.
 
 ```{python}
-root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
+root = dnnl.get_data_root()
 dataset = datasets.Caltech101(root, target_type='category', download=True)
 idx = random.randrange(len(dataset))
 image, label = dataset[idx]
