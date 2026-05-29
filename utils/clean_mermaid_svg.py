@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -18,4 +19,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if os.getenv('QUARTO_PROJECT_RENDER_ALL'):
+        main()
