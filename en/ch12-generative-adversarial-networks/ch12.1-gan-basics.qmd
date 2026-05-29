@@ -4,8 +4,8 @@ date: 2026-03-19
 date-modified: 2026-04-04
 open-graph:
   title: ch12.1-gan-basics
-  description: "12.1 GANs: The Basics of Generative Adversarial Networks"
-title: "12.1 Generative Adversarial Network (GAN)"
+  description: "12.1 GAN Basics: Core Ideas and Training Flow of Generative Adversarial Networks"
+title: "12.1 GAN Basics: Core Ideas and Training Flow of Generative Adversarial Networks"
 order: 1
 ---
 
