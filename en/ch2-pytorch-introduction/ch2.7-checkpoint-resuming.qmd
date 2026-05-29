@@ -9,13 +9,23 @@ title: "2.7 Checkpoints in PyTorch: Resuming Training After Interruptions"
 order: 7
 ---
 
-The training template is useful, but real training jobs can be interrupted by notebook restarts, server disconnects, errors, time limits, or manual pauses.
+In the previous section, we organized a training template that we will reuse later. This template helps us organize the model, data, optimizer, and evaluation metrics. With it, we can focus on the training logic itself instead of repeatedly writing boilerplate code every time.
 
-A checkpoint saves the current training state so that training can continue rather than restart from scratch.
+However, this template does not consider an important practical issue: **training may be interrupted.**
 
-This notebook demonstrates the minimal checkpoint workflow with MNIST: save model state, optimizer state, epoch number, and history; then recreate objects and load the saved state.
+For example, while a model is halfway through training, we may encounter situations like these:
 
-This section develops the concept step by step and uses the following code to make the behavior concrete.
+- The notebook kernel restarts.
+- The server disconnects.
+- The program exits because of an error.
+- Training takes too long and needs to stop first, then continue later.
+- When training on a remote cluster, the job reaches its time limit and is terminated by the system.
+
+If every interruption forced us to restart training from the beginning, a lot of time would be wasted. Therefore, in real training, we usually save **model checkpoints** periodically.
+
+The purpose of a checkpoint is not simply to save a model that has already been trained. It saves the current training scene. After the program is interrupted, we can recreate the model and optimizer, load the saved state back, and continue training from the previous progress.
+
+In this section, we use MNIST for a small experiment: train for a few epochs, simulate a sudden crash, then reload the checkpoint and continue training. We will see how checkpoints help us restore the training scene.
 
 ```{python}
 import os
@@ -38,21 +48,33 @@ print('PyTorch version:', torch.__version__)
 
 ## 2.7.1 Why Saving Only Model Parameters Is Not Enough
 
-The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+We have already seen `state_dict`. For an nn.Module, its `state_dict` saves all parameters and buffers in the model. For example, weights and biases in linear layers, and running mean and running variance in BatchNorm, all appear in the model's `state_dict`.
+
+So if we only care about inference, we can save only the model's `state_dict`:
 
 ```python
 checkpoint = model.state_dict()
 torch.save(checkpoint, 'model.pt')
 ```
 
-In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+Then recreate the same model structure and load the `state_dict`:
 
 ```python
 model = MyModel()
 model.load_state_dict(torch.load('model.pt'))
 ```
 
-The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+This is suitable when the model has already been trained and we only want to use it for prediction.
+
+However, if we want to continue training from an interruption, saving only model parameters is usually not enough. The training scene contains not only the model, but also the optimizer. For example, the Adam optimizer maintains first-moment and second-moment estimates, and SGD with momentum maintains a momentum buffer. These states are not saved in `model.state_dict()`; they are saved in `optimizer.state_dict()`.
+
+Therefore, to resume training, we usually need to save at least:
+
+- Model parameters and buffers.
+- Optimizer internal state.
+- The current epoch.
+
+That is:
 
 ```python
 checkpoint = {
@@ -62,11 +84,13 @@ checkpoint = {
 }
 ```
 
-These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+Only this kind of checkpoint is more like a "training scene."
 
 ## 2.7.2 Training a Simple MLP
 
-This section develops the concept step by step and uses the following code to make the behavior concrete.
+To demonstrate checkpoints, we first write a simple MLP to train MNIST.
+
+First, as in the previous section, set the random seed and get the currently available device:
 
 ```{python}
 dnnl.set_seed(42)
@@ -74,7 +98,7 @@ device = dnnl.get_default_device()
 print('Using device:', device)
 ```
 
-The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+Then load the MNIST dataset and split out a training set and validation set:
 
 ```{python}
 root = dnnl.get_data_root()
@@ -90,7 +114,9 @@ val_dl = utils.DataLoader(val_ds, batch_size=128, shuffle=False)
 test_dl = utils.DataLoader(test_ds, batch_size=128, shuffle=False)
 ```
 
-In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+Here we still pass a separate `Generator` to `random_split`. This prevents the data split from being affected by other random operations.
+
+Next, define a small MLP to demonstrate checkpoint saving and loading:
 
 ```{python}
 class MLP(nn.Module):
@@ -107,7 +133,7 @@ class MLP(nn.Module):
         return self.net(x)
 ```
 
-The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+To avoid repeatedly writing initialization code later, we also write a helper function to create the model, loss function, optimizer, and metrics:
 
 ```{python}
 def create_training_objects(
@@ -127,11 +153,11 @@ def create_training_objects(
     return model, loss_fn, optimizer, metric, val_metric
 ```
 
-These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+Notice that we use Adam here. This makes it easier to explain later why resuming training should load not only model parameters, but also optimizer state.
 
 ## 2.7.3 Saving a Checkpoint
 
-This section develops the concept step by step and uses the following code to make the behavior concrete.
+Now we start writing checkpoint-related functions. Saving a checkpoint is essentially putting the states we need to recover into a dictionary and writing it to disk with `torch.save`.
 
 ```{python}
 def save_checkpoint(
@@ -150,11 +176,18 @@ def save_checkpoint(
     torch.save(checkpoint, path)
 ```
 
-The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+Here we save four things:
+
+- `epoch`: the epoch that has just finished.
+- `model`: model parameters and buffers.
+- `optimizer`: optimizer internal state.
+- `history`: training logs recorded so far.
+
+The most important parts are `model` and `optimizer`. If only model parameters are saved, the model weights are correct after restoration, but the optimizer behaves as if it had just been created and accumulates its state from scratch. For optimizers such as Adam, this changes the later training trajectory.
 
 ## 2.7.4 Loading a Checkpoint
 
-In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+Loading a checkpoint is the reverse of saving one: read the dictionary with `torch.load`, then load the states back into the model and optimizer separately.
 
 ```{python}
 def load_checkpoint(
@@ -177,23 +210,27 @@ def load_checkpoint(
     return epoch, history
 ```
 
-The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+There are two small details here.
+
+The first is:
 
 ```python
 map_location=device
 ```
 
-These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+Its role is to load tensors in the checkpoint onto the current device. For example, the checkpoint may have been saved on a GPU, but the current machine only has a CPU. `map_location` can avoid device mismatch problems.
+
+The second is:
 
 ```python
 weights_only=True
 ```
 
-This section develops the concept step by step and uses the following code to make the behavior concrete.
+Newer versions of PyTorch recommend using `weights_only=True` when loading checkpoints that only contain tensors and simple Python objects. This can reduce security risks from pickle deserialization. Our checkpoint only saves model state, optimizer state, epoch, and history, so this setting can be used. If a checkpoint stores custom class objects, `weights_only=True` may not be able to load it. This is also why we usually recommend saving `state_dict` rather than saving the entire model object directly.
 
-## 2.7.5 First Training Run: Simulating a Crash
+## 2.7.5 First Training Run: Simulating a Sudden Crash
 
-The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+Now train for a few epochs and save checkpoints along the way.
 
 ```{python}
 checkpoint_path = 'mnist-mlp-checkpoint.pt'
@@ -208,7 +245,7 @@ val_metric = MulticlassAccuracy(num_classes=10).to(device)
 history = []
 ```
 
-In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+Suppose we originally planned to train for 5 epochs, but the program suddenly crashes after epoch 3. We can use `signal.SIGINT` inside the training loop to simulate this crash:
 
 ```{python}
 num_epochs = 5
@@ -265,11 +302,11 @@ for epoch in range(1, num_epochs + 1):
             break
 ```
 
-The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+Here, a checkpoint is saved after every epoch. This way, even if the program is interrupted, we can at least recover to the state after the most recent complete epoch. Of course, in real training, we do not actively crash the program. This is only written this way to demonstrate the role of checkpoints.
 
 ## 2.7.6 Recreating the Model and Optimizer
 
-These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+After the program crashes, the `model` and `optimizer` in memory are gone. So when resuming training, the first step is not to directly call `train_one_epoch` again, but to recreate a model and optimizer with the same structure:
 
 ```{python}
 model = MLP(num_classes=10).to(device)
@@ -279,7 +316,9 @@ metric = MulticlassAccuracy(num_classes=10).to(device)
 val_metric = MulticlassAccuracy(num_classes=10).to(device)
 ```
 
-This section develops the concept step by step and uses the following code to make the behavior concrete.
+At this point, this `model` is randomly initialized, and the `optimizer` is brand new. They have not yet been restored to the state before the crash.
+
+Next, load the checkpoint:
 
 ```{python}
 last_epoch, history = load_checkpoint(
@@ -293,11 +332,11 @@ print('Last finished epoch:', last_epoch)
 print('Number of history records:', len(history))
 ```
 
-The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+After loading, the model parameters have been restored to the state at the end of epoch `last_epoch`, and the optimizer state has also been restored. Therefore, continued training should start from `last_epoch + 1`.
 
 ## 2.7.7 Continuing Training from a Checkpoint
 
-In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+Now continue finishing the remaining epochs:
 
 ```{python}
 for epoch in range(last_epoch + 1, num_epochs + 1):
@@ -344,7 +383,9 @@ for epoch in range(last_epoch + 1, num_epochs + 1):
     )
 ```
 
-The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+This way, even though we simulated a program crash in the middle, training can still continue and finish.
+
+We can also look at the final performance on the test set:
 
 ```{python}
 test_metric = MulticlassAccuracy(num_classes=10).to(device)
@@ -359,27 +400,38 @@ model_name = type(model).__name__
 print(f'[{model_name}] | test_loss: {test_loss:.4f} | test_acc: {test_acc:.4f}')
 ```
 
-These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+This is the most basic role of checkpoints:
+
+> **The program can be interrupted, but the training state does not necessarily have to be lost.**
 
 ## 2.7.8 What Happens If Only the Model Is Loaded
 
-This section develops the concept step by step and uses the following code to make the behavior concrete.
+To understand the role of optimizer state more clearly, imagine another way of resuming:
 
 ```python
 model.load_state_dict(checkpoint['model'])
 ```
 
-The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+but without executing:
 
 ```python
 optimizer.load_state_dict(checkpoint['optimizer'])
 ```
 
-In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+This is not completely wrong. The model parameters are indeed restored, and the code can continue training. But the optimizer's internal state is lost.
+
+For ordinary SGD without momentum, the impact may be small. But for Adam, AdamW, or SGD with momentum, the optimizer internally maintains state related to past gradients. If these states are discarded, the training trajectory after resuming is no longer equivalent to continuing from the original point.
+
+So more precisely:
+
+- Restoring only the model restores model parameters, but loses optimizer state, and the training trajectory changes.
+- Restoring model + optimizer restores a more complete training state, and the training trajectory is closer to continuing from the original point.
+
+If we are only loading a pretrained model and starting a new training task, usually loading only model parameters is enough. But if the goal is to continue training after an interruption, optimizer state should be saved and loaded together.
 
 ## 2.7.9 What Else Can Be Saved
 
-The example below is small on purpose: it exposes the mechanism without burying it inside a large model.
+In this section, we only saved the most basic contents:
 
 ```python
 checkpoint = {
@@ -390,11 +442,25 @@ checkpoint = {
 }
 ```
 
-These details are easy to overlook, but they explain many common PyTorch errors and performance surprises.
+In a more complete training project, a checkpoint may also save:
+
+- The state of the learning rate scheduler.
+- The state of GradScaler, meaning the scale factor used in automatic mixed precision training.
+- The current global step.
+- The current best validation metric.
+- Experiment configuration, such as learning rate, batch size, and model hyperparameters.
+- Random number generator state.
+- Dataloader state.
+
+These all belong to more complex training engineering. For most later examples, saving `model`, `optimizer`, and `epoch` is already enough. Dataloader state is especially important only when we want to resume training in the middle of an epoch. Here we use a simpler strategy: save a checkpoint after each epoch, so resuming starts from the next epoch.
 
 ## 2.7.10 Summary
 
-This section develops the concept step by step and uses the following code to make the behavior concrete.
+In this section, we used MNIST to demonstrate the basic use of checkpoints.
+
+If the goal is only inference, usually saving only the model's `state_dict` is enough, because inference depends on model parameters, not optimizer state.
+
+However, if we want to continue training after an interruption, saving only model parameters is usually not enough. The optimizer itself also has state, such as Adam's first-moment and second-moment estimates or SGD's momentum buffer. Therefore, a minimal training checkpoint usually contains:
 
 ```python
 checkpoint = {
@@ -404,12 +470,13 @@ checkpoint = {
 }
 ```
 
-The important point is the distinction between mathematical intent and the way PyTorch records or manages state.
+When resuming training, we need to recreate the same model and optimizer structure first, then load their states separately:
 
 ```python
 model.load_state_dict(checkpoint['model'])
 optimizer.load_state_dict(checkpoint['optimizer'])
 ```
 
-In normal training code, this pattern keeps the model logic explicit while letting PyTorch handle the repetitive bookkeeping.
+Finally, continue training from `epoch + 1`.
 
+After this section, the PyTorch fundamentals part forms a complete training chain: automatic differentiation computes gradients, `nn.Module` organizes the model, the loss function defines the optimization objective, the optimizer updates parameters, the training template connects these components, and checkpoints save and restore the training scene when training is interrupted.
