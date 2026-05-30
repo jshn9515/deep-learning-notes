@@ -73,9 +73,9 @@ The `bank` in the first sentence is closer to a financial bank, and the `bank` i
 
 Self-attention is exactly doing this. For each position in the sequence, it uses its own query to match the keys of all positions in the whole sequence, and then aggregates the corresponding values according to the obtained weights. The previous section has already discussed the full attention formula. Here we only emphasize its meaning in self-attention:
 
-- the query of the current token represents what contextual information I currently need;
-- the keys of all tokens represent how I can be matched;
-- the values of all tokens represent what content I can provide if I am attended to.
+- The query of the current token represents what contextual information I currently need;
+- The keys of all tokens represent how I can be matched;
+- The values of all tokens represent what content I can provide if I am attended to.
 
 After weighted aggregation, the output representation will contain both the information of the current token itself and the information it retrieves from the context.
 

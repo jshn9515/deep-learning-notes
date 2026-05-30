@@ -869,10 +869,10 @@ Table 1: Mapping between Transformer structures and Hugging Face APIs
   - `AutoTokenizer.from_pretrained(...)`
 
 - - Token IDs
-  - `inputs['input_ids']`
+  - The `inputs['input_ids']` tensor
 
 - - Padding mask
-  - `inputs['attention_mask']`
+  - The `inputs['attention_mask']` tensor
 
 - - Encoder-only backbone
   - `AutoModel` / `AutoModelForSequenceClassification`
@@ -884,28 +884,28 @@ Table 1: Mapping between Transformer structures and Hugging Face APIs
   - `AutoModelForSeq2SeqLM`
 
 - - Token representations
-  - `outputs.last_hidden_state`
+  - The `outputs.last_hidden_state` attribute
 
 - - Classification scores
-  - `outputs.logits`
+  - The `outputs.logits` attribute
 
 - - Hidden states at each layer
-  - `output_hidden_states=True` / `outputs.hidden_states`
+  - The `output_hidden_states=True` option / `outputs.hidden_states` attribute
 
 - - Attention weights
-  - `output_attentions=True` / `outputs.attentions`
+  - The `output_attentions=True` option / `outputs.attentions` attribute
 
 - - Cross-attention weights
-  - `outputs.cross_attentions`
+  - The `outputs.cross_attentions` attribute
 
 - - Autoregressive generation
-  - `model.generate(...)`
+  - The `model.generate(...)` method
 
 - - KV cache
-  - `use_cache=True` / `outputs.past_key_values`
+  - The `use_cache=True` option / `outputs.past_key_values` attribute
 
 - - Training loss
-  - `labels=...` / `outputs.loss`
+  - The `labels=...` argument / `outputs.loss` attribute
 :::
 
 The purpose of this table is to connect structural understanding to code calls. Later, when you see a Hugging Face code snippet, you can first ask yourself:

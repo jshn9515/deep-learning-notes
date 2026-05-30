@@ -312,13 +312,13 @@ print('Encoder block output shape:', output.shape)
 The most important parts of this code are the two residual paths:
 
 ```python
-x = x + self.dropout1(attn_out)
+x = src + self._sa_block(...)
 ```
 
 and:
 
 ```python
-x = x + self.dropout2(ffn_out)
+x = x + self._ff_block(...)
 ```
 
 The first residual path corresponds to multi-head self-attention, and the second residual path corresponds to FFN.

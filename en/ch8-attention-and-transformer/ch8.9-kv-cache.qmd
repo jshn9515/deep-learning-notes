@@ -67,9 +67,9 @@ When generating a new token, what the model really cares about is:
 
 This sentence corresponds to the three parts of attention:
 
-- the query of the current new token: it means “what I am looking for now”;
-- the keys of past tokens: they mean “how each past position can be matched”;
-- the values of past tokens: they mean “what content each past position can provide”.
+- The query of the current new token: it means “what I am looking for now”;
+- The keys of past tokens: they mean “how each past position can be matched”;
+- The values of past tokens: they mean “what content each past position can provide”.
 
 When we generate the $t$-th token, this step only needs to compute one new query for the latest position:
 

@@ -4,7 +4,7 @@ date: 2026-05-08
 date-modified: 2026-05-20
 open-graph:
   title: ch8.10-transformer-architectures
-  description: "8.10 Three Different Transformer Architectures: Understanding, Generation, and Input-Output Conversion"
+  description: "8.10 Three Different Architectures of Transformer: Understanding, Generation, and Input-Output Conversion"
 title: "8.10 Three Different Transformer Architectures: Understanding, Generation, and Input-Output Conversion"
 order: 10
 ---

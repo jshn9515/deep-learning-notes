@@ -20,14 +20,15 @@ This section focuses on answering three questions:
 3. Why inference must use autoregressive generation.
 
 ```{python}
+from collections.abc import Callable
 import math
 
+import dnnl.nn as dnn
+import dnnl.nn.functional as dF
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-import dnnl.nn as dnn
-import dnnl.nn.functional as dF
 
 print('PyTorch version:', torch.__version__)
 ```
@@ -46,8 +47,8 @@ Chinese: 我喜欢深度学习。
 Or code generation:
 
 ```text
-Input: 打印 "Hello, World!"
-Output: print("Hello, World!")
+Input: Add two numbers and print the result.
+Output: print(a + b)
 ```
 
 This type of task is usually called **Sequence-to-Sequence**, abbreviated as **Seq2Seq**. Both its input and output are sequences, but their lengths are not necessarily the same, and their languages, structures, and forms of expression may also be completely different.
@@ -273,12 +274,12 @@ A complete Encoder-Decoder Transformer usually involves several types of masks. 
 
 The names of these masks may differ slightly across frameworks, but the core is just two types:
 
-> Padding mask: do not look at padding.\
+> Padding mask: do not look at padding. \
 > Causal mask: do not look at the future.
 
-## 8.8.7 `nn.Transformer` in PyTorch
+## 8.8.7 PyTorch Implementation of the Transformer
 
-PyTorch provides a complete Encoder-Decoder Transformer module:
+Now, let's implement a complete Encoder-Decoder Transformer. We will directly use the encoder block and decoder block implemented in 8.6 and 8.7 to build a complete Transformer model.
 
 ```{python}
 class Transformer(nn.Module):
@@ -394,8 +395,8 @@ print('Output shape:', output.shape)
 
 where:
 
-- `src` is the Encoder input;
-- `tgt` is the Decoder input;
+- The `src` argument is the Encoder input;
+- The `tgt` argument is the Decoder input;
 - The output is the Decoder hidden states.
 
 If `batch_first=True` is used, the shapes are usually:
@@ -691,4 +692,4 @@ So, the complete logic of the Encoder-Decoder Transformer can be summarized as:
 
 In the next section, we will continue to look at a problem closely related to inference efficiency: since autoregressive generation must proceed step by step, why is it not necessary to recompute the key and value of past tokens at every step during actual inference?
 
-This leads to KV Cache.
+This leads to KV cache.

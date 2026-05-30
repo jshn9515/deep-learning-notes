@@ -15,16 +15,17 @@ If we are only doing tasks such as text classification, sequence labeling, or im
 
 But if the task is a **sequence-to-sequence generation task** such as machine translation, text summarization, or image captioning, things are different. The model not only needs to understand the input, but also needs to generate the output step by step.
 
-For example, in machine translation, the input is an English sentence:
-
-```text
-I love deep learning.
-```
-
-The output might be a Chinese sentence:
+For example, in machine translation, the input is a Chinese sentence:
 
 ```text
 我喜欢深度学习。
+I love deep learning.
+```
+
+The output might be an English sentence:
+
+```text
+I love deep learning.
 ```
 
 At this point, the model needs to do two things:
@@ -77,10 +78,10 @@ But the decoder is different. The decoder is used to generate sequences. When ge
 For example, when training translation, the target sentence is:
 
 ```text
-我喜欢深度学习。
+I love deep learning.
 ```
 
-When the model predicts "喜欢", if it can already see the later "深度学习", isn't it directly peeking at the answer? This is clearly unreasonable. Also, if the model uses future information during training, but those future tokens do not exist during real generation, this will cause the model's performance at inference time to drop sharply.
+When the model predicts "love", if it can already see the later "deep learning", isn't it directly peeking at the answer? This is clearly unreasonable. Also, if the model uses future information during training, but those future tokens do not exist during real generation, this will cause the model's performance at inference time to drop sharply.
 
 Therefore, decoder self-attention must add a **causal mask**, also called a **look-ahead mask**. Its function is:
 
@@ -262,7 +263,7 @@ Compared with the encoder block, the decoder block has one more cross-attention 
 
 ## 8.7.5 PyTorch Implementation of a Transformer Decoder Block
 
-Below, we implement a simplified Transformer Decoder block. Here, to make the structure clearer, we directly use PyTorch's built-in `nn.MultiheadAttention`.
+Below, we implement a simplified Transformer Decoder block. We use our own implementation of multi-head attention in the previous section, but you can also use `nn.MultiheadAttention` for simplicity.
 
 ```{python}
 class TransformerDecoderLayer(nn.Module):
@@ -384,7 +385,7 @@ target -> key
 target -> value
 ```
 
-In cross-attention:
+While in cross-attention:
 
 ```text
 target -> query
@@ -510,13 +511,13 @@ Next, we can look at a more practical question: how exactly is the decoder used 
 During training, we usually already have the complete target sequence. For example, the target sentence is:
 
 ```text
-<BOS> 我 喜欢 深度 学习
+<BOS> I love deep learning
 ```
 
 What the model needs to predict is:
 
 ```text
-我 喜欢 深度 学习 <EOS>
+I love deep learning <EOS>
 ```
 
 Although the full target sequence is visible during training, because of the causal mask, each position can still only see the positions before it. Therefore, the model will not peek at future answers. It can only predict the next word based on the part that has already been generated.
@@ -530,19 +531,19 @@ During inference, the decoder starts from a start token and generates step by st
 First predict the first token:
 
 ```text
-我
+I
 ```
 
 Then append it back to the input:
 
 ```text
-<BOS> 我
+<BOS> I
 ```
 
 Then predict the next token:
 
 ```text
-喜欢
+love
 ```
 
 This process repeats continuously until `<EOS>` is generated or the maximum length is reached.

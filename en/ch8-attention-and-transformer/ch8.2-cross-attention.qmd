@@ -37,8 +37,8 @@ print('PyTorch version:', torch.__version__)
 
 In machine translation, we have two sequences:
 
-- the source-language sequence, for example an English sentence;
-- the target-language sequence, for example a Chinese sentence.
+- The source-language sequence, for example an English sentence;
+- The target-language sequence, for example a Chinese sentence.
 
 A traditional seq2seq model first uses an encoder to compress the source sentence into a context vector, and then the decoder relies on this vector to generate the target sentence step by step. Bahdanau attention changed this process: the decoder no longer relies only on one fixed vector. Instead, at every generation step, it revisits all hidden states of the source sentence.
 
@@ -52,9 +52,9 @@ Cross-attention means that positions in one sequence attend to positions in anot
 
 If we understand it through machine translation:
 
-- a certain position in the target sequence is responsible for asking the question;
-- each position in the source sequence is responsible for providing candidate information;
-- the model retrieves the most useful content for the current generation step from the source sequence according to relevance.
+- A certain position in the target sequence is responsible for asking the question;
+- Each position in the source sequence is responsible for providing candidate information;
+- The model retrieves the most useful content for the current generation step from the source sequence according to relevance.
 
 So, cross-attention is essentially a **cross-sequence information retrieval mechanism**.
 
@@ -127,8 +127,8 @@ Now we write cross-attention in matrix form.
 
 Suppose there are two sequences:
 
-- the query sequence is represented as $X \in \mathbb{R}^{n_x \times d}$;
-- the queried sequence is represented as $Y \in \mathbb{R}^{n_y \times d}$.
+- The query sequence is represented as $X \in \mathbb{R}^{n_x \times d}$;
+- The queried sequence is represented as $Y \in \mathbb{R}^{n_y \times d}$.
 
 Here, $n_x$ is the length of the query sequence, $n_y$ is the length of the queried sequence, and $d$ is the hidden dimension.
 
@@ -169,7 +169,11 @@ In cross-attention, the most important point is that Q comes from one sequence, 
 In the code below, we implement a minimal version of cross-attention using random tensors. Here `x` and `y` are two different sequences. Q comes from `x`, and K and V come from `y`.
 
 ::: {.callout-note}
-Our implementation here is slightly different from PyTorch's standard `nn.MultiheadAttention`. `nn.MultiheadAttention` uses `attn_dim` as the input dimension of query, the projected dimension of query/key/value, and the final output dimension of attention at the same time. It only additionally provides `kdim` and `vdim`, which are used to allow the original input dimensions of key/value to be different.
+Here we need to clarify that our implementation mainly aligns with PyTorch's `nn.MultiheadAttention`, rather than implementing the most general possible dimensional design for attention.
+
+In `nn.MultiheadAttention`, `embed_dim` simultaneously represents the input dimension of the query, the total projected dimension of query/key/value, and the final output dimension of attention. It only additionally provides `kdim` and `vdim`, which allow the original input dimensions of key/value to differ from the query.
+
+From the attention mechanism itself, however, the dimensions can be more flexible. The input dimensions of query, key, and value can be different; the matching dimension of query/key and the content dimension of value can also be different; and the final output dimension does not necessarily have to equal `embed_dim`. As long as query and key can correctly compute attention scores, and the attention weights can align with value for the weighted sum, the attention computation is valid.
 :::
 
 ```{python}
@@ -211,8 +215,11 @@ class CrossAttention(nn.Module):
             return output, attn_weights
 
         return output, None
+```
 
+Let us test the input and output shapes of this cross-attention:
 
+```{python}
 x = torch.randn(3, 5, 16)  # query sequence, length = 5
 y = torch.randn(3, 8, 16)  # key/value sequence, length = 8
 cross_attn = CrossAttention(embed_dim=16)
@@ -377,10 +384,10 @@ The difference is that the Transformer fully matrixizes this process. It no long
 
 Of course, although cross-attention is easiest to understand through machine translation, its applications are far beyond translation. As long as a task has a structure where one sequence needs to retrieve information from another sequence, cross-attention can be used. For example:
 
-- in image captioning, the text decoder can query image features;
-- in visual question answering, the question representation can query image-region features;
-- in text question answering, the question can query document content;
-- in multimodal models, text tokens can query image patches, and image patches can also query text tokens.
+- In image captioning, the text decoder can query image features;
+- In visual question answering, the question representation can query image-region features;
+- In text question answering, the question can query document content;
+- In multimodal models, text tokens can query image patches, and image patches can also query text tokens.
 
 These tasks look different on the surface, but they can all be abstracted into the same process:
 
