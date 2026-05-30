@@ -189,4 +189,4 @@ We obtained three key conclusions:
 
 And once we truly understand this point, one question appears: since the most expensive thing is the read and write of intermediate matrices, can we avoid storing them completely?
 
-This is exactly the starting point of flash attention. In the next section, we will see that it does not approximate attention, but instead makes the execution process of attention access HBM as little as possible through better blocking and better IO organization.
+This is exactly the starting point of FlashAttention v1. In the next section, we will see that it does not approximate attention, but instead makes the execution process of attention access HBM as little as possible through better blocking and better IO organization.
