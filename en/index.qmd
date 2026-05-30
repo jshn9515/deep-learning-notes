@@ -3,6 +3,7 @@ title: Deep Learning Notes
 author: jshn9515
 date: 2026-03-19
 date-modified: today
+page-layout: full
 comments: false
 
 listing:
