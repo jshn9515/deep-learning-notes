@@ -109,6 +109,10 @@ website:
               contents: "en/ch8-attention-and-transformer/*.qmd"
             - section: "Chapter 10: Efficient Attention Implementations: From Memory-Efficient Attention to FlashAttention"
               contents: "en/ch10-efficient-attention/*.qmd"
+        - section: "Part 5: Modern Computer Vision"
+          contents:
+            - section: "Chapter 11: Vision Transformer: From Image Classification to Visual Sequence Modeling"
+              contents: "en/ch11-vision-transformers/*.qmd"
         - section: "Part 6: Generative Models"
           contents:
             - section: "Chapter 12: GAN: Learning to Generate through Adversarial Training"
