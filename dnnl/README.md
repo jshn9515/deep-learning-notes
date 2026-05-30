@@ -29,7 +29,7 @@ In short, this package serves as the code companion to the tutorial.
 
 ## Requirements
 
-- Python 3.12 or newer
+- Python 3.14 or newer
 - PyTorch 3.10 or newer
 
 ## Installation
