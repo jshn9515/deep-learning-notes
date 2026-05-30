@@ -3,6 +3,7 @@ title: "Part 5: Modern Computer Vision"
 author: jshn9515
 date: 2026-05-05
 date-modified: today
+page-layout: full
 comments: false
 
 listing:
