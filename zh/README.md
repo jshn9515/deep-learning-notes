@@ -32,7 +32,7 @@
 ## Chapter 10: 高效 Attention 实现：从 Memory-Efficient Attention 到 FlashAttention
 
 - 10.1 为什么 Attention 是 IO-Bound
-- 10.2 Flash Attention v1：消除 Attention 的 IO 瓶颈
+- 10.2 FlashAttention v1：消除 attention 的 IO 瓶颈
 
 ## Chapter 11: Vision Transformer：从图像分类到视觉序列建模
 
