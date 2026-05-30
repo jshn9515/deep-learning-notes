@@ -72,6 +72,8 @@ website:
               contents: "zh/ch1-introduction/*.qmd"
             - section: "Chapter 2: PyTorch 入门"
               contents: "zh/ch2-pytorch-introduction/*.qmd"
+            - section: "Chapter 4: 深度学习中的优化算法"
+              contents: "zh/ch4-optimization-algorithms/*.qmd"
         - section: "Part 4: Attention 机制与 Transformer"
           contents:
             - section: "Chapter 8: Attention 与 Transformer：从动态检索到序列建模"
