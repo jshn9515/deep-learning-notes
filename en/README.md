@@ -32,7 +32,15 @@
 ## Chapter 10: Efficient Attention Implementations: From Memory-Efficient Attention to FlashAttention
 
 - 10.1 Why Attention is IO-Bound
-- 10.2 Flash Attention v1: Eliminating the IO Bottleneck in Attention Mechanisms
+- 10.2 FlashAttention v1: Eliminating the IO Bottleneck in attention mechanisms
+
+## Chapter 11: Vision Transformer: From Image Classification to Visual Sequence Modeling
+
+- 11.1 From CNN to Vision Transformer: Treating Images as Sequences
+- 11.2 Patch Embedding: Cutting Images into Tokens
+- 11.3 Class Token and Positional Embedding: Letting a Sequence Represent the Whole Image
+- 11.4 ViT Encoder: Letting Patch Tokens Exchange Information
+- 11.5 ViT Backbone: Pretraining and Fine-tuning
 
 ## Chapter 12: GAN: Learning to Generate through Adversarial Training
 
