@@ -9,6 +9,7 @@ listing:
   contents:
     - "../ch1-introduction/*.qmd"
     - "../ch2-pytorch-introduction/*.qmd"
+    - "../ch4-optimization-algorithms/*.qmd"
   sort: title asc
   type: table
   fields: [title, author, date]
