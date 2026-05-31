@@ -33,7 +33,7 @@ dependencies = [
     "opencv-contrib-python>=4.13.0,<4.14.0",
 
     # Data download and management
-    "gdown>=6.0.0,<6.1.0",
+    "gdown>=6.1.0,<6.2.0",
 ]
 
 [project.urls]
