@@ -30,12 +30,16 @@ $$
 这一节我们先从最基础的梯度下降开始，看清楚“根据梯度更新参数”这件事的基本逻辑。然后我们会进一步讨论，为什么在深度学习里更常见的不是完整的梯度下降，而是随机梯度下降，也就是我们常说的 **SGD (Stochastic Gradient Descent)**。
 
 ```{python}
+from typing import override
+
 import dnnl
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
+from dnnl.optim import Optimizer
+from torch import Tensor
 
 plt.rc('figure', dpi=100)
 dnnl.set_matplotlib_format('svg')
@@ -98,36 +102,69 @@ $$
 
 这个函数的最小值显然出现在 $\theta = 3$。如果我们从一个较远的位置开始，比如 $\theta = -4$，梯度下降应该一步一步把参数推向 3。
 
-先定义损失函数和梯度下降过程：
+先定义损失函数：
 
 ```{python}
-def loss_fn_np(theta: np.ndarray) -> np.ndarray:
+def loss_fn(theta: Tensor) -> Tensor:
     return (theta - 3) ** 2
+```
 
+然后实现一个简单的梯度下降：
 
-def grad_fn_np(theta: np.ndarray) -> np.ndarray:
-    return 2 * (theta - 3)
+```{python}
+class SimpleSGD(Optimizer):
+    def __init__(self, params: list[Tensor], lr: float):
+        self.params = params
+        self.lr = lr
 
+    @override
+    @torch.no_grad()
+    def step(self):
+        for p in self.params:
+            if p.grad is None:
+                continue
 
-theta = np.array(-4.0)
-lr = 0.2
-history = [theta]
+            p.sub_(self.lr * p.grad)
+
+    @override
+    def zero_grad(self, set_to_none: bool = False):
+        for p in self.params:
+            if p.grad is None:
+                continue
+
+            if set_to_none:
+                p.grad = None
+            else:
+                p.grad.zero_()
+```
+
+现在我们运行梯度下降，并观察参数的更新轨迹：
+
+```{python}
+theta = torch.tensor(-4.0, requires_grad=True)
+optimizer = SimpleSGD([theta], lr=0.2)
+history = [theta.clone()]
 
 for iteration in range(20):
-    grad = grad_fn_np(theta)
-    theta = theta - lr * grad
-    history.append(theta)
+    loss = loss_fn(theta)
+    loss.backward()
 
-print('Final theta:', theta)
-print('Final loss:', loss_fn_np(theta))
+    optimizer.step()
+    optimizer.zero_grad()
+
+    history.append(theta.clone())
+
+print('Final theta:', history[-1].item())
+print('Final loss:', loss_fn(history[-1]).item())
 ```
 
 我们可以把参数更新轨迹画出来：
 
 ```{python}
-thetas = np.linspace(-5, 5, 200)
-losses = loss_fn_np(thetas)
-history_losses = [loss_fn_np(theta) for theta in history]
+thetas = torch.linspace(-5, 5, 200)
+losses = loss_fn(thetas)
+history = torch.stack(history).detach()
+history_losses = loss_fn(history)
 
 fig = plt.figure(1, figsize=(5, 3.5))
 ax = fig.add_subplot(1, 1, 1)
@@ -234,13 +271,12 @@ Mini-batch SGD 介于完整 batch gradient descent 和单样本 SGD 之间。如
 ```{python}
 model = nn.Linear(1, 1)
 optimizer = optim.SGD(model.parameters(), lr=0.1)
-loss_fn = nn.MSELoss()
 
 x = torch.randn(32, 1)
 y = 2 * x + 1
 
 pred = model(x)
-loss = loss_fn(pred, y)
+loss = F.mse_loss(pred, y)
 
 optimizer.zero_grad()
 loss.backward()
