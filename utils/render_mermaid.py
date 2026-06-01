@@ -3,7 +3,7 @@ import platform
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[1]
 NPX = 'npx.cmd' if platform.system() == 'Windows' else 'npx'
 PUPPETEER_CONFIG = ROOT / 'utils' / 'puppeteer-config.json'
 
