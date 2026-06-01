@@ -18,6 +18,7 @@
 ## Chapter 4: 优化算法：神经网络如何更新参数
 
 - 4.1 从梯度下降到 SGD
+- 4.2 Momentum 与 Nesterov Momentum
 
 ## Chapter 8: Attention 与 Transformer：从动态检索到序列建模
 
