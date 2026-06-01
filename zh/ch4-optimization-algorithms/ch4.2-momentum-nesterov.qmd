@@ -29,7 +29,6 @@ $$
 
 ```{python}
 from pprint import pprint
-from typing import override
 
 import dnnl
 import dnnl.optim as dopt
@@ -38,7 +37,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from dnnl.optim import Optimizer
 from torch import Tensor
 
 plt.rc('figure', dpi=100)
@@ -223,24 +221,22 @@ $$
 我们可以在前面狭长山谷的例子上实现 momentum，观察它和普通 SGD 的区别。
 
 ```{python}
-class SGDWithMomentum(Optimizer):
-    def __init__(self, params: list[Tensor], lr: float, beta: float):
+class SGDWithMomentum:
+    def __init__(self, params: list[Tensor], lr: float = 1e-3, momentum: float = 0.0):
         self.params = list(params)
         self.lr = lr
-        self.beta = beta
+        self.momentum = momentum
         self.velocity = [torch.zeros_like(p) for p in self.params]
 
-    @override
     @torch.no_grad()
     def step(self):
         for p, v in zip(self.params, self.velocity, strict=True):
             if p.grad is None:
                 continue
 
-            v.mul_(self.beta).add_(p.grad)
+            v.mul_(self.momentum).add_(p.grad)
             p.sub_(self.lr * v)
 
-    @override
     def zero_grad(self, set_to_none: bool = False):
         for p in self.params:
             if p.grad is None:
@@ -255,9 +251,11 @@ class SGDWithMomentum(Optimizer):
 定义一个简单的训练循环：
 
 ```{python}
-def run_momentum(theta_init: Tensor, lr: float, beta: float, steps: int) -> list[Tensor]:
+def run_momentum(
+    theta_init: Tensor, lr: float, momentum: float, steps: int,
+) -> list[Tensor]:
     theta = theta_init.clone().requires_grad_()
-    optimizer = SGDWithMomentum([theta], lr=lr, beta=beta)
+    optimizer = SGDWithMomentum([theta], lr=lr, momentum=momentum)
     history = [theta.clone().detach()]
 
     for iteration in range(steps):
@@ -281,7 +279,7 @@ def run_momentum(theta_init: Tensor, lr: float, beta: float, steps: int) -> list
 ```{python}
 theta = torch.tensor([-4.0, 1.0])
 sgd_history = run_sgd(theta, lr=0.035, steps=40)
-momentum_history = run_momentum(theta, lr=0.0035, beta=0.9, steps=40)
+momentum_history = run_momentum(theta, lr=0.0035, momentum=0.9, steps=40)
 sgd_history = torch.stack(sgd_history)
 momentum_history = torch.stack(momentum_history)
 
