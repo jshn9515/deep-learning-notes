@@ -30,15 +30,12 @@ $$
 这一节我们先从最基础的梯度下降开始，看清楚“根据梯度更新参数”这件事的基本逻辑。然后我们会进一步讨论，为什么在深度学习里更常见的不是完整的梯度下降，而是随机梯度下降，也就是我们常说的 **SGD (Stochastic Gradient Descent)**。
 
 ```{python}
-from typing import override
-
 import dnnl
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from dnnl.optim import Optimizer
 from torch import Tensor
 
 plt.rc('figure', dpi=100)
@@ -112,12 +109,11 @@ def loss_fn(theta: Tensor) -> Tensor:
 然后实现一个简单的梯度下降：
 
 ```{python}
-class SimpleSGD(Optimizer):
-    def __init__(self, params: list[Tensor], lr: float):
+class SimpleSGD:
+    def __init__(self, params: list[Tensor], lr: float = 1e-3):
         self.params = params
         self.lr = lr
 
-    @override
     @torch.no_grad()
     def step(self):
         for p in self.params:
@@ -126,7 +122,6 @@ class SimpleSGD(Optimizer):
 
             p.sub_(self.lr * p.grad)
 
-    @override
     def zero_grad(self, set_to_none: bool = False):
         for p in self.params:
             if p.grad is None:
