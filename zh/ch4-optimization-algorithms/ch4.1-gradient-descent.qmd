@@ -30,13 +30,19 @@ $$
 这一节我们先从最基础的梯度下降开始，看清楚“根据梯度更新参数”这件事的基本逻辑。然后我们会进一步讨论，为什么在深度学习里更常见的不是完整的梯度下降，而是随机梯度下降，也就是我们常说的 **SGD (Stochastic Gradient Descent)**。
 
 ```{python}
+from collections.abc import Callable, Sequence
+from typing import override
+
 import dnnl
+import dnnl.optim as dopt
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch import Tensor
+
+type Loss = Callable[[Tensor], Tensor]
 
 plt.rc('figure', dpi=100)
 dnnl.set_matplotlib_format('svg')
@@ -109,11 +115,12 @@ def loss_fn(theta: Tensor) -> Tensor:
 然后实现一个简单的梯度下降：
 
 ```{python}
-class SimpleSGD:
-    def __init__(self, params: list[Tensor], lr: float = 1e-3):
-        self.params = params
+class SimpleSGD(dopt.Optimizer):
+    def __init__(self, params: Sequence[Tensor], lr: float = 1e-3):
         self.lr = lr
+        super().__init__(params)
 
+    @override
     @torch.no_grad()
     def step(self):
         for p in self.params:
@@ -121,33 +128,34 @@ class SimpleSGD:
                 continue
 
             p.sub_(self.lr * p.grad)
+```
 
-    def zero_grad(self, set_to_none: bool = False):
-        for p in self.params:
-            if p.grad is None:
-                continue
+以及一个简单的训练循环：
 
-            if set_to_none:
-                p.grad = None
-            else:
-                p.grad.zero_()
+```{python}
+def run_sgd(loss_fn: Loss, params: Tensor, lr: float, steps: int) -> list[Tensor]:
+    theta = params.clone().requires_grad_()
+    optimizer = SimpleSGD([theta], lr=lr)
+    history = [theta.clone().detach()]
+
+    for _ in range(steps):
+        loss = loss_fn(theta)
+        loss.backward()
+
+        optimizer.step()
+        optimizer.zero_grad()
+
+        history.append(theta.clone().detach())
+
+    return history
 ```
 
 现在我们运行梯度下降，并观察参数的更新轨迹：
 
 ```{python}
-theta = torch.tensor(-4.0, requires_grad=True)
+theta = torch.tensor(-4.0)
 optimizer = SimpleSGD([theta], lr=0.2)
-history = [theta.clone()]
-
-for iteration in range(20):
-    loss = loss_fn(theta)
-    loss.backward()
-
-    optimizer.step()
-    optimizer.zero_grad()
-
-    history.append(theta.clone())
+history = run_sgd(loss_fn, theta, lr=0.2, steps=20)
 
 print('Final theta:', history[-1].item())
 print('Final loss:', loss_fn(history[-1]).item())
@@ -158,7 +166,7 @@ print('Final loss:', loss_fn(history[-1]).item())
 ```{python}
 thetas = torch.linspace(-5, 5, 200)
 losses = loss_fn(thetas)
-history = torch.stack(history).detach()
+history = torch.stack(history)
 history_losses = loss_fn(history)
 
 fig = plt.figure(1, figsize=(5, 3.5))
