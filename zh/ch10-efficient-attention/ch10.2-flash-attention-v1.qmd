@@ -4,8 +4,8 @@ date: 2026-03-19
 date-modified: 2026-04-04
 open-graph:
   title: ch10.2-flashattention-v1
-  description: "10.2 FlashAttention v1: Eliminating the IO Bottleneck in attention mechanisms"
-title: "10.2 FlashAttention v1：消除 attention 的 IO 瓶颈"
+  description: "10.2 FlashAttention v1: Eliminating the IO Bottleneck in Attention Mechanisms"
+title: "10.2 FlashAttention v1：消除 Attention 的 IO 瓶颈"
 order: 2
 ---
 
