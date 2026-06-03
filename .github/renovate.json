@@ -4,6 +4,7 @@
   "rangeStrategy": "replace",
   "timezone": "America/New_York",
   "assignees": ["jshn9515"],
+  "addLabels": ["dependencies", "python"],
   "packageRules": [
     {
       "matchManagers": ["pep621"],
