@@ -1,9 +1,15 @@
+from .adadelta import Adadelta as Adadelta
 from .adagrad import Adagrad as Adagrad
+from .adam import Adam as Adam
 from .base import Optimizer as Optimizer
+from .rmsprop import RMSprop as RMSprop
 from .sgd import SGD as SGD
 from .sgd import SimpleSGD as SimpleSGD
 from .sgd import SimpleSGDWithMomentum as SimpleSGDWithMomentum
 from .sgd import SimpleSGDWithNesterovMomentum as SimpleSGDWithNesterovMomentum
+from .sgd import SimpleSGDWithWeightDecay as SimpleSGDWithWeightDecay
 from .utils import run_adagrad as run_adagrad
 from .utils import run_sgd as run_sgd
 from .utils import run_sgd_with_momentum as run_sgd_with_momentum
+from .utils import run_sgd_with_nesterov_momentum as run_sgd_with_nesterov_momentum
+from .utils import run_sgd_with_weight_decay as run_sgd_with_weight_decay
