@@ -32,7 +32,7 @@
 ## Chapter 10: Efficient Attention Implementations: From Memory-Efficient Attention to FlashAttention
 
 - 10.1 Why Attention is IO-Bound
-- 10.2 FlashAttention v1: Eliminating the IO Bottleneck in attention mechanisms
+- 10.2 FlashAttention v1: Eliminating the IO Bottleneck in Attention Mechanisms
 
 ## Chapter 11: Vision Transformer: From Image Classification to Visual Sequence Modeling
 
