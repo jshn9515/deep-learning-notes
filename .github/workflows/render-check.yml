@@ -17,12 +17,14 @@ on:
 
 env:
   DNNL_DATA_ROOT: ${{ github.workspace }}/datasets
+  HF_HOME: ~/.cache/huggingface
+  HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
 permissions:
   contents: read
 
 concurrency:
-  group: render-website-${{ github.ref }}
+  group: check-rendering-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,6 +37,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Detect external invalidation
         id: changes
@@ -51,10 +56,14 @@ jobs:
             echo "external_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Remove freeze cache if external files changed
-        if: steps.changes.outputs.external_changed == 'true'
-        shell: bash
-        run: rm -rf _freeze
+      - name: Restore Quarto Freeze Cache
+        if: steps.changes.outputs.external_changed != 'true'
+        uses: actions/cache/restore@v5
+        with:
+          path: _freeze
+          key: quarto-freeze-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            quarto-freeze-${{ runner.os }}-
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.0.0
@@ -64,7 +73,7 @@ jobs:
             pyproject.toml
             dnnl/pyproject.toml
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           uv python install 3.14
           uv sync --python 3.14 --all-packages
@@ -81,21 +90,21 @@ jobs:
         if: runner.os == 'Linux'
         run: echo "PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
 
-      - name: Set up Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
-
-      - name: Download Caltech101 from Google Drive
+      - name: Download datasets for notebooks
         shell: bash
         run: |
           set -euo pipefail
 
           mkdir -p "$DNNL_DATA_ROOT/caltech101"
-          cd "$DNNL_DATA_ROOT/caltech101"
+          uv run gdown 19qo4t_YR0RGILU_nmpXHbo1mMGOvn3iH \
+            -O "$DNNL_DATA_ROOT/caltech101/caltech-101.zip"
 
-          uv run gdown 19qo4t_YR0RGILU_nmpXHbo1mMGOvn3iH
+          mkdir -p "$DNNL_DATA_ROOT/MNIST"
+          uv run gdown 1Aph8a8r7_uFN-IsVu5oFmZ4_zJKckk4X \
+            -O "$DNNL_DATA_ROOT/MNIST/mnist.zip"
+          unzip -q "$DNNL_DATA_ROOT/MNIST/mnist.zip" -d "$DNNL_DATA_ROOT/MNIST"
 
-      - name: Download datasets for notebooks
-        run: uv run python utils/download_datasets.py
+          uv run python utils/download_datasets.py
 
       - name: Render site
         env:
