@@ -20,6 +20,8 @@
 - 4.1 从梯度下降到 SGD
 - 4.2 Momentum 与 Nesterov Momentum
 - 4.3 Adagrad：自适应学习率的起点
+- 4.4 RMSprop 与 Adadelta：修正学习率衰减
+- 4.5 Adam：Momentum 与 RMSprop 的结合
 
 ## Chapter 8: Attention 与 Transformer：从动态检索到序列建模
 
