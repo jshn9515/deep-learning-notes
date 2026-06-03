@@ -216,7 +216,7 @@ y = torch.randn(8, 1)
 loss = F.mse_loss(model(x), y)
 loss.backward()
 
-flag1 = model.weight.grad is not None
+flag1 = model.weight.grad is None
 print('Whether grad is None before zero_grad?', flag1)
 
 optimizer.zero_grad(set_to_none=True)
