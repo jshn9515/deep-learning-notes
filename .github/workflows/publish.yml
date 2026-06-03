@@ -16,6 +16,11 @@ on:
       - "**/.github/workflows/render-check.yml"
   workflow_dispatch:
 
+env:
+  DNNL_DATA_ROOT: ${{ github.workspace }}/datasets
+  HF_HOME: ~/.cache/huggingface
+  HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
 permissions:
   contents: write
   pages: write
@@ -34,15 +39,29 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Use Quarto Freeze Cache
+        uses: actions/cache@v5
         with:
-          python-version: "3.14"
+          path: _freeze
+          key: quarto-freeze-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            quarto-freeze-${{ runner.os }}-
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            dnnl/pyproject.toml
 
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
+          uv python install 3.14
+          uv sync --python 3.14 --all-packages
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -56,28 +75,26 @@ jobs:
         if: runner.os == 'Linux'
         run: echo "PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
 
-      - name: Set up Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
-
-      - name: Render site
-        run: quarto render
-
-      - name: Commit back _freeze changes
+      - name: Download datasets for notebooks
         shell: bash
         run: |
           set -euo pipefail
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p "$DNNL_DATA_ROOT/caltech101"
+          uv run gdown 19qo4t_YR0RGILU_nmpXHbo1mMGOvn3iH \
+            -O "$DNNL_DATA_ROOT/caltech101/caltech-101.zip"
 
-          git add _freeze
+          mkdir -p "$DNNL_DATA_ROOT/MNIST"
+          uv run gdown 1Aph8a8r7_uFN-IsVu5oFmZ4_zJKckk4X \
+            -O "$DNNL_DATA_ROOT/MNIST/mnist.zip"
+          unzip -q "$DNNL_DATA_ROOT/MNIST/mnist.zip" -d "$DNNL_DATA_ROOT/MNIST"
 
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "MAINT: Update freeze cache for deep-learning-notes"
-            git push
-          fi
+          uv run python utils/download_datasets.py
+
+      - name: Render site
+        env:
+          QUARTO_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: quarto render
 
       - name: Commit back TOC changes
         shell: bash
