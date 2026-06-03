@@ -51,7 +51,7 @@ When using Hugging Face Transformers, the most common workflow is:
 ```{python}
 from transformers import AutoTokenizer, AutoModel
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModel.from_pretrained(model_id)
@@ -134,7 +134,7 @@ This is essentially the `key_padding_mask` we discussed earlier. It tells the mo
 ```{python}
 from transformers import AutoTokenizer, AutoModel
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModel.from_pretrained(model_id)
@@ -205,7 +205,7 @@ If we want to do text classification, we usually do not use only `AutoModel`; in
 ```{python}
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSequenceClassification.from_pretrained(
@@ -262,7 +262,7 @@ If the task is named entity recognition or another token-level classification ta
 ```{python}
 from transformers import AutoModelForTokenClassification
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 model = AutoModelForTokenClassification.from_pretrained(
     model_id,
@@ -309,7 +309,7 @@ Here is a BERT-style text representation example:
 import torch
 from transformers import AutoTokenizer, AutoModel
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModel.from_pretrained(model_id)
@@ -365,7 +365,7 @@ If we want to load a GPT-style decoder-only model, we usually use:
 ```{python}
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-model_id = 'gpt2'
+model_id = 'openai-community/gpt2'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForCausalLM.from_pretrained(model_id)
@@ -510,7 +510,7 @@ Here is a minimal GPT-style generation example:
 ```{python}
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-model_id = 'gpt2'
+model_id = 'openai-community/gpt2'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForCausalLM.from_pretrained(model_id)
@@ -554,7 +554,7 @@ If we want to load encoder-decoder models such as T5 or BART, we usually use:
 ```{python}
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-model_id = 't5-small'
+model_id = 'google-t5/t5-small'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
@@ -601,7 +601,7 @@ Here is a T5-style text-to-text example:
 ```{python}
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-model_id = 't5-small'
+model_id = 'google-t5/t5-small'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
@@ -650,7 +650,7 @@ In newer Transformers versions, some models may use efficient attention implemen
 ```{python}
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSequenceClassification.from_pretrained(
@@ -758,7 +758,7 @@ If we want to extract attention weights, we can write:
 ```{python}
 from transformers import AutoTokenizer, AutoModel
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModel.from_pretrained(
@@ -802,7 +802,7 @@ For example, text classification:
 ```{python}
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-model_id = 'bert-base-uncased'
+model_id = 'google-bert/bert-base-uncased'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSequenceClassification.from_pretrained(
@@ -835,7 +835,7 @@ For sequence classification, this is commonly cross-entropy loss. For causal lan
 ```{python}
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-model_id = 'gpt2'
+model_id = 'openai-community/gpt2'
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForCausalLM.from_pretrained(model_id)
