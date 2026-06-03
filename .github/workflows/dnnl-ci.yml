@@ -20,7 +20,7 @@ permissions:
   attestations: write
 
 concurrency:
-  group: dnnl-ci-build-${{ github.ref }}
+  group: dnnl-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -44,7 +44,8 @@ jobs:
         uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
-          cache-dependency-glob: dnnl/pyproject.toml
+          cache-dependency-glob: |
+            dnnl/pyproject.toml
 
       - name: Install dependencies
         run: |
