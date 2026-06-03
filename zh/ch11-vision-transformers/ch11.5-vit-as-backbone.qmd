@@ -236,7 +236,7 @@ vit-base-patch16-224
   - 参数量
   - 特点
 
-- - `google/vit-base-patch16-224`
+- - google/vit-base-patch16-224
   - 16
   - 224
   - 768
@@ -245,7 +245,7 @@ vit-base-patch16-224
   - 86M
   - 最常用的 ViT-Base/16 配置
 
-- - `google/vit-base-patch32-224`
+- - google/vit-base-patch32-224
   - 32
   - 224
   - 768
@@ -254,7 +254,7 @@ vit-base-patch16-224
   - 86M
   - Patch 更大，token 更少，计算更省
 
-- - `google/vit-large-patch16-224`
+- - google/vit-large-patch16-224
   - 16
   - 224
   - 1024
@@ -263,7 +263,7 @@ vit-base-patch16-224
   - 307M
   - 更大的 ViT-Large 配置，性能更好但更重
 
-- - `google/vit-large-patch32-384`
+- - google/vit-large-patch32-384
   - 32
   - 384
   - 1024
@@ -369,7 +369,7 @@ $$
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 model_id = 'google/vit-base-patch16-224'
-ds = load_dataset('beans')
+ds = load_dataset('AI-Lab-Makerere/beans')
 train_ds = ds['train'].shuffle()
 val_ds = ds['validation'].shuffle()
 
@@ -398,6 +398,7 @@ def transform(batch: dict) -> dict:
 
 train_ds = train_ds.with_transform(transform)
 val_ds = val_ds.with_transform(transform)
+acc_metric = evaluate.load('accuracy')
 
 
 def collate_fn(images: list[dict]) -> dict:
@@ -407,7 +408,6 @@ def collate_fn(images: list[dict]) -> dict:
 
 
 def compute_metrics(eval_pred: tuple[np.ndarray, np.ndarray]) -> dict:
-    acc_metric = evaluate.load('accuracy')
     logits, labels = eval_pred
     predictions = np.argmax(logits, axis=-1)
     acc_value = acc_metric.compute(predictions=predictions, references=labels)
