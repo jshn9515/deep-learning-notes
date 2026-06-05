@@ -16,7 +16,7 @@ class RMSprop(Optimizer):
         self,
         params: Iterable[Tensor],
         lr: float = 1e-2,
-        rho: float = 0.9,
+        rho: float = 0.99,
         eps: float = 1e-8,
         weight_decay: float = 0.0,
     ):
@@ -25,7 +25,7 @@ class RMSprop(Optimizer):
         Args:
             params (Iterable[Tensor]): Parameters to update.
             lr (float, default: 1e-2): Base learning rate.
-            rho (float, default: 0.9): Decay factor for the squared-gradient
+            rho (float, default: 0.99): Decay factor for the squared-gradient
                 moving average.
             eps (float, default: 1e-8): Small value added to the denominator
                 for numerical stability.
