@@ -351,41 +351,47 @@ class Adam(dopt.Optimizer):
 我们可以用一个简单线性回归任务，检查我们实现的 Adam 是否能正常训练。
 
 ```{python}
-x = torch.linspace(-2, 2, 100).unsqueeze(1)
-y = 3 * x - 1 + 0.3 * x.relu() + torch.randn_like(x)
+def loss_fn(theta: Tensor) -> Tensor:
+    x, y = theta[0], theta[1]
+    return 0.1 * (x - 2) ** 2 + 2.0 * (y + 1) ** 2
 
-model = nn.Linear(1, 1)
-optimizer = Adam(model.parameters(), lr=0.1)
-losses = []
 
-for _ in range(100):
-    pred = model(x)
-    loss = F.mse_loss(pred, y)
+theta = torch.tensor([-5.0, 2.0])
+history = dopt.run_adam(loss_fn, theta, lr=0.25, steps=40)
+history = torch.stack(history)
 
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-
-    losses.append(loss.item())
-
-print('weight:', model.weight.item())
-print('bias:', model.bias.item())
-print('loss:', losses[-1])
+print('Final theta:', history[-1])
+print('Final loss:', loss_fn(history[-1]).item())
 ```
 
-画出训练曲线：
+画出 Adam 在参数平面上的轨迹：
 
 ```{python}
-fig = plt.figure(1, figsize=(6, 4))
+x = torch.linspace(-6.5, 5.5, 200)
+y = torch.linspace(-3.5, 2.5, 200)
+X, Y = torch.meshgrid(x, y, indexing='ij')
+Z = 0.1 * (X - 2) ** 2 + 2.0 * (Y + 1) ** 2
+
+fig = plt.figure(1)
 ax = fig.add_subplot(1, 1, 1)
-ax.plot(losses)
-ax.set_xlabel('Step')
-ax.set_ylabel('Loss')
-ax.set_title('Training with Adam')
+ax.contourf(X, Y, Z, levels=25, cmap='YlGnBu')
+ax.plot(
+    history[:, 0],
+    history[:, 1],
+    color='#EC705B',
+    marker='o',
+    markersize=3,
+    markerfacecolor='#C0392B',
+    markeredgecolor='white',
+    markeredgewidth=0.5,
+)
+ax.set_xlabel(r'$\theta_1$')
+ax.set_ylabel(r'$\theta_2$')
+ax.set_title('Adam Optimization Trajectory')
 plt.show()
 ```
 
-可以看到，我们实现的 Adam 能够成功地把线性模型拟合到数据上。`weight` 在 3.1 到 3.25 之间，`bias` 在 -0.95 到 -0.75 之间，最终 loss 在 1.0 左右，就是我们预期的结果。
+可以看到，我们实现的 Adam 能够成功地优化这个简单的二次函数，参数逐渐收敛到最优点 $(2, -1)$。
 
 ## 4.5.6 Adam 为什么常用？
 
@@ -456,7 +462,7 @@ $$
 
 这就有点奇怪了。weight decay 本来关心的是参数大小，不应该被 Adam 的自适应学习率重新解释。
 
-所以 AdamW 的做法是：
+所以 AdamW [@loshchilov2019AdamW] 的做法是：
 
 > **不要把 weight decay 混进梯度里。**
 
