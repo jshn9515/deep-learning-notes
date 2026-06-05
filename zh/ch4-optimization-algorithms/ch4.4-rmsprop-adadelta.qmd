@@ -104,7 +104,7 @@ for grad in grads:
     effective_lr = lr / (squared.sqrt() + eps)
     adagrad_effective_lrs.append(effective_lr.item())
 
-fig = plt.figure(1, figsize=(6, 4))
+fig = plt.figure(1)
 ax = fig.add_subplot(1, 1, 1)
 ax.plot(adagrad_effective_lrs)
 ax.set_xlabel('Step')
@@ -204,7 +204,7 @@ for t, grad in enumerate(grads, start=1):
     effective_lr = lr / (velocity_adj.sqrt() + eps)
     rmsprop_effective_lrs.append(effective_lr.item())
 
-fig = plt.figure(2, figsize=(6, 4))
+fig = plt.figure(2)
 ax = fig.add_subplot(1, 1, 1)
 ax.plot(adagrad_effective_lrs)
 ax.plot(rmsprop_effective_lrs)
@@ -465,46 +465,74 @@ Adam 同时维护这两个量，因此自然接在 momentum 和 RMSprop 后面�
 最后，我们用一个简单的线性回归例子，比较 Adagrad、RMSprop 和 Adadelta 的训练曲线。
 
 ```{python}
+def loss_fn(theta: Tensor) -> Tensor:
+    x, y = theta[0], theta[1]
+    return 0.1 * (x - 2) ** 2 + 2.0 * (y + 1) ** 2
+
+
 def train_with_optimizer(
-    optimizer_cls: type[dopt.Optimizer],
-    x: Tensor,
-    y: Tensor,
+    optimizer: str,
+    params: Tensor,
     lr: float,
-    num_steps: int = 100,
+    steps: int = 40,
 ):
-    model = nn.Linear(1, 1)
-    optimizer = optimizer_cls(model.parameters(), lr=lr)
-
-    losses = []
-
-    for _ in range(num_steps):
-        pred = model(x)
-        loss = F.mse_loss(pred, y)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        losses.append(loss.item())
-
-    return losses
+    optimizer = optimizer.lower()
+    match optimizer:
+        case 'adagrad':
+            history = dopt.run_adagrad(loss_fn, params, lr=lr, steps=steps)[0]
+        case 'rmsprop':
+            history = dopt.run_rmsprop(loss_fn, params, lr=lr, steps=steps)[0]
+        case 'adadelta':
+            history = dopt.run_adadelta(loss_fn, params, lr=lr, steps=steps)
+        case _:
+            raise NotImplementedError(f'Unknown optimizer: {optimizer}.')
+    return torch.stack(history)
 
 
-x = torch.linspace(-2, 2, 100).unsqueeze(1)
-y = 3 * x - 1 + 0.3 * x.relu() + torch.randn_like(x)
+x = torch.linspace(-6.5, 5.5, 200)
+y = torch.linspace(-3.5, 2.5, 200)
+X, Y = torch.meshgrid(x, y, indexing='ij')
+Z = 0.1 * (X - 2) ** 2 + 2.0 * (Y + 1) ** 2
 
-adagrad_losses = train_with_optimizer(dopt.Adagrad, x, y, lr=0.5)
-rmsprop_losses = train_with_optimizer(RMSprop, x, y, lr=0.05)
-adadelta_losses = train_with_optimizer(Adadelta, x, y, lr=1.5)
+theta = torch.tensor([-5.0, 2.0])
+adagrad_history = train_with_optimizer('adagrad', theta, lr=1.2)
+rmsprop_history = train_with_optimizer('rmsprop', theta, lr=0.5)
+adadelta_history = train_with_optimizer('adadelta', theta, lr=3.0)
 
-fig = plt.figure(3, figsize=(6, 4))
+fig = plt.figure(3)
 ax = fig.add_subplot(1, 1, 1)
-ax.plot(adagrad_losses)
-ax.plot(rmsprop_losses)
-ax.plot(adadelta_losses)
-ax.set_xlabel('Step')
-ax.set_ylabel('Loss')
+ax.contourf(X, Y, Z, levels=25, cmap='YlGnBu')
+common_kwargs = dict(
+    marker='o',
+    markersize=3,
+    markeredgecolor='white',
+    markeredgewidth=0.5,
+)
+ax.plot(
+    adagrad_history[:, 0],
+    adagrad_history[:, 1],
+    color='#EC705B',
+    markerfacecolor='#C0392B',
+    **common_kwargs,
+)
+ax.plot(
+    rmsprop_history[:, 0],
+    rmsprop_history[:, 1],
+    color='#4B96EB',
+    markerfacecolor='#2A74C8',
+    **common_kwargs,
+)
+ax.plot(
+    adadelta_history[:, 0],
+    adadelta_history[:, 1],
+    color='#58D68D',
+    markerfacecolor='#27AE60',
+    **common_kwargs,
+)
+ax.set_xlabel(r'$\theta_1$')
+ax.set_ylabel(r'$\theta_2$')
 ax.legend(['Adagrad', 'RMSprop', 'Adadelta'])
-ax.set_title('Adagrad, RMSprop, and Adadelta')
+ax.set_title('Adagrad vs. RMSprop vs. Adadelta Trajectory')
 plt.show()
 ```
 
