@@ -1,7 +1,7 @@
 ---
 author: jshn9515
 date: 2026-05-29
-date-modified: 2026-05-29
+date-modified: 2026-06-05
 open-graph:
   title: ch4.4-rmsprop-adadelta
   description: "4.4 RMSprop and Adadelta: Fixing Learning Rate Decay"
