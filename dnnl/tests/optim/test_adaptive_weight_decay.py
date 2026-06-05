@@ -3,20 +3,20 @@ from typing import Any
 import pytest
 import torch
 
-import dnnl.optim as optim
+import dnnl.optim as dopt
 
 
 @pytest.mark.parametrize(
     ('optimizer_cls', 'kwargs'),
     [
-        (optim.Adagrad, {'lr': 0.1, 'eps': 0.0}),
-        (optim.RMSprop, {'lr': 0.1, 'rho': 0.9, 'eps': 1e-8}),
-        (optim.Adadelta, {'lr': 1.0, 'rho': 0.9, 'eps': 1e-6}),
-        (optim.Adam, {'lr': 0.1, 'betas': (0.9, 0.999), 'eps': 1e-8}),
+        (dopt.Adagrad, {'lr': 0.1, 'eps': 0.0}),
+        (dopt.RMSprop, {'lr': 0.1, 'rho': 0.9, 'eps': 1e-8}),
+        (dopt.Adadelta, {'lr': 1.0, 'rho': 0.9, 'eps': 1e-6}),
+        (dopt.Adam, {'lr': 0.1, 'betas': (0.9, 0.999), 'eps': 1e-8}),
     ],
 )
 def test_adaptive_optimizers_apply_weight_decay_as_gradient_term(
-    optimizer_cls: type[optim.Optimizer],
+    optimizer_cls: type[dopt.Optimizer],
     kwargs: Any,
 ):
     actual_param = torch.tensor([1.0, -2.0], requires_grad=True)
@@ -42,10 +42,10 @@ def test_adaptive_optimizers_apply_weight_decay_as_gradient_term(
 
 @pytest.mark.parametrize(
     'optimizer_cls',
-    [optim.Adagrad, optim.RMSprop, optim.Adadelta, optim.Adam],
+    [dopt.Adagrad, dopt.RMSprop, dopt.Adadelta, dopt.Adam],
 )
 def test_adaptive_optimizers_leave_parameters_without_gradients_unchanged(
-    optimizer_cls: type[optim.Optimizer],
+    optimizer_cls: type[dopt.Optimizer],
 ):
     trained = torch.tensor([1.0], requires_grad=True)
     skipped = torch.tensor([2.0], requires_grad=True)

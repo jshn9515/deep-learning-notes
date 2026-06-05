@@ -2,7 +2,7 @@ import inspect
 
 import torch
 
-import dnnl.optim as optim
+import dnnl.optim as dopt
 import dnnl.optim.adagrad as adagrad
 
 
@@ -17,12 +17,12 @@ def test_adagrad_module_has_docstrings():
 
 
 def test_adagrad_public_export():
-    assert optim.Adagrad is adagrad.Adagrad
+    assert dopt.Adagrad is adagrad.Adagrad
 
 
 def test_adagrad_accumulates_squared_gradients_and_updates_parameters():
     param = torch.tensor([1.0, -2.0], requires_grad=True)
-    optimizer = optim.Adagrad([param], lr=0.1, eps=0.0)
+    optimizer = dopt.Adagrad([param], lr=0.1, eps=0.0)
 
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
@@ -44,7 +44,7 @@ def test_adagrad_skips_parameters_without_gradients():
     trained = torch.tensor([1.0], requires_grad=True)
     skipped = torch.tensor([2.0], requires_grad=True)
     trained.grad = torch.tensor([0.5])
-    optimizer = optim.Adagrad([trained, skipped], lr=0.1, eps=0.0)
+    optimizer = dopt.Adagrad([trained, skipped], lr=0.1, eps=0.0)
 
     optimizer.step()
 

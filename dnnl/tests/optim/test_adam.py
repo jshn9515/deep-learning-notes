@@ -2,7 +2,7 @@ import inspect
 
 import torch
 
-import dnnl.optim as optim
+import dnnl.optim as dopt
 import dnnl.optim.adam as adam
 
 
@@ -17,12 +17,12 @@ def test_adam_module_has_docstrings():
 
 
 def test_adam_public_export():
-    assert optim.Adam is adam.Adam
+    assert dopt.Adam is adam.Adam
 
 
 def test_adam_accumulates_moments_and_updates_parameters():
     param = torch.tensor([1.0, -2.0], requires_grad=True)
-    optimizer = optim.Adam([param], lr=0.1, betas=(0.9, 0.999), eps=0.0)
+    optimizer = dopt.Adam([param], lr=0.1, betas=(0.9, 0.999), eps=0.0)
 
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
@@ -37,7 +37,7 @@ def test_adam_skips_parameters_without_gradients():
     trained = torch.tensor([1.0], requires_grad=True)
     skipped = torch.tensor([2.0], requires_grad=True)
     trained.grad = torch.tensor([0.5])
-    optimizer = optim.Adam([trained, skipped], lr=0.1, betas=(0.9, 0.999), eps=0.0)
+    optimizer = dopt.Adam([trained, skipped], lr=0.1, betas=(0.9, 0.999), eps=0.0)
 
     optimizer.step()
 

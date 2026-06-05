@@ -3,7 +3,7 @@ import inspect
 import pytest
 import torch
 
-import dnnl.optim as optim
+import dnnl.optim as dopt
 import dnnl.optim.base as base
 import dnnl.optim.sgd as sgd
 
@@ -22,16 +22,16 @@ def test_sgd_modules_have_docstrings():
 
 
 def test_sgd_public_exports():
-    assert optim.Optimizer is base.Optimizer
-    assert optim.SimpleSGD is sgd.SimpleSGD
-    assert optim.SimpleSGDWithMomentum is sgd.SimpleSGDWithMomentum
-    assert optim.SimpleSGDWithNesterovMomentum is sgd.SimpleSGDWithNesterovMomentum
-    assert optim.SGD is sgd.SGD
+    assert dopt.Optimizer is base.Optimizer
+    assert dopt.SimpleSGD is sgd.SimpleSGD
+    assert dopt.SimpleSGDWithMomentum is sgd.SimpleSGDWithMomentum
+    assert dopt.SimpleSGDWithNesterovMomentum is sgd.SimpleSGDWithNesterovMomentum
+    assert dopt.SGD is sgd.SGD
 
 
 def test_optimizer_base_cannot_be_instantiated():
     with pytest.raises(TypeError):
-        optim.Optimizer([])  # type: ignore[abstract]
+        dopt.Optimizer([])  # type: ignore[abstract]
 
 
 def test_optimizer_zero_grad_can_zero_or_remove_gradients():
@@ -39,7 +39,7 @@ def test_optimizer_zero_grad_can_zero_or_remove_gradients():
     untouched = torch.tensor([3.0], requires_grad=True)
     param.grad = torch.tensor([0.5, -0.25])
 
-    optimizer = optim.SimpleSGD([param, untouched])
+    optimizer = dopt.SimpleSGD([param, untouched])
     optimizer.zero_grad()
 
     assert param.grad is not None
@@ -57,7 +57,7 @@ def test_simple_sgd_step_updates_parameters_and_skips_missing_gradients():
     frozen = torch.tensor([3.0], requires_grad=True)
     trainable.grad = torch.tensor([0.25, -0.5])
 
-    optimizer = optim.SimpleSGD([trainable, frozen], lr=0.1)
+    optimizer = dopt.SimpleSGD([trainable, frozen], lr=0.1)
     optimizer.step()
 
     assert torch.allclose(trainable, torch.tensor([0.975, -1.95]))
@@ -66,7 +66,7 @@ def test_simple_sgd_step_updates_parameters_and_skips_missing_gradients():
 
 def test_simple_sgd_with_momentum_accumulates_velocity():
     param = torch.tensor([1.0, -2.0], requires_grad=True)
-    optimizer = optim.SimpleSGDWithMomentum([param], lr=0.1, momentum=0.9)
+    optimizer = dopt.SimpleSGDWithMomentum([param], lr=0.1, momentum=0.9)
 
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
@@ -83,7 +83,7 @@ def test_simple_sgd_with_momentum_accumulates_velocity():
 
 def test_simple_sgd_with_nesterov_momentum_uses_lookahead_update():
     param = torch.tensor([1.0, -2.0], requires_grad=True)
-    optimizer = optim.SimpleSGDWithNesterovMomentum([param], lr=0.1, momentum=0.9)
+    optimizer = dopt.SimpleSGDWithNesterovMomentum([param], lr=0.1, momentum=0.9)
 
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
@@ -96,12 +96,12 @@ def test_simple_sgd_with_nesterov_momentum_uses_lookahead_update():
 def test_sgd_matches_simple_momentum_variants(nesterov: bool):
     actual_param = torch.tensor([1.0, -2.0], requires_grad=True)
     expected_param = actual_param.detach().clone().requires_grad_()
-    optimizer = optim.SGD([actual_param], lr=0.1, momentum=0.9, nesterov=nesterov)
+    optimizer = dopt.SGD([actual_param], lr=0.1, momentum=0.9, nesterov=nesterov)
 
     if nesterov:
-        expected_optimizer_cls = optim.SimpleSGDWithNesterovMomentum
+        expected_optimizer_cls = dopt.SimpleSGDWithNesterovMomentum
     else:
-        expected_optimizer_cls = optim.SimpleSGDWithMomentum
+        expected_optimizer_cls = dopt.SimpleSGDWithMomentum
 
     expected_optimizer = expected_optimizer_cls(
         [expected_param],
@@ -125,7 +125,7 @@ def test_sgd_with_zero_momentum_matches_simple_sgd():
     actual_param.grad = torch.tensor([0.5, -0.25])
     expected_param.grad = actual_param.grad.clone()
 
-    optim.SGD([actual_param], lr=0.1).step()
-    optim.SimpleSGD([expected_param], lr=0.1).step()
+    dopt.SGD([actual_param], lr=0.1).step()
+    dopt.SimpleSGD([expected_param], lr=0.1).step()
 
     assert torch.allclose(actual_param, expected_param)

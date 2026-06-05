@@ -2,7 +2,7 @@ import inspect
 
 import torch
 
-import dnnl.optim as optim
+import dnnl.optim as dopt
 import dnnl.optim.adadelta as adadelta
 
 
@@ -17,12 +17,12 @@ def test_adadelta_module_has_docstrings():
 
 
 def test_adadelta_public_export():
-    assert optim.Adadelta is adadelta.Adadelta
+    assert dopt.Adadelta is adadelta.Adadelta
 
 
 def test_adadelta_accumulates_state_and_updates_parameters():
     param = torch.tensor([1.0, -2.0], requires_grad=True)
-    optimizer = optim.Adadelta([param], lr=1.0, rho=0.9, eps=1e-6)
+    optimizer = dopt.Adadelta([param], lr=1.0, rho=0.9, eps=1e-6)
 
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
@@ -39,7 +39,7 @@ def test_adadelta_skips_parameters_without_gradients():
     trained = torch.tensor([1.0], requires_grad=True)
     skipped = torch.tensor([2.0], requires_grad=True)
     trained.grad = torch.tensor([0.5])
-    optimizer = optim.Adadelta([trained, skipped], lr=1.0, rho=0.9, eps=1e-6)
+    optimizer = dopt.Adadelta([trained, skipped], lr=1.0, rho=0.9, eps=1e-6)
 
     optimizer.step()
 
