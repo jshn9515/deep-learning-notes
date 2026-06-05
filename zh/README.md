@@ -22,6 +22,10 @@
 - 4.3 Adagrad：自适应学习率的起点
 - 4.4 RMSprop 与 Adadelta：修正学习率衰减
 - 4.5 Adam：Momentum 与 RMSprop 的结合
+- 4.6 AdamW：解耦权重衰减
+- 4.7 Muon：矩阵参数的正交化更新
+- 4.8 优化器地图：不同优化算法该在什么时候使用
+- 4.9 学习率调度器：让学习率随训练过程变化
 
 ## Chapter 8: Attention 与 Transformer：从动态检索到序列建模
 
