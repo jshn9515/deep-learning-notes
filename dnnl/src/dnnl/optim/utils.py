@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 import matplotlib.pyplot as plt
 import torch
@@ -70,8 +71,8 @@ def run_sgd_with_weight_decay(
     loss_fn: Loss,
     params: Tensor,
     lr: float,
-    weight_decay: float,
     steps: int,
+    **kwargs: Any,
 ) -> list[Tensor]:
     """Run SGD with weight decay and record the parameter trajectory.
 
@@ -80,14 +81,15 @@ def run_sgd_with_weight_decay(
         params (Tensor): Initial parameter value. The tensor is cloned before
             optimization.
         lr (float): Learning rate.
-        weight_decay (float): Weight decay coefficient.
         steps (int): Number of optimization steps to run.
+        **kwargs: Additional keyword arguments passed to the optimizer constructor,
+            such as ``weight_decay``.
 
     Returns:
         Parameter snapshots before the first step and after each update.
     """
     theta = params.clone().requires_grad_()
-    optimizer = SimpleSGDWithWeightDecay([theta], lr=lr, weight_decay=weight_decay)
+    optimizer = SimpleSGDWithWeightDecay([theta], lr=lr, **kwargs)
     history = [theta.clone().detach()]
 
     for _ in range(steps):
@@ -106,8 +108,8 @@ def run_sgd_with_momentum(
     loss_fn: Loss,
     params: Tensor,
     lr: float,
-    momentum: float,
     steps: int,
+    **kwargs: Any,
 ) -> list[Tensor]:
     """Run SGD with momentum and record the parameter trajectory.
 
@@ -116,14 +118,15 @@ def run_sgd_with_momentum(
         params (Tensor): Initial parameter value. The tensor is cloned before
             optimization.
         lr (float): Learning rate.
-        momentum (float): Momentum coefficient.
         steps (int): Number of optimization steps to run.
+        **kwargs: Additional keyword arguments passed to the optimizer constructor,
+            such as ``momentum``.
 
     Returns:
         Parameter snapshots before the first step and after each update.
     """
     theta = params.clone().requires_grad_()
-    optimizer = SimpleSGDWithMomentum([theta], lr=lr, momentum=momentum)
+    optimizer = SimpleSGDWithMomentum([theta], lr=lr, **kwargs)
     history = [theta.detach().clone()]
 
     for _ in range(steps):
@@ -142,8 +145,8 @@ def run_sgd_with_nesterov_momentum(
     loss_fn: Loss,
     params: Tensor,
     lr: float,
-    momentum: float,
     steps: int,
+    **kwargs: Any,
 ) -> list[Tensor]:
     """Run SGD with Nesterov momentum and record the parameter trajectory.
 
@@ -152,14 +155,15 @@ def run_sgd_with_nesterov_momentum(
         params (Tensor): Initial parameter value. The tensor is cloned before
             optimization.
         lr (float): Learning rate.
-        momentum (float): Momentum coefficient.
         steps (int): Number of optimization steps to run.
+        **kwargs: Additional keyword arguments passed to the optimizer constructor,
+            such as ``momentum``.
 
     Returns:
         Parameter snapshots before the first step and after each update.
     """
     theta = params.clone().requires_grad_()
-    optimizer = SimpleSGDWithNesterovMomentum([theta], lr=lr, momentum=momentum)
+    optimizer = SimpleSGDWithNesterovMomentum([theta], lr=lr, **kwargs)
     history = [theta.detach().clone()]
 
     for _ in range(steps):
@@ -179,7 +183,7 @@ def run_adagrad(
     params: Tensor,
     lr: float,
     steps: int,
-    eps: float = 1e-10,
+    **kwargs: Any,
 ) -> tuple[list[Tensor], list[list[Tensor]]]:
     """Run Adagrad and record parameter and effective-learning-rate histories.
 
@@ -189,14 +193,15 @@ def run_adagrad(
             optimization.
         lr (float): Base learning rate.
         steps (int): Number of optimization steps to run.
-        eps (float, default: 1e-10): Small value added to Adagrad denominators.
+        **kwargs: Additional keyword arguments passed to the Adagrad optimizer
+            constructor, such as ``eps``.
 
     Returns:
         A tuple containing parameter snapshots and per-step effective learning
         rates for each optimized parameter.
     """
     theta = params.clone().requires_grad_()
-    optimizer = Adagrad([theta], lr=lr, eps=eps)
+    optimizer = Adagrad([theta], lr=lr, **kwargs)
 
     theta_history = [theta.detach().clone()]
     lr_history = []
@@ -219,7 +224,7 @@ def run_rmsprop(
     params: Tensor,
     lr: float,
     steps: int,
-    eps: float = 1e-8,
+    **kwargs: Any,
 ) -> tuple[list[Tensor], list[list[Tensor]]]:
     """Run RMSProp and record parameter and effective-learning-rate histories.
 
@@ -229,14 +234,15 @@ def run_rmsprop(
             optimization.
         lr (float): Base learning rate.
         steps (int): Number of optimization steps to run.
-        eps (float, default: 1e-8): Small value added to RMSProp denominators.
+        **kwargs: Additional keyword arguments passed to the RMSprop optimizer
+            constructor, such as ``momentum`` and ``eps``.
 
     Returns:
         A tuple containing parameter snapshots and per-step effective learning
         rates for each optimized parameter.
     """
     theta = params.clone().requires_grad_()
-    optimizer = RMSprop([theta], lr=lr, eps=eps)
+    optimizer = RMSprop([theta], lr=lr, **kwargs)
 
     theta_history = [theta.detach().clone()]
     lr_history = []
@@ -259,7 +265,7 @@ def run_adadelta(
     params: Tensor,
     lr: float,
     steps: int,
-    eps: float = 1e-6,
+    **kwargs: Any,
 ) -> list[Tensor]:
     """Run Adadelta and record parameter and effective-learning-rate histories.
 
@@ -269,13 +275,14 @@ def run_adadelta(
             optimization.
         lr (float): Base learning rate.
         steps (int): Number of optimization steps to run.
-        eps (float, default: 1e-6): Small value added to Adadelta denominators.
+        **kwargs: Additional keyword arguments passed to the Adadelta optimizer
+            constructor, such as ``rho`` and ``eps``.
 
     Returns:
         Parameter snapshots before the first step and after each update.
     """
     theta = params.clone().requires_grad_()
-    optimizer = Adadelta([theta], lr=lr, eps=eps)
+    optimizer = Adadelta([theta], lr=lr, **kwargs)
     theta_history = [theta.detach().clone()]
 
     for _ in range(steps):
@@ -296,7 +303,7 @@ def run_adam(
     lr: float,
     steps: int,
     betas: tuple[float, float] = (0.9, 0.999),
-    eps: float = 1e-8,
+    **kwargs: Any,
 ) -> list[Tensor]:
     """Run Adam and record parameter history.
 
@@ -308,13 +315,14 @@ def run_adam(
         steps (int): Number of optimization steps to run.
         betas (tuple[float, float], default: (0.9, 0.999)): Coefficients for
             computing running averages of gradient and its square.
-        eps (float, default: 1e-8): Small value added to Adam denominators.
+        **kwargs: Additional keyword arguments passed to the Adam optimizer
+            constructor, such as ``eps`` and ``weight_decay``.
 
     Returns:
         Parameter snapshots before the first step and after each update.
     """
     theta = params.clone().requires_grad_()
-    optimizer = Adam([theta], lr=lr, betas=betas, eps=eps)
+    optimizer = Adam([theta], lr=lr, betas=betas, **kwargs)
     theta_history = [theta.detach().clone()]
 
     for _ in range(steps):
@@ -335,8 +343,7 @@ def run_adamw(
     lr: float,
     steps: int,
     betas: tuple[float, float] = (0.9, 0.999),
-    eps: float = 1e-8,
-    weight_decay: float = 0.01,
+    **kwargs: Any,
 ) -> list[Tensor]:
     """Run AdamW and record parameter history.
 
@@ -348,20 +355,14 @@ def run_adamw(
         steps (int): Number of optimization steps to run.
         betas (tuple[float, float], default: (0.9, 0.999)): Coefficients for
             computing running averages of gradient and its square.
-        eps (float, default: 1e-8): Small value added to AdamW denominators.
-        weight_decay (float, default: 0.01): Decoupled weight decay coefficient.
+        **kwargs: Additional keyword arguments passed to the AdamW optimizer
+            constructor, such as ``eps`` and ``weight_decay``.
 
     Returns:
         Parameter snapshots before the first step and after each update.
     """
     theta = params.clone().requires_grad_()
-    optimizer = AdamW(
-        [theta],
-        lr=lr,
-        betas=betas,
-        eps=eps,
-        weight_decay=weight_decay,
-    )
+    optimizer = AdamW([theta], lr=lr, betas=betas, **kwargs)
     theta_history = [theta.detach().clone()]
 
     for _ in range(steps):
@@ -381,9 +382,7 @@ def run_muon(
     params: Tensor,
     lr: float,
     steps: int,
-    momentum: float = 0.95,
-    ns_coefficients: tuple[float, float, float] = (3.4445, -4.7750, 2.0315),
-    ns_steps: int = 5,
+    **kwargs: Any,
 ) -> list[Tensor]:
     """Run Muon and record parameter history.
 
@@ -393,24 +392,15 @@ def run_muon(
             cloned before optimization.
         lr (float): Base learning rate.
         steps (int): Number of optimization steps to run.
-        momentum (float, default: 0.95): Momentum coefficient for the update
-            buffer.
-        ns_coefficients (tuple[float, float, float], default: (3.4445, -4.7750,
-            2.0315)): Coefficients for the Newton-Schulz orthogonalization
-            iteration.
-        ns_steps (int, default: 5): Number of Newton-Schulz iterations.
+        **kwargs: Additional keyword arguments passed to the Muon optimizer
+            constructor, such as ``momentum``, ``ns_coefficients``, and
+            ``ns_steps``.
 
     Returns:
         Parameter snapshots before the first step and after each update.
     """
     theta = params.clone().requires_grad_()
-    optimizer = Muon(
-        [theta],
-        lr=lr,
-        momentum=momentum,
-        ns_coefficients=ns_coefficients,
-        ns_steps=ns_steps,
-    )
+    optimizer = Muon([theta], lr=lr, **kwargs)
     theta_history = [theta.detach().clone()]
 
     for _ in range(steps):
