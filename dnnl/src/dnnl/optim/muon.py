@@ -8,27 +8,29 @@ from .base import Optimizer
 
 __all__ = ['Muon']
 
+NS_COEFFS_DEFAULT = (3.4445, -4.7750, 2.0315)
+
 
 def newton_schulz_5(
     X: Tensor,
     ns_steps: int = 5,
+    ns_coefficients: tuple[float, float, float] = NS_COEFFS_DEFAULT,
     eps: float = 1e-7,
-    ns_coefficients: tuple[float, float, float] = (3.4445, -4.7750, 2.0315),
 ) -> Tensor:
     """Approximate the orthogonalized Muon update with Newton-Schulz steps.
 
     Args:
         X (Tensor): Two-dimensional update matrix to orthogonalize.
         ns_steps (int, default: 5): Number of Newton-Schulz iterations.
+        ns_coefficients (tuple[float, float, float], default: (3.4445, -4.7750, 2.0315)):
+            Coefficients for the quintic Newton-Schulz iteration.
         eps (float, default: 1e-7): Small value used when normalizing ``X``.
-        ns_coefficients (tuple[float, float, float], default: (3.4445, -4.7750,
-            2.0315)): Coefficients for the quintic Newton-Schulz iteration.
 
     Returns:
         Orthogonalized update matrix with the same shape as ``X``.
     """
     if X.ndim != 2:
-        raise NotImplementedError('Muon only supports 2D parameters.')
+        raise ValueError('Muon only supports 2D parameters.')
 
     a, b, c = ns_coefficients
     X = X / (X.norm() + eps)
@@ -38,9 +40,9 @@ def newton_schulz_5(
         X = X.T
 
     for _ in range(ns_steps):
-        A = X @ X.T
-        B = b * A + c * A @ A
-        X = a * X + B @ X
+        A = torch.mm(X, X.T)
+        B = torch.addmm(A, A, A, beta=b, alpha=c)
+        X = torch.addmm(X, B, X, beta=a)
 
     if should_transpose:
         X = X.T
@@ -55,8 +57,10 @@ class Muon(Optimizer):
         self,
         params: Iterable[Tensor],
         lr: float = 1e-3,
+        weight_decay: float = 0.1,
         momentum: float = 0.95,
-        ns_coefficients: tuple[float, float, float] = (3.4445, -4.7750, 2.0315),
+        nesterov: bool = True,
+        ns_coefficients: tuple[float, float, float] = NS_COEFFS_DEFAULT,
         ns_steps: int = 5,
         eps: float = 1e-7,
     ):
@@ -65,8 +69,11 @@ class Muon(Optimizer):
         Args:
             params (Iterable[Tensor]): Two-dimensional parameters to update.
             lr (float, default: 1e-3): Base learning rate.
+            weight_decay (float, default: 0.1): Coefficient applied to the
+                parameters before adding them to the gradient.
             momentum (float, default: 0.95): Momentum coefficient applied to
                 the update buffer.
+            nesterov (bool, default: True): Whether to use Nesterov momentum.
             ns_coefficients (tuple[float, float, float], default: (3.4445,
                 -4.7750, 2.0315)): Coefficients for the Newton-Schulz
                 orthogonalization iteration.
@@ -76,14 +83,12 @@ class Muon(Optimizer):
         """
         super().__init__(params)
         self.lr = lr
+        self.weight_decay = weight_decay
         self.momentum = momentum
+        self.nesterov = nesterov
         self.ns_coefficients = ns_coefficients
         self.ns_steps = ns_steps
         self.eps = eps
-
-        for p in self.params:
-            if p.ndim != 2:
-                raise NotImplementedError('Muon only supports 2D parameters.')
 
         self.momentum_buffers = [torch.zeros_like(p) for p in self.params]
 
@@ -95,12 +100,21 @@ class Muon(Optimizer):
             if p.grad is None:
                 continue
 
+            # Decoupled weight decay: directly shrink parameters.
+            if self.weight_decay > 0:
+                p.mul_(1 - self.lr * self.weight_decay)
+
             buffer.mul_(self.momentum).add_(p.grad)
+            if self.nesterov:
+                direction = p.grad + self.momentum * buffer
+            else:
+                direction = buffer
+
             update = newton_schulz_5(
-                buffer,
+                direction,
                 ns_steps=self.ns_steps,
-                eps=self.eps,
                 ns_coefficients=self.ns_coefficients,
+                eps=self.eps,
             )
 
-            p.add_(update, alpha=-self.lr)
+            p.sub_(update, alpha=self.lr)
