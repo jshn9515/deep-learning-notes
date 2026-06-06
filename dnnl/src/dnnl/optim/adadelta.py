@@ -36,17 +36,17 @@ class Adadelta(Optimizer):
         self.rho = rho
         self.eps = eps
         self.weight_decay = weight_decay
-        self.square_avgs = [torch.zeros_like(p) for p in self.params]
-        self.accumulate_updates = [torch.zeros_like(p) for p in self.params]
+        self.ema_of_sq_grads = [torch.zeros_like(p) for p in self.params]
+        self.ema_of_sq_updates = [torch.zeros_like(p) for p in self.params]
 
     @override
     @torch.no_grad()
     def step(self):
         """Update parameters using the current Adadelta state."""
-        for p, square_avg, accumulate_update in zip(
+        for p, v, u in zip(
             self.params,
-            self.square_avgs,
-            self.accumulate_updates,
+            self.ema_of_sq_grads,
+            self.ema_of_sq_updates,
             strict=True,
         ):
             if p.grad is None:
@@ -55,18 +55,14 @@ class Adadelta(Optimizer):
             if self.weight_decay > 0:
                 p.grad.add_(self.weight_decay * p)
 
-            square_avg.mul_(self.rho).add_(
+            v.mul_(self.rho).add_(
                 p.grad.square(),
                 alpha=1 - self.rho,
             )
+            delta_x = (u + self.eps).sqrt() / (v + self.eps).sqrt() * p.grad
 
-            rms_update = (accumulate_update + self.eps).sqrt()
-            rms_grad = (square_avg + self.eps).sqrt()
-            update = -self.lr * rms_update / rms_grad * p.grad
-
-            p.add_(update)
-
-            accumulate_update.mul_(self.rho).add_(
-                update.square(),
+            u.mul_(self.rho).add_(
+                delta_x.square(),
                 alpha=1 - self.rho,
             )
+            p.sub_(delta_x, alpha=self.lr)
