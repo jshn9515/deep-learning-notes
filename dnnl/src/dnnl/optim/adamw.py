@@ -39,8 +39,8 @@ class AdamW(Optimizer):
         self.beta2 = betas[1]
         self.eps = eps
         self.weight_decay = weight_decay
-        self.step_count = 0
 
+        self.step_count = 0
         self.first_moments = [torch.zeros_like(p) for p in self.params]
         self.second_moments = [torch.zeros_like(p) for p in self.params]
 
@@ -59,6 +59,10 @@ class AdamW(Optimizer):
             if p.grad is None:
                 continue
 
+            # Decoupled weight decay: directly shrink parameters.
+            if self.weight_decay > 0:
+                p.mul_(1 - self.lr * self.weight_decay)
+
             m.mul_(self.beta1).add_(p.grad, alpha=1 - self.beta1)
             v.mul_(self.beta2).addcmul_(p.grad, p.grad, value=1 - self.beta2)
 
@@ -68,10 +72,9 @@ class AdamW(Optimizer):
             m_hat = m / bias_correction1
             v_hat = v / bias_correction2
 
-            # Decoupled weight decay: directly shrink parameters.
-            if self.weight_decay != 0:
-                p.mul_(1 - self.lr * self.weight_decay)
-
             # Adam update: use the original gradient statistics.
-            update = m_hat / (v_hat.sqrt() + self.eps)
-            p.add_(update, alpha=-self.lr)
+            p.addcdiv_(
+                m_hat,
+                v_hat.sqrt() + self.eps,
+                value=-self.lr,
+            )
