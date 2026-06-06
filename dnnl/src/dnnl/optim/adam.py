@@ -66,6 +66,7 @@ class Adam(Optimizer):
 
             bias_correction1 = 1 - pow(self.beta1, self.step_count)
             bias_correction2 = 1 - pow(self.beta2, self.step_count)
+
             m_hat = m / bias_correction1
             v_hat = v / bias_correction2
 
