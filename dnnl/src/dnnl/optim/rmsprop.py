@@ -19,6 +19,7 @@ class RMSprop(Optimizer):
         rho: float = 0.99,
         eps: float = 1e-8,
         weight_decay: float = 0.0,
+        momentum: float = 0.0,
     ):
         """Create an RMSprop optimizer.
 
@@ -31,37 +32,46 @@ class RMSprop(Optimizer):
                 for numerical stability.
             weight_decay (float, default: 0.0): Coefficient applied to the
                 parameters before adding them to the gradient.
+            momentum (float, default: 0.0): Momentum coefficient.
         """
         super().__init__(params)
         self.lr = lr
         self.rho = rho
         self.eps = eps
         self.weight_decay = weight_decay
-        self.square_avgs = [torch.zeros_like(p) for p in self.params]
+        self.momentum = momentum
+
+        self.ema_of_sq_grads = [torch.zeros_like(p) for p in self.params]
+        self.momentum_buffers = [torch.zeros_like(p) for p in self.params]
 
     @override
     @torch.no_grad()
     def step(self):
         """Update parameters using the current RMSprop state."""
-        for p, square_avg in zip(self.params, self.square_avgs, strict=True):
+        for p, v, buffer in zip(
+            self.params,
+            self.ema_of_sq_grads,
+            self.momentum_buffers,
+            strict=True,
+        ):
             if p.grad is None:
                 continue
 
             if self.weight_decay > 0:
                 p.grad.add_(self.weight_decay * p)
 
-            square_avg.mul_(self.rho).add_(
+            v.mul_(self.rho).add_(
                 p.grad.square(),
                 alpha=1 - self.rho,
             )
 
-            effective_lr = self.lr / (square_avg.sqrt() + self.eps)
-            p.add_(-effective_lr * p.grad)
+            if self.momentum > 0:
+                buffer.mul_(self.momentum).addcdiv_(p.grad, v.sqrt() + self.eps)
+                p.sub_(buffer, alpha=self.lr)
+            else:
+                p.addcdiv_(p.grad, v.sqrt() + self.eps, value=-self.lr)
 
     @torch.no_grad()
     def get_effective_lr(self) -> list[Tensor]:
         """Return the current per-parameter effective learning rates."""
-        return [
-            self.lr / (square_avg.sqrt() + self.eps).clone()
-            for square_avg in self.square_avgs
-        ]
+        return [self.lr / (v.sqrt() + self.eps).clone() for v in self.ema_of_sq_grads]
