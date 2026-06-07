@@ -73,5 +73,11 @@ class RMSprop(Optimizer):
 
     @torch.no_grad()
     def get_effective_lr(self) -> list[Tensor]:
-        """Return the current per-parameter effective learning rates."""
-        return [self.lr / (v.sqrt() + self.eps).clone() for v in self.ema_of_sq_grads]
+        """Return per-parameter effective learning rates."""
+        effective_lr = []
+
+        for v in self.ema_of_sq_grads:
+            lr = self.lr / (v.sqrt() + self.eps).clone()
+            effective_lr.append(lr)
+
+        return effective_lr
