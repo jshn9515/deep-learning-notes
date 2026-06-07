@@ -36,6 +36,7 @@ Muon 的全称是 **MomentUm Orthogonalized by Newton-Schulz**。从名字就能
 
 ```{python}
 from collections.abc import Iterable
+from typing import override
 
 import dnnl.optim as dopt
 import torch
@@ -192,7 +193,7 @@ $$
 需要注意的是，上面的迭代是 Newton-Schulz 迭代的经典形式，是一个三次多项式。在 Muon 论文中，作者对这个经典形式进行了一定修改，改成下面这种五次多项式的版本：
 
 $$
-X_{k+1} = a X_k - b X_k X_k^\top X_k + c X_k X_k^\top X_k X_k^\top X_k
+X_{k+1} = a X_k + b X_k X_k^\top X_k + c X_k X_k^\top X_k X_k^\top X_k
 $$
 
 其中，$a, b, c$ 是超参数。在论文中，分别取 3.4445、-4.7750 和 2.0315。这些超参数没有严格的理论推导，而是通过实验调优得到的。它们的目标就是让矩阵 $X$ 在实际训练中能够更稳定、更快地收敛到一个近似正交化矩阵。
@@ -240,24 +241,25 @@ $$
 def newton_schulz_5(
     X: Tensor,
     ns_steps: int = 5,
-    eps: float = 1e-7,
     ns_coefficients: tuple[float, float, float] = (3.4445, -4.7750, 2.0315),
+    eps: float = 1e-7,
 ) -> Tensor:
     if X.ndim != 2:
-        raise NotImplementedError('Muon only supports 2D parameters.')
+        raise ValueError('Muon only supports 2D parameters.')
 
     a, b, c = ns_coefficients
     X = X / (X.norm() + eps)
+    should_transpose = X.size(0) > X.size(1)
 
-    if X.size(0) > X.size(1):
+    if should_transpose:
         X = X.T
 
     for _ in range(ns_steps):
-        A = X @ X.T
-        B = b * A + c * A @ A
-        X = a * X + B @ X
+        A = torch.mm(X, X.T)
+        B = torch.addmm(A, A, A, beta=b, alpha=c)
+        X = torch.addmm(X, B, X, beta=a)
 
-    if X.size(0) > X.size(1):
+    if should_transpose:
         X = X.T
 
     return X
@@ -271,39 +273,49 @@ class Muon(dopt.Optimizer):
         self,
         params: Iterable[Tensor],
         lr: float = 1e-3,
+        weight_decay: float = 0.1,
         momentum: float = 0.95,
+        nesterov: bool = True,
         ns_coefficients: tuple[float, float, float] = (3.4445, -4.7750, 2.0315),
         ns_steps: int = 5,
         eps: float = 1e-7,
     ):
         super().__init__(params)
         self.lr = lr
+        self.weight_decay = weight_decay
         self.momentum = momentum
+        self.nesterov = nesterov
         self.ns_coefficients = ns_coefficients
         self.ns_steps = ns_steps
         self.eps = eps
 
-        for p in self.params:
-            if p.ndim != 2:
-                raise NotImplementedError('Muon only supports 2D parameters.')
-
         self.momentum_buffers = [torch.zeros_like(p) for p in self.params]
 
+    @override
     @torch.no_grad()
     def step(self):
         for p, buffer in zip(self.params, self.momentum_buffers, strict=True):
             if p.grad is None:
                 continue
 
+            # Decoupled weight decay: directly shrink parameters.
+            if self.weight_decay > 0:
+                p.mul_(1 - self.lr * self.weight_decay)
+
             buffer.mul_(self.momentum).add_(p.grad)
+            if self.nesterov:
+                direction = p.grad + self.momentum * buffer
+            else:
+                direction = buffer
+
             update = newton_schulz_5(
-                buffer,
+                direction,
                 ns_steps=self.ns_steps,
-                eps=self.eps,
                 ns_coefficients=self.ns_coefficients,
+                eps=self.eps,
             )
 
-            p.add_(update, alpha=-self.lr)
+            p.sub_(update, alpha=self.lr)
 
 ```
 
@@ -352,9 +364,12 @@ def loss_fn(theta: Tensor) -> Tensor:
     return 0.5 * (scale * (theta - target) ** 2).sum()
 
 
-theta = torch.tensor([[-5.0, 1.0], [1.0, 2.0]])
-sgd_history = dopt.run_sgd(loss_fn, theta, lr=0.1, steps=80)
-muon_history = dopt.run_muon(loss_fn, theta, lr=0.2, steps=80)
+theta = torch.tensor([[-5.0, 1.0], [1.0, 2.0]], requires_grad=True)
+optimizer1 = dopt.SGD([theta], lr=0.1)
+optimizer2 = Muon([theta], lr=0.2)
+
+sgd_history = dopt.run_optimizer(optimizer1, loss_fn, steps=80)
+muon_history = dopt.run_optimizer(optimizer2, loss_fn, steps=80)
 
 print('SGD:')
 print('Final theta:', sgd_history[-1])
