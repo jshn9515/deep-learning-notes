@@ -28,7 +28,7 @@ $$
 > **不要只看当前这一步的梯度，也参考过去一段时间的更新方向。**
 
 ```{python}
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from pprint import pprint
 from typing import override
 
@@ -40,8 +40,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch import Tensor
-
-type Loss = Callable[[Tensor], Tensor]
 
 plt.rc('figure', dpi=100)
 dnnl.set_matplotlib_format('svg')
@@ -81,9 +79,9 @@ def loss_fn(theta: Tensor) -> Tensor:
 运行 SGD 并画出更新轨迹：
 
 ```{python}
-theta = torch.tensor([-5.0, 2.0])
-history = dopt.run_sgd(loss_fn, theta, lr=0.4, steps=40)
-history = torch.stack(history)
+theta = torch.tensor([-5.0, 2.0], requires_grad=True)
+optimizer = dopt.SGD([theta], lr=0.4)
+history = dopt.run_optimizer(optimizer, loss_fn, steps=40)
 
 x = torch.linspace(-6.5, 5.5, 200)
 y = torch.linspace(-3.5, 2.5, 200)
@@ -109,7 +107,7 @@ ax.set_title('SGD on a Narrow Valley')
 plt.show()
 ```
 
-从图中可以看到，参数不是平滑地向最低点移动，而是在两侧陡峭的山坡上来回摆动。这种摆动会浪费很多更新步数（实际上，如果你把学习率改成 0.05，甚至不会收敛）。
+从图中可以看到，参数不是平滑地向最低点移动，而是在两侧陡峭的山坡上来回摆动。这种摆动会浪费很多更新步数（实际上，如果你把学习率改成 0.5，甚至不会收敛）。
 
 这就引出了一个问题：如果很多步的梯度都大致指向同一个方向，我们能不能让参数在这个方向上越走越快？如果某个方向的梯度来回反复，我们能不能抵消掉这种震荡？
 
@@ -226,7 +224,7 @@ class SimpleSGDWithMomentum(dopt.Optimizer):
                 continue
 
             v.mul_(self.momentum).add_(p.grad)
-            p.sub_(self.lr * v)
+            p.sub_(v, alpha=self.lr)
 ```
 
 然后比较普通 SGD 和 momentum 的轨迹：
@@ -236,13 +234,13 @@ class SimpleSGDWithMomentum(dopt.Optimizer):
 :::
 
 ```{python}
-theta = torch.tensor([-5.0, 2.0])
-sgd_history = dopt.run_sgd(loss_fn, theta, lr=0.4, steps=40)
-momentum_history = dopt.run_sgd_with_momentum(
-    loss_fn, theta, lr=0.04, momentum=0.9, steps=40
-)
-sgd_history = torch.stack(sgd_history)
-momentum_history = torch.stack(momentum_history)
+theta1 = torch.tensor([-5.0, 2.0], requires_grad=True)
+theta2 = torch.tensor([-5.0, 2.0], requires_grad=True)
+optimizer1 = dopt.SGD([theta1], lr=0.4)
+optimizer2 = SimpleSGDWithMomentum([theta2], lr=0.04, momentum=0.9)
+
+sgd_history = dopt.run_optimizer(optimizer1, loss_fn, steps=40)
+momentum_history = dopt.run_optimizer(optimizer2, loss_fn, steps=40)
 
 fig = plt.figure(2)
 ax = fig.add_subplot(1, 1, 1)
@@ -281,7 +279,7 @@ Momentum 的轨迹通常更有连续性。它不会像普通 SGD 那样完全由
 在 PyTorch 中，`optim.SGD` 本身就支持 momentum。只需要设置 `momentum` 参数：
 
 ```{python}
-model = nn.Linear(10, 1)
+model = nn.Linear(6, 1)
 optimizer = optim.SGD(
     model.parameters(),
     lr=0.1,
@@ -294,7 +292,7 @@ optimizer = optim.SGD(
 训练循环本身和之前一样：
 
 ```{python}
-x = torch.randn(32, 10)
+x = torch.randn(32, 6)
 y = torch.randn(32, 1)
 
 pred = model(x)
