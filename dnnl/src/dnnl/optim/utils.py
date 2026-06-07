@@ -25,13 +25,13 @@ def run_optimizer(
     """Run an optimizer on a cloned parameter tensor and record its trajectory.
 
     Args:
-        optimizer (Optimizer): Optimizer to run. Its ``params`` attribute must 
+        optimizer (Optimizer): Optimizer to run. Its ``params`` attribute must
             contain a single tensor to optimize.
         loss_fn (Loss): Function that maps the optimized tensor to a scalar loss.
         steps (int): Number of optimization steps to run.
 
     Returns:
-        Parameter snapshots before the first step and after each update. The 
+        Parameter snapshots before the first step and after each update. The
         returned tensor has shape ``(steps + 1, *param.shape)``.
     """
     theta = optimizer.params[0]
