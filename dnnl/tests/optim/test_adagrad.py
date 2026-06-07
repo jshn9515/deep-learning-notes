@@ -27,17 +27,50 @@ def test_adagrad_accumulates_squared_gradients_and_updates_parameters():
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
 
-    assert torch.allclose(optimizer.sum_sq_grads[0], torch.tensor([0.25, 0.0625]))
+    assert torch.allclose(optimizer.sum_of_sq_grads[0], torch.tensor([0.25, 0.0625]))
     assert torch.allclose(param, torch.tensor([0.9, -1.9]))
 
     param.grad = torch.tensor([0.5, 0.25])
     optimizer.step()
 
     expected_sum_sq_grads = torch.tensor([0.5, 0.125])
-    expected_effective_lr = 0.1 / expected_sum_sq_grads.sqrt()
-    assert torch.allclose(optimizer.sum_sq_grads[0], expected_sum_sq_grads)
+    expected_effective_lr = torch.tensor([0.14142136, 0.28284273])
+    assert torch.allclose(optimizer.sum_of_sq_grads[0], expected_sum_sq_grads)
     assert torch.allclose(param, torch.tensor([0.8292893, -1.9707106]))
     assert torch.allclose(optimizer.get_effective_lr()[0], expected_effective_lr)
+
+
+def test_adagrad_uses_lr_decay_and_initial_accumulator_value():
+    param = torch.tensor([1.0], requires_grad=True)
+    optimizer = dopt.Adagrad(
+        [param],
+        lr=0.2,
+        lr_decay=0.5,
+        initial_accumulator_value=0.25,
+        eps=0.0,
+    )
+
+    assert torch.allclose(optimizer.sum_of_sq_grads[0], torch.tensor([0.25]))
+
+    param.grad = torch.tensor([0.5])
+    optimizer.step()
+
+    assert optimizer.step_count == 1
+    assert torch.allclose(optimizer.sum_of_sq_grads[0], torch.tensor([0.5]))
+    assert torch.allclose(param, torch.tensor([0.8585786]))
+
+    param.grad = torch.tensor([0.5])
+    optimizer.step()
+
+    expected_clr = 0.2 / (1 + 0.5)
+    expected_param = torch.tensor([0.8585786]) - expected_clr / (0.75**0.5) * 0.5
+    assert optimizer.step_count == 2
+    assert torch.allclose(optimizer.sum_of_sq_grads[0], torch.tensor([0.75]))
+    assert torch.allclose(param, expected_param)
+    assert torch.allclose(
+        optimizer.get_effective_lr()[0],
+        torch.tensor([expected_clr / (0.75**0.5)]),
+    )
 
 
 def test_adagrad_skips_parameters_without_gradients():
@@ -50,4 +83,4 @@ def test_adagrad_skips_parameters_without_gradients():
 
     assert torch.allclose(trained, torch.tensor([0.9]))
     assert torch.allclose(skipped, torch.tensor([2.0]))
-    assert torch.equal(optimizer.sum_sq_grads[1], torch.zeros_like(skipped))
+    assert torch.equal(optimizer.sum_of_sq_grads[1], torch.zeros_like(skipped))
