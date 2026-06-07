@@ -28,8 +28,8 @@ def test_rmsprop_accumulates_squared_gradients_and_updates_parameters():
     optimizer.step()
 
     expected_square_avg = torch.tensor([0.025, 0.00625])
-    expected_effective_lr = 0.1 / expected_square_avg.sqrt()
-    assert torch.allclose(optimizer.square_avgs[0], expected_square_avg)
+    expected_effective_lr = torch.tensor([0.6324555, 1.264911])
+    assert torch.allclose(optimizer.ema_of_sq_grads[0], expected_square_avg)
     assert torch.allclose(param, torch.tensor([0.6837722, -1.6837722]))
     assert torch.allclose(optimizer.get_effective_lr()[0], expected_effective_lr)
 
@@ -44,4 +44,32 @@ def test_rmsprop_skips_parameters_without_gradients():
 
     assert torch.allclose(trained, torch.tensor([0.6837722]))
     assert torch.allclose(skipped, torch.tensor([2.0]))
-    assert torch.equal(optimizer.square_avgs[1], torch.zeros_like(skipped))
+    assert torch.equal(optimizer.ema_of_sq_grads[1], torch.zeros_like(skipped))
+    assert torch.equal(optimizer.momentum_buffers[1], torch.zeros_like(skipped))
+
+
+def test_rmsprop_accumulates_momentum_buffer():
+    param = torch.tensor([1.0], requires_grad=True)
+    optimizer = dopt.RMSprop(
+        [param],
+        lr=0.1,
+        rho=0.9,
+        eps=0.0,
+        momentum=0.5,
+    )
+
+    param.grad = torch.tensor([0.5])
+    optimizer.step()
+
+    assert torch.allclose(optimizer.ema_of_sq_grads[0], torch.tensor([0.025]))
+    assert torch.allclose(optimizer.momentum_buffers[0], torch.tensor([3.1622777]))
+    assert torch.allclose(param, torch.tensor([0.6837722]))
+
+    param.grad = torch.tensor([0.25])
+    optimizer.step()
+
+    expected_ema = torch.tensor([0.02875])
+    expected_buffer = 0.5 * torch.tensor([3.1622777]) + 0.25 / expected_ema.sqrt()
+    assert torch.allclose(optimizer.ema_of_sq_grads[0], expected_ema)
+    assert torch.allclose(optimizer.momentum_buffers[0], expected_buffer)
+    assert torch.allclose(param, torch.tensor([0.6837722]) - 0.1 * expected_buffer)
