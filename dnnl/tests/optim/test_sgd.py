@@ -129,3 +129,20 @@ def test_sgd_with_zero_momentum_matches_simple_sgd():
     dopt.SimpleSGD([expected_param], lr=0.1).step()
 
     assert torch.allclose(actual_param, expected_param)
+
+
+def test_sgd_initializes_velocity_from_first_momentum_update():
+    param = torch.tensor([1.0], requires_grad=True)
+    optimizer = dopt.SGD([param], lr=0.1, momentum=0.9)
+
+    param.grad = torch.tensor([0.5])
+    optimizer.step()
+
+    assert torch.allclose(optimizer.velocity[0], torch.tensor([0.5]))
+    assert torch.allclose(param, torch.tensor([0.95]))
+
+    param.grad = torch.tensor([0.2])
+    optimizer.step()
+
+    assert torch.allclose(optimizer.velocity[0], torch.tensor([0.65]))
+    assert torch.allclose(param, torch.tensor([0.885]))
