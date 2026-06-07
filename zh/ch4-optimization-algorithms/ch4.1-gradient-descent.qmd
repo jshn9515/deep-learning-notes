@@ -30,7 +30,7 @@ $$
 这一节我们先从最基础的梯度下降开始，看清楚“根据梯度更新参数”这件事的基本逻辑。然后我们会进一步讨论，为什么在深度学习里更常见的不是完整的梯度下降，而是随机梯度下降，也就是我们常说的 **SGD (Stochastic Gradient Descent)** [@bottou2012SGD]。
 
 ```{python}
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import override
 
 import dnnl
@@ -41,8 +41,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch import Tensor
-
-type Loss = Callable[[Tensor], Tensor]
 
 plt.rc('figure', dpi=100)
 dnnl.set_matplotlib_format('svg')
@@ -120,15 +118,15 @@ class SimpleSGD(dopt.Optimizer):
             if p.grad is None:
                 continue
 
-            p.sub_(self.lr * p.grad)
+            p.sub_(p.grad, alpha=self.lr)
 ```
 
 运行梯度下降，并观察参数的更新轨迹：
 
 ```{python}
-theta = torch.tensor([-5.0, 2.0])
-history = dopt.run_sgd(loss_fn, theta, lr=0.4, steps=40)
-history = torch.stack(history)
+theta = torch.tensor([-5.0, 2.0], requires_grad=True)
+optimizer = SimpleSGD([theta], lr=0.4)
+history = dopt.run_optimizer(optimizer, loss_fn, steps=40)
 
 print('Final theta:', history[-1])
 print('Final loss:', loss_fn(history[-1]).item())
@@ -386,7 +384,7 @@ class SimpleSGDWithWeightDecay(dopt.Optimizer):
             if self.weight_decay > 0:
                 p.grad.add_(self.weight_decay * p)
 
-            p.sub_(self.lr * p.grad)
+            p.sub_(p.grad, alpha=self.lr)
 ```
 
 注意，这里的 `weight_decay` 并不是直接从参数里减去一个固定值，而是按照参数当前的大小成比例地衰减。参数越大，衰减项也越大；参数越接近 0，衰减项也越小。
@@ -394,13 +392,13 @@ class SimpleSGDWithWeightDecay(dopt.Optimizer):
 我们可以用同一个简单二次函数看一下它的效果：
 
 ```{python}
-theta = torch.tensor([-5.0, 2.0])
-history_no_decay = dopt.run_sgd(loss_fn, theta, lr=0.4, steps=40)
-history_with_decay = dopt.run_sgd_with_weight_decay(
-    loss_fn, theta, lr=0.4, weight_decay=0.2, steps=40
-)
-history_no_decay = torch.stack(history_no_decay)
-history_with_decay = torch.stack(history_with_decay)
+theta1 = torch.tensor([-5.0, 2.0], requires_grad=True)
+theta2 = torch.tensor([-5.0, 2.0], requires_grad=True)
+optimizer1 = SimpleSGD([theta1], lr=0.4)
+optimizer2 = SimpleSGDWithWeightDecay([theta2], lr=0.4, weight_decay=0.2)
+
+history_no_decay = dopt.run_optimizer(optimizer1, loss_fn, steps=40)
+history_with_decay = dopt.run_optimizer(optimizer2, loss_fn, steps=40)
 
 print('Without weight decay:')
 print('Final theta:', history_no_decay[-1])
