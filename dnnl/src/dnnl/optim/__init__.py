@@ -12,13 +12,4 @@ from .sgd import SimpleSGDWithNesterovMomentum as SimpleSGDWithNesterovMomentum
 from .sgd import SimpleSGDWithWeightDecay as SimpleSGDWithWeightDecay
 from .utils import collect_lr_schedule as collect_lr_schedule
 from .utils import plot_lr_schedule as plot_lr_schedule
-from .utils import run_adadelta as run_adadelta
-from .utils import run_adagrad as run_adagrad
-from .utils import run_adam as run_adam
-from .utils import run_adamw as run_adamw
-from .utils import run_muon as run_muon
-from .utils import run_rmsprop as run_rmsprop
-from .utils import run_sgd as run_sgd
-from .utils import run_sgd_with_momentum as run_sgd_with_momentum
-from .utils import run_sgd_with_nesterov_momentum as run_sgd_with_nesterov_momentum
-from .utils import run_sgd_with_weight_decay as run_sgd_with_weight_decay
+from .utils import run_optimizer as run_optimizer
