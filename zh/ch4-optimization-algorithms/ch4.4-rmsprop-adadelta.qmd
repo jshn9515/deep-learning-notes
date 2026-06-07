@@ -90,23 +90,23 @@ $$
 
 ```{python}
 num_steps = 200
-lr = 1.0
+initial_lr = 1.0
 eps = 1e-10
 
-grads = torch.arange(1, num_steps + 1, dtype=torch.float32)
-grads = 1.0 + 0.5 * (grads / 10.0).sin()
+simulated_grad = torch.arange(1, num_steps + 1, dtype=torch.float32)
+simulated_grad = 1.0 + 0.5 * (simulated_grad / 10.0).sin()
 
-squared = torch.tensor(0.0)
-adagrad_effective_lrs = []
+sum_of_sq_grad = torch.tensor(0.0)
+adagrad_lr_history = []
 
-for grad in grads:
-    squared += grad.square()
-    effective_lr = lr / (squared.sqrt() + eps)
-    adagrad_effective_lrs.append(effective_lr.item())
+for grad in simulated_grad:
+    sum_of_sq_grad += grad.square()
+    lr = initial_lr / (sum_of_sq_grad.sqrt() + eps)
+    adagrad_lr_history.append(lr.item())
 
-fig = plt.figure(1)
+fig = plt.figure(1, figsize=(6, 4))
 ax = fig.add_subplot(1, 1, 1)
-ax.plot(adagrad_effective_lrs)
+ax.plot(adagrad_lr_history)
 ax.set_xlabel('Step')
 ax.set_ylabel('Effective Learning Rate')
 ax.set_title('Adagrad Effective Learning Rate Keeps Decreasing')
@@ -194,20 +194,20 @@ $$
 ```{python}
 rho = 0.9
 velocity = torch.tensor(0.0)
-rmsprop_effective_lrs = []
+rmsprop_lr_history = []
 
-for t, grad in enumerate(grads, start=1):
+for t, grad in enumerate(simulated_grad, start=1):
     velocity = rho * velocity + (1 - rho) * grad.square()
     # We do bias correction to make it comparable to Adagrad's
     # effective learning rate.
-    velocity_adj = velocity / (1 - rho**t)
-    effective_lr = lr / (velocity_adj.sqrt() + eps)
-    rmsprop_effective_lrs.append(effective_lr.item())
+    velocity_adj = velocity / (1 - pow(rho, t))
+    lr = initial_lr / (velocity_adj.sqrt() + eps)
+    rmsprop_lr_history.append(lr.item())
 
-fig = plt.figure(2)
+fig = plt.figure(2, figsize=(6, 4))
 ax = fig.add_subplot(1, 1, 1)
-ax.plot(adagrad_effective_lrs)
-ax.plot(rmsprop_effective_lrs)
+ax.plot(adagrad_lr_history)
+ax.plot(rmsprop_lr_history)
 ax.set_xlabel('Step')
 ax.set_ylabel('Effective Learning Rate')
 ax.legend(['Adagrad', 'RMSprop'])
@@ -227,47 +227,62 @@ class RMSprop(dopt.Optimizer):
         self,
         params: Iterable[Tensor],
         lr: float = 1e-2,
-        rho: float = 0.9,
+        rho: float = 0.99,
         eps: float = 1e-8,
         weight_decay: float = 0.0,
+        momentum: float = 0.0,
     ):
         super().__init__(params)
         self.lr = lr
         self.rho = rho
         self.eps = eps
         self.weight_decay = weight_decay
-        self.square_avgs = [torch.zeros_like(p) for p in self.params]
+        self.momentum = momentum
+
+        self.ema_of_sq_grads = [torch.zeros_like(p) for p in self.params]
+        self.momentum_buffers = [torch.zeros_like(p) for p in self.params]
 
     @override
     @torch.no_grad()
     def step(self):
-        for p, square_avg in zip(self.params, self.square_avgs, strict=True):
+        for p, v, buffer in zip(
+            self.params,
+            self.ema_of_sq_grads,
+            self.momentum_buffers,
+            strict=True,
+        ):
             if p.grad is None:
                 continue
 
             if self.weight_decay > 0:
                 p.grad.add_(self.weight_decay * p)
 
-            square_avg.mul_(self.rho).add_(
+            v.mul_(self.rho).add_(
                 p.grad.square(),
                 alpha=1 - self.rho,
             )
 
-            effective_lr = self.lr / (square_avg.sqrt() + self.eps)
-            p.add_(-effective_lr * p.grad)
+            if self.momentum > 0:
+                buffer.mul_(self.momentum).addcdiv_(p.grad, v.sqrt() + self.eps)
+                p.sub_(buffer, alpha=self.lr)
+            else:
+                p.addcdiv_(p.grad, v.sqrt() + self.eps, value=-self.lr)
 
     @torch.no_grad()
     def get_effective_lr(self) -> list[Tensor]:
-        return [
-            self.lr / (square_avg.sqrt() + self.eps).clone()
-            for square_avg in self.square_avgs
-        ]
+        effective_lr = []
+
+        for v in self.ema_of_sq_grads:
+            lr = self.lr / (v.sqrt() + self.eps).clone()
+            effective_lr.append(lr)
+
+        return effective_lr
 ```
 
 其中最关键的是这一行：
 
 ```python
-square_avg.mul_(self.rho).add_(
+v.mul_(self.rho).add_(
     p.grad.square(),
     alpha=1 - self.rho,
 )
@@ -353,16 +368,17 @@ class Adadelta(dopt.Optimizer):
         self.rho = rho
         self.eps = eps
         self.weight_decay = weight_decay
-        self.square_avgs = [torch.zeros_like(p) for p in self.params]
-        self.accumulate_updates = [torch.zeros_like(p) for p in self.params]
+
+        self.ema_of_sq_grads = [torch.zeros_like(p) for p in self.params]
+        self.ema_of_sq_updates = [torch.zeros_like(p) for p in self.params]
 
     @override
     @torch.no_grad()
     def step(self):
-        for p, square_avg, accumulate_update in zip(
+        for p, v, u in zip(
             self.params,
-            self.square_avgs,
-            self.accumulate_updates,
+            self.ema_of_sq_grads,
+            self.ema_of_sq_updates,
             strict=True,
         ):
             if p.grad is None:
@@ -371,29 +387,37 @@ class Adadelta(dopt.Optimizer):
             if self.weight_decay > 0:
                 p.grad.add_(self.weight_decay * p)
 
-            square_avg.mul_(self.rho).add_(
+            v.mul_(self.rho).add_(
                 p.grad.square(),
                 alpha=1 - self.rho,
             )
+            delta_x = (u + self.eps).sqrt() / (v + self.eps).sqrt() * p.grad
 
-            rms_update = (accumulate_update + self.eps).sqrt()
-            rms_grad = (square_avg + self.eps).sqrt()
-            update = -self.lr * rms_update / rms_grad * p.grad
-
-            p.add_(update)
-
-            accumulate_update.mul_(self.rho).add_(
-                update.square(),
+            u.mul_(self.rho).add_(
+                delta_x.square(),
                 alpha=1 - self.rho,
             )
+            p.sub_(delta_x, alpha=self.lr)
+
+    @torch.no_grad()
+    def get_effective_lr(self) -> list[Tensor]:
+        effective_lr = []
+
+        for v, u in zip(
+            self.ema_of_sq_grads,
+            self.ema_of_sq_updates,
+            strict=True,
+        ):
+            lr = self.lr * (u + self.eps).sqrt() / (v + self.eps).sqrt()
+            effective_lr.append(lr)
+
+        return effective_lr
 ```
 
 这段代码里最重要的是：
 
 ```python
-rms_update = (accumulate_update + self.eps).sqrt()
-rms_grad = (square_avg + self.eps).sqrt()
-update = -self.lr * rms_update / rms_grad * grad
+delta_x = (u + self.eps).sqrt() / (v + self.eps).sqrt() * p.grad
 ```
 
 它对应公式：
@@ -402,11 +426,11 @@ $$
 \Delta \theta_t = -\frac{\sqrt{E[\Delta \theta^2]_{t-1} + \epsilon}}{\sqrt{E[g^2]_t + \epsilon}} g_t
 $$
 
-更新完参数后，再用当前更新量更新 `accumulate_update`：
+更新完参数后，再用当前更新量更新 `ema_of_sq_updates`：
 
 ```python
-accumulate_update.mul_(self.rho).add_(
-    update.square(),
+u.mul_(self.rho).add_(
+    delta_x.square(),
     alpha=1 - self.rho,
 )
 ```
@@ -470,34 +494,22 @@ def loss_fn(theta: Tensor) -> Tensor:
     return 0.1 * (x - 2) ** 2 + 2.0 * (y + 1) ** 2
 
 
-def train_with_optimizer(
-    optimizer: str,
-    params: Tensor,
-    lr: float,
-    steps: int = 40,
-):
-    optimizer = optimizer.lower()
-    match optimizer:
-        case 'adagrad':
-            history = dopt.run_adagrad(loss_fn, params, lr=lr, steps=steps)[0]
-        case 'rmsprop':
-            history = dopt.run_rmsprop(loss_fn, params, lr=lr, steps=steps)[0]
-        case 'adadelta':
-            history = dopt.run_adadelta(loss_fn, params, lr=lr, steps=steps)
-        case _:
-            raise NotImplementedError(f'Unknown optimizer: {optimizer}.')
-    return torch.stack(history)
+theta1 = torch.tensor([-5.0, 2.0], requires_grad=True)
+theta2 = torch.tensor([-5.0, 2.0], requires_grad=True)
+theta3 = torch.tensor([-5.0, 2.0], requires_grad=True)
 
+optimizer1 = dopt.Adagrad([theta1], lr=1.2)
+optimizer2 = RMSprop([theta2], lr=0.5, rho=0.9)
+optimizer3 = Adadelta([theta3], lr=100.0, rho=0.99)
+
+adagrad_history = dopt.run_optimizer(optimizer1, loss_fn, steps=40)
+rmsprop_history = dopt.run_optimizer(optimizer2, loss_fn, steps=40)
+adadelta_history = dopt.run_optimizer(optimizer3, loss_fn, steps=40)
 
 x = torch.linspace(-6.5, 5.5, 200)
 y = torch.linspace(-3.5, 2.5, 200)
 X, Y = torch.meshgrid(x, y, indexing='ij')
 Z = 0.1 * (X - 2) ** 2 + 2.0 * (Y + 1) ** 2
-
-theta = torch.tensor([-5.0, 2.0])
-adagrad_history = train_with_optimizer('adagrad', theta, lr=1.2)
-rmsprop_history = train_with_optimizer('rmsprop', theta, lr=0.5)
-adadelta_history = train_with_optimizer('adadelta', theta, lr=3.0)
 
 fig = plt.figure(3)
 ax = fig.add_subplot(1, 1, 1)
