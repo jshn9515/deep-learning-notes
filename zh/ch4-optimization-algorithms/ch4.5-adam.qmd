@@ -332,6 +332,7 @@ class Adam(dopt.Optimizer):
 
             bias_correction1 = 1 - pow(self.beta1, self.step_count)
             bias_correction2 = 1 - pow(self.beta2, self.step_count)
+
             m_hat = m / bias_correction1
             v_hat = v / bias_correction2
 
@@ -356,9 +357,9 @@ def loss_fn(theta: Tensor) -> Tensor:
     return 0.1 * (x - 2) ** 2 + 2.0 * (y + 1) ** 2
 
 
-theta = torch.tensor([-5.0, 2.0])
-history = dopt.run_adam(loss_fn, theta, lr=0.25, steps=40)
-history = torch.stack(history)
+theta = torch.tensor([-5.0, 2.0], requires_grad=True)
+optimizer = Adam([theta], lr=0.25)
+history = dopt.run_optimizer(optimizer, loss_fn, steps=40)
 
 print('Final theta:', history[-1])
 print('Final loss:', loss_fn(history[-1]).item())
