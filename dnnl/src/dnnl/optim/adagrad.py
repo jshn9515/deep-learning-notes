@@ -61,11 +61,16 @@ class Adagrad(Optimizer):
                 p.grad.add_(self.weight_decay * p)
 
             s.add_(p.grad.square())
-            effective_lr = clr / (s.sqrt() + self.eps)
-            p.sub_(effective_lr * p.grad)
+            p.sub_(clr / (s.sqrt() + self.eps) * p.grad)
 
     @torch.no_grad()
     def get_effective_lr(self) -> list[Tensor]:
-        """Return the current per-parameter effective learning rates."""
+        """Return per-parameter effective learning rates."""
         clr = self.lr / (1 + max(self.step_count - 1, 0) * self.lr_decay)
-        return [clr / (s.sqrt() + self.eps).clone() for s in self.sum_of_sq_grads]
+        effective_lr = []
+
+        for s in self.sum_of_sq_grads:
+            lr = clr / (s.sqrt() + self.eps).clone()
+            effective_lr.append(lr)
+
+        return effective_lr
