@@ -21,6 +21,8 @@
 - 3.2 激活函数：给神经网络加入非线性
 - 3.3 Softmax 与 Cross Entropy：从 logits 到分类损失
 - 3.4 线性层的前向传播与反向传播
+- 3.5 用 NumPy 搭建完整 MLP
+- 3.6 用 NumPy 在 MNIST 上训练 MLP
 
 ## Chapter 4: 优化算法：神经网络如何更新参数
 
