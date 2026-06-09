@@ -5,13 +5,9 @@ import numpy as np
 from .base import Module
 
 __all__ = [
-    'sigmoid',
     'Sigmoid',
-    'tanh',
     'Tanh',
-    'relu',
     'ReLU',
-    'softmax',
     'Softmax',
 ]
 
@@ -26,7 +22,7 @@ class Sigmoid(Module):
 
     def __init__(self):
         """Initialize the activation cache."""
-        self.ctx = None
+        super().__init__()
 
     @override
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -51,7 +47,7 @@ class Tanh(Module):
 
     def __init__(self):
         """Initialize the activation cache."""
-        self.ctx = None
+        super().__init__()
 
     @override
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -76,7 +72,7 @@ class ReLU(Module):
 
     def __init__(self):
         """Initialize the activation cache."""
-        self.ctx = None
+        super().__init__()
 
     @override
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -101,9 +97,14 @@ def softmax(logits: np.ndarray) -> np.ndarray:
 class Softmax(Module):
     """Row-wise softmax activation layer."""
 
-    def __init__(self):
+    def __init__(self, dim: int = 1):
         """Initialize the activation cache."""
-        self.ctx = None
+        super().__init__()
+        self.dim = dim
+
+    def extra_repr(self) -> str:
+        """Return extra string representation of the layer."""
+        return f'dim={self.dim}'
 
     @override
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -115,5 +116,5 @@ class Softmax(Module):
     def backward(self, grad: np.ndarray) -> np.ndarray:
         """Return gradients through the softmax Jacobian."""
         assert self.ctx is not None, 'Must call forward before backward.'
-        dot = np.sum(grad * self.ctx, axis=1, keepdims=True)
+        dot = np.sum(grad * self.ctx, axis=self.dim, keepdims=True)
         return self.ctx * (grad - dot)
