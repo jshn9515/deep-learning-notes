@@ -14,7 +14,7 @@ dependencies = [
     "torchmetrics>=1.9.0,<1.10.0",
     "accelerate>=1.13.0,<1.14.0",
     "transformers>=5.10.1,<5.11.0",
-    "diffusers>=0.37.0,<0.38.0",   # pin due to safetensors 0.8.0rc0
+    "diffusers>=0.38.0,<0.39.0",   # pin due to safetensors 0.8.0rc0
     "datasets>=5.0.0,<5.1.0",
     "evaluate>=0.4.0,<0.5.0",
 
