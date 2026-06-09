@@ -105,6 +105,28 @@ images = torch.randn(2, 3, 224, 224)
 logits = model(images)
 ```
 
+The `dnnl.models.mlp` package contains small NumPy modules for teaching manual
+forward and backward passes:
+
+```python
+import dnnl.models.mlp as mlp
+import numpy as np
+
+model = mlp.MLP(input_dim=4, hidden_dim=8, num_classes=3)
+loss_fn = mlp.CrossEntropyLoss()
+optimizer = mlp.SGD(model.parameters(), lr=0.1)
+
+x = np.random.randn(2, 4)
+targets = np.array([0, 2])
+
+logits = model(x)
+loss = loss_fn(logits, targets)
+model.backward(loss_fn.backward())
+
+optimizer.step()
+optimizer.zero_grad()
+```
+
 A simple rule of thumb is:
 
 - Use `dnnl.nn` when a component is reusable across many models.
