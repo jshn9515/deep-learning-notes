@@ -352,7 +352,7 @@ print('dK max absolute error:', max_err_dK.item())
 print('dV max absolute error:', max_err_dV.item())
 ```
 
-## 10.2.5 FlashAttention v1 的局限：为什么还要 FlashAttention v2？
+## 10.2.5 为什么还要 FlashAttention v2？
 
 到这里，FlashAttention v1 已经完成了一件非常重要的事：它通过分块计算和 Online Softmax，避免了显式存储完整的注意力矩阵 $S$ 和 $P$，从而显著减少了 HBM 读写。这也是它相比标准 attention 能够明显加速的根本原因。
 
