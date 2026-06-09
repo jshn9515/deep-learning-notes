@@ -22,7 +22,7 @@ x = torch.randn(4, 3)
 weight = torch.randn(2, 3, requires_grad=True)
 bias = torch.randn(2, requires_grad=True)
 
-y = x @ weight.T + bias
+y = torch.addmm(bias, x, weight.T)
 ```
 
 This certainly works. `weight` and `bias` participate in the computation graph, and after `loss.backward()` they can receive gradients.
@@ -69,7 +69,7 @@ weight = torch.randn(out_features, in_features, requires_grad=True)
 bias = torch.randn(out_features, requires_grad=True)
 
 x = torch.randn(4, in_features)
-y = x @ weight.T + bias
+y = torch.addmm(bias, x, weight.T)
 
 print(y.shape)
 ```
@@ -102,7 +102,7 @@ class SimpleLinear(nn.Module):
         self.bias = nn.Parameter(torch.randn(out_features))
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.bias.addmm(x, self.weight.T)
+        return torch.addmm(self.bias, x, self.weight.T)
 ```
 
 Now `weight` and `bias` are no longer scattered external variables; they belong to the `SimpleLinear` module:
@@ -132,7 +132,7 @@ class SimpleLinear(nn.Module):
     ...
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.bias.addmm(x, self.weight.T)
+        return torch.addmm(self.bias, x, self.weight.T)
 ```
 
 When using it, we usually write:
