@@ -22,7 +22,7 @@ x = torch.randn(4, 3)
 weight = torch.randn(2, 3, requires_grad=True)
 bias = torch.randn(2, requires_grad=True)
 
-y = x @ weight.T + bias
+y = torch.addmm(bias, x, weight.T)
 ```
 
 这当然可以工作。`weight` 和 `bias` 会参与计算图，`loss.backward()` 之后也可以得到梯度。
@@ -69,7 +69,7 @@ weight = torch.randn(out_features, in_features, requires_grad=True)
 bias = torch.randn(out_features, requires_grad=True)
 
 x = torch.randn(4, in_features)
-y = x @ weight.T + bias
+y = torch.addmm(bias, x, weight.T)
 
 print(y.shape)
 ```
@@ -102,7 +102,7 @@ class SimpleLinear(nn.Module):
         self.bias = nn.Parameter(torch.randn(out_features))
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.bias.addmm(x, self.weight.T)
+        return torch.addmm(self.bias, x, self.weight.T)
 ```
 
 现在，`weight` 和 `bias` 不再是散落在外面的变量，而是属于 `SimpleLinear` 这个模块：
@@ -132,7 +132,7 @@ class SimpleLinear(nn.Module):
     ...
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.bias.addmm(x, self.weight.T)
+        return torch.addmm(self.bias, x, self.weight.T)
 ```
 
 使用时，我们通常写：
