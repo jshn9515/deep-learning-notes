@@ -435,9 +435,8 @@ z.backward()
 
 with warnings.catch_warnings(record=True) as warns:
     print('q.grad:', q.grad)
-    if len(warns) > 0:
-        for warn in warns:
-            print('UserWarning:', warn.message)
+    for warn in warns:
+        print('UserWarning:', warn.message)
 ```
 
 If we really need to inspect the gradient of an intermediate node, we can call `retain_grad()`:
