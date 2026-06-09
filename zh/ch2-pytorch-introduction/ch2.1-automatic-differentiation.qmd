@@ -435,9 +435,8 @@ z.backward()
 
 with warnings.catch_warnings(record=True) as warns:
     print('q.grad:', q.grad)
-    if len(warns) > 0:
-        for warn in warns:
-            print('UserWarning:', warn.message)
+    for warn in warns:
+        print('UserWarning:', warn.message)
 ```
 
 如果我们确实需要查看中间节点的梯度，可以调用 `retain_grad()`：
