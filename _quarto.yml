@@ -72,6 +72,8 @@ website:
               contents: "zh/ch1-introduction/*.qmd"
             - section: "Chapter 2: PyTorch 入门"
               contents: "zh/ch2-pytorch-introduction/*.qmd"
+            - section: "Chapter 3: 多层感知机：从单层到深层的非线性建模"
+              contents: "zh/ch3-multi-layer-perceptron/*.qmd"
             - section: "Chapter 4: 优化算法：神经网络如何更新参数"
               contents: "zh/ch4-optimization-algorithms/*.qmd"
         - section: "Part 4: Attention 机制与 Transformer"
