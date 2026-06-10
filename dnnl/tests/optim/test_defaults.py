@@ -45,3 +45,11 @@ def test_optimizer_sigs_match_torch_optim_sigs():
     assert _sig(dopt.AdamW, 'betas') == _sig(optim.AdamW, 'betas')
     assert _sig(dopt.AdamW, 'eps') == _sig(optim.AdamW, 'eps')
     assert _sig(dopt.AdamW, 'weight_decay') == _sig(optim.AdamW, 'weight_decay')
+
+    assert _sig(dopt.Muon, 'lr') == _sig(optim.Muon, 'lr')
+    assert _sig(dopt.Muon, 'weight_decay') == _sig(optim.Muon, 'weight_decay')
+    assert _sig(dopt.Muon, 'momentum') == _sig(optim.Muon, 'momentum')
+    assert _sig(dopt.Muon, 'nesterov') == _sig(optim.Muon, 'nesterov')
+    assert _sig(dopt.Muon, 'ns_coefficients') == _sig(optim.Muon, 'ns_coefficients')
+    assert _sig(dopt.Muon, 'eps') == _sig(optim.Muon, 'eps')
+    assert _sig(dopt.Muon, 'ns_steps') == _sig(optim.Muon, 'ns_steps')
