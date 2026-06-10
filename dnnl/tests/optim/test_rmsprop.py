@@ -50,13 +50,7 @@ def test_rmsprop_skips_parameters_without_gradients():
 
 def test_rmsprop_accumulates_momentum_buffer():
     param = torch.tensor([1.0], requires_grad=True)
-    optimizer = dopt.RMSprop(
-        [param],
-        lr=0.1,
-        rho=0.9,
-        eps=0.0,
-        momentum=0.5,
-    )
+    optimizer = dopt.RMSprop([param], lr=0.1, rho=0.9, eps=0.0, momentum=0.5)
 
     param.grad = torch.tensor([0.5])
     optimizer.step()
