@@ -23,6 +23,8 @@
 - 3.4 线性层的前向传播与反向传播
 - 3.5 用 NumPy 搭建完整 MLP
 - 3.6 用 NumPy 在 MNIST 上训练 MLP
+- 3.7 反向传播检查：用数值梯度验证手写 backward
+- 3.8 用 PyTorch nn.Module 重新实现 MLP
 
 ## Chapter 4: 优化算法：神经网络如何更新参数
 
