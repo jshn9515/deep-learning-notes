@@ -16,11 +16,7 @@ def test_run_optimizer_records_parameter_history():
     params = torch.tensor([1.0, -2.0], requires_grad=True)
     optimizer = dopt.SimpleSGD([params], lr=0.1)
 
-    history = dopt.run_optimizer(
-        optimizer,
-        quadratic_loss,
-        steps=2,
-    )
+    history = dopt.run_optimizer(optimizer, quadratic_loss, steps=2)
 
     assert history.shape == (3, 2)
     assert torch.allclose(history[0], torch.tensor([1.0, -2.0]))
