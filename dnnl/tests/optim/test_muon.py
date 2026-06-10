@@ -27,10 +27,7 @@ def test_newton_schulz_5_preserves_tall_matrix_shape():
     update = torch.tensor([[3.0, 0.0], [4.0, 0.0], [0.0, 0.0]])
 
     actual = muon.newton_schulz_5(
-        update,
-        ns_steps=1,
-        eps=0.0,
-        ns_coefficients=(1.0, 0.0, 0.0),
+        update, ns_steps=1, eps=0.0, ns_coefficients=(1.0, 0.0, 0.0)
     )
 
     assert actual.shape == update.shape
@@ -72,8 +69,7 @@ def test_muon_accumulates_momentum_and_updates_parameters():
     expected_update = expected_buffer / expected_buffer.norm()
     assert torch.allclose(optimizer.momentum_buffers[0], expected_buffer)
     assert torch.allclose(
-        param,
-        torch.tensor([[0.94, -2.08], [0.5, 1.0]]) - 0.1 * expected_update,
+        param, torch.tensor([[0.94, -2.08], [0.5, 1.0]]) - 0.1 * expected_update
     )
 
 
