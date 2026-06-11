@@ -15,6 +15,29 @@
 - 2.6 Training Loops in PyTorch: Connecting Data, Models, and Optimizers
 - 2.7 Checkpoints in PyTorch: Resuming Training After Interruptions
 
+## Chapter 3: Multi-Layer Perceptron: From Single Layer to Deep Nonlinear Modeling
+
+- 3.1 From Linear Classifiers to MLPs: Why We Need Hidden Layers
+- 3.2 Activation Functions: Adding Nonlinearity to Neural Networks
+- 3.3 Softmax and Cross Entropy: From Logits to Classification Loss
+- 3.4 Forward and Backward Propagation of Linear Layers
+- 3.5 Building a Complete MLP with NumPy
+- 3.6 Train MLP on MNIST with NumPy
+- 3.7 Backward Propagation Check: Using Numerical Gradients to Verify Handwritten Backward
+- 3.8 Reimplementing MLP with PyTorch nn.Module
+
+## Chapter 4: Optimization Algorithms: How Neural Networks Update Parameters
+
+- 4.1 From Gradient Descent to SGD
+- 4.2 Momentum and Nesterov Momentum
+- 4.3 Adagrad: Starting Point of Adaptive Learning Rates
+- 4.4 RMSprop and Adadelta: Fixing Learning Rate Decay
+- 4.5 Adam: Combining Momentum and RMSprop
+- 4.6 AdamW: Decoupled Weight Decay
+- 4.7 Muon: Orthogonalized Updates for Matrix Parameters
+- 4.8 Optimizer Map: When to Use Which Optimization Algorithm
+- 4.9 Learning Rate Schedulers: Letting the Learning Rate Change During Training
+
 ## Chapter 8: Attention and Transformer: From Dynamic Retrieval to Sequence Modeling
 
 - 8.1 Bahdanau Attention: From Information Compression to Dynamic Retrieval
