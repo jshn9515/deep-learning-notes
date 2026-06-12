@@ -3,6 +3,8 @@ import math
 import torch.nn as nn
 from torch import Tensor
 
+import dnnl.nn as dnn
+
 __all__ = ['AutoEncoder']
 
 
@@ -28,15 +30,15 @@ class AutoEncoder(nn.Module):
         self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
             nn.Flatten(),  # 28x28 -> 784
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, latent_dim),
+            dnn.Linear(input_dim, hidden_dim),
+            dnn.ReLU(),
+            dnn.Linear(hidden_dim, latent_dim),
         )
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, input_dim),
-            nn.Sigmoid(),
+            dnn.Linear(latent_dim, hidden_dim),
+            dnn.ReLU(),
+            dnn.Linear(hidden_dim, input_dim),
+            dnn.Sigmoid(),
             nn.Unflatten(1, input_shape),  # 784 -> 28x28
         )
 
