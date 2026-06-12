@@ -230,12 +230,12 @@ TorchMetrics 的另一个重要特点是：**metric 是有状态的。**
 
 所以，使用 metric 时一定要记得在合适的时候 `reset()`。否则，这个 epoch 的统计结果可能会混进上一个 epoch 的状态。
 
-## 2.6.6 单轮训练：train_one_epoch
+## 2.6.6 单轮训练：train
 
 现在我们把训练一个 epoch 的逻辑写成函数。
 
 ```{python}
-def train_one_epoch(
+def train(
     model: nn.Module,
     dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
     loss_fn: nn.Module,
@@ -255,9 +255,9 @@ def train_one_epoch(
         logits = model(X)
         loss = loss_fn(logits, y)
 
-        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
 
         total_loss += loss.item()
         # We use `detach()` here to avoid keeping the computation graph
@@ -306,7 +306,7 @@ total_loss += loss.item()
 
 这里，我们对 `total_loss` 的计算按 batch 进行了简单平均。注意，这样是不太严谨的。因为最后一个 batch 的样本数可能和前面不一样。比如，我有 100 个训练样本，batch size 是 32，那么前面两个 batch 是 32 个样本，最后一个 batch 只有 4 个样本。这样直接平均就会有一点误差。更严谨的做法是把每个 batch 的 loss 乘以当前 batch 的样本数，累积到 `total_loss` 里，最后再除以总样本数，或者在使用 DataLoader 加载数据集时设置 `drop_last=True`。但是，这里我们就先采用简单平均的方式，保持代码简洁。
 
-## 2.6.7 单轮验证：evaluate_on_epoch
+## 2.6.7 单轮验证：evaluate
 
 验证循环和训练循环很像，但有三个关键区别：
 
@@ -315,7 +315,7 @@ total_loss += loss.item()
 - 使用 `torch.inference_mode()`，避免记录计算图。
 
 ```{python}
-def evaluate_on_epoch(
+def evaluate(
     model: nn.Module,
     dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
     loss_fn: nn.Module,
@@ -369,7 +369,7 @@ def train_and_evaluate(
     val_metric.to(device)
 
     for epoch in range(1, num_epochs + 1):
-        loss, score = train_one_epoch(
+        loss, score = train(
             model=model,
             dataloader=train_dl,
             loss_fn=loss_fn,
@@ -377,7 +377,7 @@ def train_and_evaluate(
             metric=metric,
             device=device,
         )
-        val_loss, val_score = evaluate_on_epoch(
+        val_loss, val_score = evaluate(
             model=model,
             dataloader=val_dl,
             loss_fn=loss_fn,

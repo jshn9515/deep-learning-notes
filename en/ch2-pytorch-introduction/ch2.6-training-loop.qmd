@@ -230,12 +230,12 @@ For example, accuracy internally maintains states such as "number of correctly p
 
 Therefore, when using metrics, remember to call `reset()` at the right time. Otherwise, the statistics for this epoch may mix with the state from the previous epoch.
 
-## 2.6.6 One Training Epoch: train_one_epoch
+## 2.6.6 One Training Epoch: train
 
 Now we write the logic for training one epoch as a function.
 
 ```{python}
-def train_one_epoch(
+def train(
     model: nn.Module,
     dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
     loss_fn: nn.Module,
@@ -306,7 +306,7 @@ total_loss += loss.item()
 
 Here, we compute `total_loss` by simply averaging over batches. Strictly speaking, this is not very rigorous, because the final batch may have a different number of samples from earlier batches. For example, if there are 100 training samples and the batch size is 32, the first three batches have 32 samples each, but the last batch has only 4 samples. Directly averaging batch losses introduces a small error. A more rigorous approach is to multiply each batch's loss by the current batch size, accumulate into `total_loss`, and divide by the total number of samples at the end, or to set `drop_last=True` when using the DataLoader. But here we use the simple average to keep the code concise.
 
-## 2.6.7 One Validation Epoch: evaluate_on_epoch
+## 2.6.7 One Validation Epoch: evaluate
 
 The validation loop is similar to the training loop, but it has three key differences:
 
@@ -315,7 +315,7 @@ The validation loop is similar to the training loop, but it has three key differ
 - Use `torch.inference_mode()` to avoid recording the computation graph.
 
 ```{python}
-def evaluate_on_epoch(
+def evaluate(
     model: nn.Module,
     dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
     loss_fn: nn.Module,
@@ -369,7 +369,7 @@ def train_and_evaluate(
     val_metric.to(device)
 
     for epoch in range(1, num_epochs + 1):
-        loss, score = train_one_epoch(
+        loss, score = train(
             model=model,
             dataloader=train_dl,
             loss_fn=loss_fn,
@@ -377,7 +377,7 @@ def train_and_evaluate(
             metric=metric,
             device=device,
         )
-        val_loss, val_score = evaluate_on_epoch(
+        val_loss, val_score = evaluate(
             model=model,
             dataloader=val_dl,
             loss_fn=loss_fn,
