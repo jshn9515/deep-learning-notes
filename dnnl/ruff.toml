@@ -75,3 +75,10 @@ docstring-code-format = true
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[lint.isort]
+# Forces all from imports to appear on their own line.
+force-single-line = true
+
+# Combines as imports on the same line. See isort's combine-as-imports option.
+combine-as-imports = false
