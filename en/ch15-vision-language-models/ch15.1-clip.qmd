@@ -45,7 +45,7 @@ device = dnnl.get_default_device()
 print('Using device:', device)
 ```
 
-## 15.1.1 Why put images and text together for learning?
+## 15.1.1 Why Put Images and Text Together for Learning?
 
 Traditional image classification usually relies on manually annotated discrete categories, such as "cat", "dog", and "car". This kind of supervision is certainly effective, but it also has two obvious limitations.
 
@@ -67,7 +67,7 @@ This training method also has a very important result: the model is no longer st
 
 This is also why CLIP looks like it is learning "matching", but finally shows more flexible ability than traditional classification with fixed labels.
 
-## 15.1.2 CLIP's core structure: two encoders + a similarity matrix
+## 15.1.2 CLIP's Core Structure: Two Encoders + a Similarity Matrix
 
 CLIP's structure can be summarized into two parts.
 
@@ -189,7 +189,7 @@ This similarity matrix explains very well how CLIP works: it pulls correctly pai
 
 At the same time, this matrix also shows that what CLIP learns is not only "right" or "wrong". For example, although dog and cat are not completely matched, the score between them is still relatively high, because dogs and cats are semantically close in the first place, both belonging to "animals"; while pizza is far away from animals, so the score is lower. In other words, CLIP learns a semantic feeling of "who is more like whom", rather than simply separating every category rigidly.
 
-## 15.1.3 CLIP's training objective: bidirectional contrastive learning
+## 15.1.3 CLIP's Training Objective: Bidirectional Contrastive Learning
 
 Suppose there are $N$ image-text pairs in a batch, and the $i$-th image corresponds to the $i$-th text. Then, for the $i$-th image, we can treat the $i$-th text as the correct category, and treat the other $N-1$ texts as negative classes. So, the image-to-text loss can be written as:
 
@@ -243,7 +243,7 @@ From the code, you can see that the implementation of CLIP loss is actually very
 
 This is also one of the beautiful parts of CLIP: the model architecture is not complicated. The key is that the scale of training data and the supervision method have changed. It does not rely on fine-grained category labels, but relies on massive image-text paired data, letting images and language naturally align in the same space.
 
-## 15.1.4 Why can CLIP do zero-shot classification?
+## 15.1.4 Why Can CLIP Do Zero-Shot Classification?
 
 Before discussing this question, let's first talk about what zero-shot classification is.
 
@@ -312,7 +312,7 @@ If you want to further improve the effect, there are usually several common tric
 - Use a stronger visual backbone or a larger pretrained model;
 - Do a small amount of fine-tuning on downstream data.
 
-## 15.1.5 CLIP's adversarial attack: why can an apple be seen as an iPod?
+## 15.1.5 CLIP's Adversarial Attack: Why Can an Apple Be Seen as an iPod?
 
 Earlier, we saw that CLIP's strength lies in putting images and text into the same semantic space. This ability is very strong, but it also brings a new weak point:
 
@@ -375,7 +375,7 @@ One possible explanation is that the image-text alignment mechanism learned by C
 
 What this example reflects is an important property of CLIP: what it learns is not a pure visual classifier, but a similarity model in a joint image-text semantic space. Precisely because it can read words, text inside images can both help it and attack it. In other words, CLIP's zero-shot ability and its vulnerability to typographic attacks actually come from the same mechanism.
 
-## 15.1.6 Chapter summary
+## 15.1.6 Summary
 
 Now we can summarize CLIP's core logic in three sentences.
 
