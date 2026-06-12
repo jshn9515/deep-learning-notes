@@ -102,10 +102,6 @@ class Softmax(Module):
         super().__init__()
         self.dim = dim
 
-    def extra_repr(self) -> str:
-        """Return extra string representation of the layer."""
-        return f'dim={self.dim}'
-
     @override
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Apply softmax and cache probabilities for backpropagation."""
@@ -118,3 +114,7 @@ class Softmax(Module):
         assert self.ctx is not None, 'Must call forward before backward.'
         dot = np.sum(grad * self.ctx, axis=self.dim, keepdims=True)
         return self.ctx * (grad - dot)
+
+    def extra_repr(self) -> str:
+        """Return extra string representation of the layer."""
+        return f'dim={self.dim}'
