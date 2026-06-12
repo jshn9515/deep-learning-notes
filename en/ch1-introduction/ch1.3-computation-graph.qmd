@@ -4,7 +4,7 @@ date: 2026-03-19
 date-modified: 2026-04-04
 open-graph:
   title: ch1.3-computation-graph
-  description: "1.3 Forward Propagation, Backpropagation, and Computation Graphs"
+  description: "1.3 Forward Propagation, Backpropagation, and Computation Graph"
 title: "1.3 Forward Propagation, Backpropagation, and Computation Graph"
 order: 3
 ---
@@ -142,9 +142,9 @@ This recursive process of "local gradient $\times$ upstream gradient" allows us 
 
 Through forward propagation, we build the computational graph and compute the value of each node; through backpropagation, we compute the gradient of each node along the reverse direction of the computational graph. In this way, we can know the degree to which each parameter affects the loss function, and thus guide how we adjust parameters to minimize the loss function. This is the core learning mechanism of deep learning.
 
-## 1.3.4 Chapter Summary
+## 1.3.4 Summary
 
-In this chapter, we introduced the three most core concepts in deep learning:
+In this section, we introduced the three most core concepts in deep learning:
 
 - Gradient: describes the degree to which each parameter affects the loss function;
 - Computational graph: records the complete computation structure of a function;
@@ -152,4 +152,4 @@ In this chapter, we introduced the three most core concepts in deep learning:
 
 Forward propagation computes the loss function along the direction of the computational graph, while backpropagation computes gradients along the reverse direction of the computational graph. It is precisely because the computational graph provides a clear dependency structure that we can efficiently compute the gradients of all parameters in a neural network.
 
-In the next chapter, we will see how to use these gradients to gradually adjust parameters, so that the neural network learns to complete specific tasks.
+In the next section, we will see how to use these gradients to gradually adjust parameters, so that the neural network learns to complete specific tasks.
