@@ -4,7 +4,7 @@ date: 2026-06-07
 date-modified: 2026-06-07
 open-graph:
   title: ch3.4-linear-layer
-  description: "3.4 Forward and Backward of Linear Layer"
+  description: "3.4 Forward and Backward Propagation of Linear Layers"
 title: "3.4 Forward and Backward Propagation of Linear Layers"
 order: 4
 ---

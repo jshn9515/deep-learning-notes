@@ -4,7 +4,7 @@ date: 2026-06-07
 date-modified: 2026-06-07
 open-graph:
   title: ch3.1-from-linear-model-to-mlp
-  description: "3.1 From Linear Model to MLP: Why We Need Hidden Layers"
+  description: "3.1 From Linear Classifiers to MLPs: Why We Need Hidden Layers"
 title: "3.1 From Linear Classifiers to MLPs: Why We Need Hidden Layers"
 order: 1
 ---

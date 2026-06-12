@@ -4,7 +4,7 @@ date: 2026-06-07
 date-modified: 2026-06-07
 open-graph:
   title: ch3.8-mlp-with-pytorch
-  description: "3.8 Implementing MLP with PyTorch nn.Module"
+  description: "3.8 Reimplementing MLP with PyTorch nn.Module"
 title: "3.8 Reimplementing MLP with PyTorch nn.Module"
 order: 8
 ---

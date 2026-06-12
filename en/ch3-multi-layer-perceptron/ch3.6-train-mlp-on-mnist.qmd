@@ -108,7 +108,7 @@ plt.show()
 
 Note that although we flatten the images into vectors, this is only to fit the input format of an MLP. The original images are still two-dimensional; it is just that the MLP does not explicitly use this spatial structure. Later, when we discuss CNNs, we will reintroduce the concept of spatial structure.
 
-## 3.6.2 Mini-batch Data Iteration
+## 3.6.2 Mini-Batch Data Iteration
 
 When training neural networks, we usually do not feed all training data into the model at once. Instead, we split the data into many mini-batches.
 
@@ -394,7 +394,8 @@ loss = loss_fn(logits, y)
 dlogits = criterion.backward()
 model.backward(dlogits)
 
-# update
+# Summary
+
 optimizer.step()
 ```
 
