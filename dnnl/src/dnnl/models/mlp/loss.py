@@ -43,7 +43,7 @@ class CrossEntropyLoss(Module):
     def forward(self, logits: np.ndarray, targets: np.ndarray) -> np.floating:
         """Return mean cross-entropy loss for logits and integer targets."""
         probs = softmax(logits)
-        self.save_to_context(probs, targets)
+        self.ctx = (probs, targets)
         loss = cross_entropy(probs, targets, self.eps)
         return loss
 
@@ -51,7 +51,7 @@ class CrossEntropyLoss(Module):
     def backward(self) -> np.ndarray:
         """Return gradients of the loss with respect to the logits."""
         assert self.ctx is not None, 'Must call forward before backward.'
-        probs, targets = self.load_from_context()
+        probs, targets = self.ctx
 
         batch_size = probs.shape[0]
         grad = probs.copy()
