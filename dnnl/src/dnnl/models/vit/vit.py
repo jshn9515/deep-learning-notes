@@ -36,10 +36,10 @@ class ViTMLP(nn.Module):
         super().__init__()
         hidden_dim = hidden_dim or embed_dim * 4
         self.net = nn.Sequential(
-            nn.Linear(embed_dim, hidden_dim),
+            dnn.Linear(embed_dim, hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout),
-            nn.Linear(hidden_dim, embed_dim),
+            dnn.Linear(hidden_dim, embed_dim),
             nn.Dropout(dropout),
         )
 
@@ -217,7 +217,7 @@ class ViTClassificationHead(nn.Module):
             num_classes (int): Number of output classes.
         """
         super().__init__()
-        self.head = nn.Linear(embed_dim, num_classes)
+        self.head = dnn.Linear(embed_dim, num_classes)
 
     def forward(self, x: Tensor) -> Tensor:
         """Return class logits from the first token of each sequence."""
