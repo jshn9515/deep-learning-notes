@@ -4,8 +4,8 @@ date: 2026-05-28
 date-modified: 2026-05-28
 open-graph:
   title: ch2.7-checkpoint-resuming
-  description: "2.7 Checkpoint and Resume Training in PyTorch"
-title: "2.7 Checkpoints in PyTorch: Resuming Training After Interruptions"
+  description: "2.7 Checkpoints in PyTorch: Resuming Training After Interruption"
+title: "2.7 Checkpoints in PyTorch: Resuming Training After Interruption"
 order: 7
 ---
 

@@ -4,8 +4,8 @@ date: 2026-05-23
 date-modified: 2026-05-28
 open-graph:
   title: ch2.6-training-template
-  description: "2.6 Training Loop in PyTorch: Connecting Data, Model and Optimizer"
-title: "2.6 Training Loops in PyTorch: Connecting Data, Models, and Optimizers"
+  description: "2.6 Training Loop in PyTorch: Connecting Data, Models, and Optimizers"
+title: "2.6 Training Loop in PyTorch: Connecting Data, Models, and Optimizers"
 order: 6
 ---
 

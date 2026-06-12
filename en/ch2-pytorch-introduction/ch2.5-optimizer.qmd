@@ -4,7 +4,7 @@ date: 2026-05-23
 date-modified: 2026-05-23
 open-graph:
   title: ch2.5-optimizer
-  description: "2.5 Optimizer in PyTorch: From Manual Updates to Parameter Groups and State Management"
+  description: "2.5 Optimizers in PyTorch: From Manual Updates to Parameter Groups and State Management"
 title: "2.5 Optimizers in PyTorch: From Manual Updates to Parameter Groups and State Management"
 order: 5
 ---
@@ -340,7 +340,7 @@ for i, group in enumerate(optimizer.param_groups):
 
 So, an optimizer does not have to update the entire model uniformly. Internally, it manages parameters group by group, and each group can have its own learning rate, weight decay, momentum, and other settings. We can flexibly split model parameters into different groups and let the optimizer manage them as needed.
 
-## 2.5.5 Optimizers Are Not Just Formulas; They Also Have State
+## 2.5.5 Optimizers Are Not Just Formulas, They Also Have State
 
 If we use the simplest SGD without momentum, the parameter update depends only on the current gradient $g$:
 
@@ -416,7 +416,7 @@ optimizer.load_state_dict(checkpoint['optimizer'])
 
 Only then can training continue as closely as possible from the interrupted point, instead of restarting optimization with the same model parameters but fresh optimizer state.
 
-## 2.5.6 foreach and fused: Different Implementations of the Same Optimizer
+## 2.5.6 Foreach and Fused: Different Implementations of the Same Optimizer
 
 Sometimes we see parameters like this in optimizers:
 
