@@ -56,7 +56,7 @@ device = dnnl.get_default_device()
 print('Using device:', device)
 ```
 
-## 11.5.1 从分类模型到视觉 Backbone
+## 11.5.1 从分类模型到视觉 backbone
 
 我们先回到上一节的完整 ViT 分类模型。它可以拆成两部分：
 
@@ -186,7 +186,7 @@ print('Feature map shape:', feature_map.shape)
 
 可以看到，patch tokens 从 `(B, N, D)` 变成了 `(B, D, H_p, W_p)`。这就是 ViT 作为 dense prediction backbone 时非常常见的一步。
 
-## 11.5.3 为什么 ViT 适合作为 Backbone？
+## 11.5.3 为什么 ViT 适合作为 backbone？
 
 现在我们可以更具体地回答：为什么 ViT 适合作为 backbone？
 
@@ -314,7 +314,7 @@ ipy.clear_output()
 
 不过在下游分类任务中，更常见的是先加载 `AutoModelForImageClassification`，然后把分类头替换成当前数据集需要的类别数。这是因为 `AutoModelForImageClassification` 已经把 `ViTModel` 和分类头封装在一起，会直接输出分类任务需要的 `logits`。如果使用 `ViTModel`，我们还需要自己写一个分类头来接收 backbone 的输出。
 
-## 11.5.5 微调：把 Backbone 迁移到具体任务
+## 11.5.5 微调：把 backbone 迁移到具体任务
 
 预训练完成以后，每次碰到新的任务，我们通常不会再从零开始训练一个 ViT，而是直接把预训练好的 backbone 拿过来，针对这个特定任务做**微调（fine-tuning）**。
 
