@@ -4,7 +4,7 @@ date: 2026-03-24
 date-modified: 2026-04-04
 open-graph:
   title: ch13.1-autoencoder
-  description: "13.1 Autoencoder: Starting with Compression and Reconstruction"
+  description: "13.1 AutoEncoder: Starting with Compression and Reconstruction"
 title: "13.1 AutoEncoder: Starting with Compression and Reconstruction"
 order: 1
 ---
@@ -342,7 +342,7 @@ You will find that the distribution of points in the latent space is very irregu
 
 So, ordinary AutoEncoder is better at representation learning, dimensionality reduction and denoising, and feature extraction, but it is not naturally good at stably generating new high-quality samples. And this is exactly the key motivation for introducing VAE later.
 
-## 13.1.6 Summary of This Chapter
+## 13.1.6 Summary
 
 By now, we already know the basic idea of AutoEncoder:
 

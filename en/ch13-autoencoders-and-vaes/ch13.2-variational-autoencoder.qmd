@@ -379,7 +379,7 @@ $$
 
 This form is very common in practice, because directly predicting the variance can easily lead to numerical instability, while predicting the log-variance is more convenient.
 
-## 13.2.6 Chapter Summary
+## 13.2.6 Summary
 
 So, compared with a normal AE, what VAE really adds is not just a slightly more complicated structure, but a change in the modeling idea.
 

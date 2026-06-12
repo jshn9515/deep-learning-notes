@@ -363,7 +363,7 @@ Intuitively, this is like the model saying:
 
 In simple experiments such as MNIST, this problem may not be particularly obvious. But in text generation, strong autoregressive decoders, or complex models, it becomes a very practical problem. We can use some methods to alleviate this problem, use a more suitable decoder structure, and use variants such as $\beta$-VAE and InfoVAE for adjustment. We do not need to remember all of these techniques right now, but we need to know that VAE training is not always naturally stable. The design and weight of the KL term are very important.
 
-## 13.4.8 Summary of This Chapter
+## 13.4.8 Summary
 
 Now let us summarize the important intuitions behind VAE training phenomena:
 

@@ -4,7 +4,7 @@ date: 2026-03-25
 date-modified: 2026-04-04
 open-graph:
   title: ch13.3-elbo-vae-objective
-  description: "13.3 ELBO: Where Does the VAE's Objective Function Come From?"
+  description: "13.3 ELBO: Where Does the VAE Objective Function Come From?"
 title: "13.3 ELBO: Where Does the VAE Objective Function Come From?"
 order: 3
 ---
@@ -382,7 +382,7 @@ You may say: we derived for so long, so why is the code only a few lines?
 
 Actually, this is exactly the charm of the mathematical derivation. Although the formulas look complicated, the logic behind them is very clear. We start from a very natural objective, go through a series of reasonable transformations, and finally obtain a loss function that is both theoretically meaningful and practical. This is the power of ELBO, and also the subtlety of VAE's design.
 
-## 13.3.8 Chapter Summary
+## 13.3.8 Summary
 
 Now, we can finally answer the question at the beginning of this section: where does the VAE objective function come from?
 

@@ -5,7 +5,7 @@ date-modified: 2026-04-04
 open-graph:
   title: ch13.5-vae-limitations-and-future-directions
   description: "13.5 VAE: Advantages, Limitations, and Future Developments"
-title: "13.5 Advantages, Limitations, and Future Developments"
+title: "13.5 VAE: Advantages, Limitations, and Future Developments"
 order: 5
 ---
 
@@ -156,7 +156,7 @@ The standard VAE uses continuous latent variables, usually assuming a Gaussian d
 
 Simply speaking, it maintains a codebook. After the encoder outputs a continuous vector, the model maps it to the nearest discrete embedding. In this way, the latent variable can be more like a discrete symbol, making it more suitable to combine with autoregressive models or token-based models. VQ-VAE has had a large influence in images, speech, and discrete representation learning. The ideas of many later visual token methods can be connected to VQ-VAE.
 
-## 13.5.4 The Position of VAE in the History of Generative Models
+## 13.5.4 Summary
 
 At this point, let us first compare several generative models together:
 
