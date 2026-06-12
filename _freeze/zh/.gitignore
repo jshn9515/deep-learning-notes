@@ -7,5 +7,8 @@ ch3-multi-layer-perceptron/
 # Chapter 4: Optimization Algorithms
 ch4-optimization-algorithms/
 
+# Chapter 8: Attention and Transformer
+ch8-attention-and-transformer/
+
 # Chapter 10: Efficient Attention Mechanisms
 ch10-efficient-attention/
