@@ -8,12 +8,12 @@
 ## Chapter 2: Getting Started with PyTorch
 
 - 2.1 Automatic Differentiation in PyTorch: From Forward Computation to Backpropagation
-- 2.2 Gradient Modes in PyTorch: Controlling Computation Graph Recording
+- 2.2 Gradient Modes in PyTorch: Controlling How Computation Graphs Are Recorded
 - 2.3 Data Loading in PyTorch: Dataset, DataLoader, and Batching
 - 2.4 nn.Module in PyTorch: Organizing Models, Parameters, and State
 - 2.5 Optimizers in PyTorch: From Manual Updates to Parameter Groups and State Management
-- 2.6 Training Loops in PyTorch: Connecting Data, Models, and Optimizers
-- 2.7 Checkpoints in PyTorch: Resuming Training After Interruptions
+- 2.6 Training Loop in PyTorch: Connecting Data, Models, and Optimizers
+- 2.7 Checkpoints in PyTorch: Resuming Training After Interruption
 
 ## Chapter 3: Multi-Layer Perceptron: From Single Layer to Deep Nonlinear Modeling
 
@@ -42,7 +42,7 @@
 
 - 8.1 Bahdanau Attention: From Information Compression to Dynamic Retrieval
 - 8.2 Cross-Attention: One Sequence Querying Another Sequence
-- 8.3 Self-Attention: Internal Information Interaction within a Sequence
+- 8.3 Self-Attention: Internal Information Interaction Within a Sequence
 - 8.4 Multi-Head Attention: From Single Perspective to Multiple Perspectives
 - 8.5 Positional Encoding: Adding Positional Information to Attention
 - 8.6 Transformer Encoder: Stacking Self-Attention Layers
@@ -54,7 +54,7 @@
 
 ## Chapter 10: Efficient Attention Implementations: From Memory-Efficient Attention to FlashAttention
 
-- 10.1 Why Attention is IO-Bound
+- 10.1 Why Attention Is IO-Bound
 - 10.2 FlashAttention v1: Eliminating the IO Bottleneck in Attention Mechanisms
 
 ## Chapter 11: Vision Transformer: From Image Classification to Visual Sequence Modeling
@@ -63,7 +63,7 @@
 - 11.2 Patch Embedding: Cutting Images into Tokens
 - 11.3 Class Token and Positional Embedding: Letting a Sequence Represent the Whole Image
 - 11.4 ViT Encoder: Letting Patch Tokens Exchange Information
-- 11.5 ViT Backbone: Pretraining and Fine-tuning
+- 11.5 ViT Backbone: Pretraining and Fine-Tuning
 
 ## Chapter 12: GAN: Learning to Generate through Adversarial Training
 
@@ -75,7 +75,7 @@
 - 13.2 VAE: Probabilistic Modeling and the Reparameterization Trick
 - 13.3 ELBO: Where Does the VAE Objective Function Come From?
 - 13.4 VAE Training Phenomena and Latent Space Intuition
-- 13.5 Advantages, Limitations, and Future Developments
+- 13.5 VAE: Advantages, Limitations, and Future Developments
 
 ## Chapter 14: Diffusion Models: From Denoising to Generation
 
