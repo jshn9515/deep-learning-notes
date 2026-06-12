@@ -1,12 +1,15 @@
-import copy
 from collections.abc import Callable
+from copy import deepcopy
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 
 from .attention import MultiheadAttention
+from .functional import gelu, relu
+from .linear import Linear
+
+type Activation = Callable[[Tensor], Tensor]
 
 __all__ = [
     'SinusoidalPositionalEncoding',
@@ -19,14 +22,12 @@ __all__ = [
 ]
 
 
-def _get_activation_fn(
-    activation: str | Callable[[Tensor], Tensor],
-) -> Callable[[Tensor], Tensor]:
+def _get_activation_fn(activation: str | Activation) -> Activation:
     """Resolve a transformer activation name or callable."""
     if activation == 'relu':
-        return F.relu
+        return relu
     if activation == 'gelu':
-        return F.gelu
+        return gelu
     if callable(activation):
         return activation
     raise ValueError('The activation must be `relu`, `gelu`, or a callable.')
@@ -34,7 +35,7 @@ def _get_activation_fn(
 
 def _clone_module(module: nn.Module, num_layers: int) -> nn.ModuleList:
     """Deep-copy a module into a ``ModuleList``."""
-    return nn.ModuleList(copy.deepcopy(module) for _ in range(num_layers))
+    return nn.ModuleList(deepcopy(module) for _ in range(num_layers))
 
 
 class SinusoidalPositionalEncoding(nn.Module):
@@ -109,7 +110,7 @@ class TransformerEncoderLayer(nn.Module):
         dim_feedforward: int = 2048,
         bias: bool = True,
         dropout: float = 0.1,
-        activation: str | Callable[[Tensor], Tensor] = F.relu,
+        activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
     ):
@@ -120,7 +121,7 @@ class TransformerEncoderLayer(nn.Module):
             num_heads (int): Number of attention heads.
             dim_feedforward (int, default: 2048): Hidden dimension of the feed-forward block.
             dropout (float, default: 0.1): Dropout probability.
-            activation (str | Callable[[Tensor], Tensor], default: F.relu): Feed-forward activation.
+            activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If ``True``, use pre-normalization.
             bias (bool, default: True): Whether linear and layer norm modules include bias.
@@ -135,9 +136,9 @@ class TransformerEncoderLayer(nn.Module):
             bias=bias,
         )
 
-        self.linear1 = nn.Linear(d_model, dim_feedforward, bias=bias)
+        self.linear1 = Linear(d_model, dim_feedforward, bias=bias)
         self.dropout = nn.Dropout(dropout)
-        self.linear2 = nn.Linear(dim_feedforward, d_model, bias=bias)
+        self.linear2 = Linear(dim_feedforward, d_model, bias=bias)
 
         self.norm1 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
         self.norm2 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
@@ -257,7 +258,7 @@ class TransformerDecoderLayer(nn.Module):
         dim_feedforward: int = 2048,
         bias: bool = True,
         dropout: float = 0.1,
-        activation: str | Callable[[Tensor], Tensor] = F.relu,
+        activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
     ):
@@ -269,7 +270,7 @@ class TransformerDecoderLayer(nn.Module):
             dim_feedforward (int, default: 2048): Hidden dimension of the feed-forward block.
             bias (bool, default: True): Whether linear and layer norm modules include bias.
             dropout (float, default: 0.1): Dropout probability.
-            activation (str | Callable[[Tensor], Tensor], default: F.relu): Feed-forward activation.
+            activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If ``True``, use pre-normalization.
         """
@@ -289,9 +290,9 @@ class TransformerDecoderLayer(nn.Module):
             bias=bias,
         )
 
-        self.linear1 = nn.Linear(d_model, dim_feedforward, bias=bias)
+        self.linear1 = Linear(d_model, dim_feedforward, bias=bias)
         self.dropout = nn.Dropout(dropout)
-        self.linear2 = nn.Linear(dim_feedforward, d_model, bias=bias)
+        self.linear2 = Linear(dim_feedforward, d_model, bias=bias)
 
         self.norm1 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
         self.norm2 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
@@ -459,7 +460,7 @@ class Transformer(nn.Module):
         dim_feedforward: int = 2048,
         bias: bool = True,
         dropout: float = 0.1,
-        activation: str | Callable[[Tensor], Tensor] = F.relu,
+        activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
     ):
@@ -472,7 +473,7 @@ class Transformer(nn.Module):
             num_decoder_layers (int, default: 6): Number of decoder layers.
             dim_feedforward (int, default: 2048): Hidden dimension of feed-forward blocks.
             dropout (float, default: 0.1): Dropout probability.
-            activation (str | Callable[[Tensor], Tensor], default: F.relu): Feed-forward activation.
+            activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If ``True``, use pre-normalization inside layers.
             bias (bool, default: True): Whether linear and layer norm modules include bias.
