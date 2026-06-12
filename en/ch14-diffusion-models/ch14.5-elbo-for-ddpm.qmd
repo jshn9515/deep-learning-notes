@@ -4,7 +4,7 @@ date: 2026-04-02
 date-modified: 2026-04-04
 open-graph:
   title: ch14.5-elbo-for-ddpm
-  description: "14.5 DDPM from a Variational Perspective: Where Does the ELBO Come From?"
+  description: "14.5 DDPM from a Variational Derivation: Where Does the ELBO Come From?"
 title: "14.5 DDPM from a Variational Derivation: Where Does the ELBO Come From?"
 order: 5
 ---
@@ -22,7 +22,7 @@ In this section, we will answer this question. We will see that behind DDPM, the
 
 So DDPM did not invent a denoising loss out of nowhere. Instead, it can be naturally derived from the perspective of variational inference.
 
-## 14.5.1 Why introduce the ELBO?
+## 14.5.1 Why Introduce the ELBO?
 
 Let us first recall the most fundamental goal of a generative model. Whether it is AE, VAE, or Diffusion, we ultimately hope the model can approximate the real data distribution $p_{\text{data}}(x)$. More specifically, we hope to maximize the log-likelihood of the observed data:
 
@@ -60,7 +60,7 @@ Does this look very similar to the idea behind VAE? And this lower bound is the 
 
 [^1]: For why this can be written as maximizing log-likelihood rather than minimizing KL divergence, you can refer to the derivation in Section 13.2.2.
 
-## 14.5.2 What is the variational distribution in DDPM?
+## 14.5.2 What Is the Variational Distribution in DDPM?
 
 In VAE, we introduce an approximate posterior $q_\phi(z\mid x)$, and this approximate posterior is played by the encoder. The encoder maps the image into the latent variable $z$, and this process is the variational distribution $q$ we construct. In DDPM, the corresponding role is played by the forward noising process:
 
@@ -81,7 +81,7 @@ This process has two important properties:
 
 So in DDPM, the forward process is, on the one hand, the mechanism that turns data into noise. On the other hand, it also happens to serve as the auxiliary distribution $q$ in variational inference. So how does it do that?
 
-## 14.5.3 From log-likelihood to ELBO
+## 14.5.3 From Log-Likelihood to ELBO
 
 Now let us write the standard variational derivation.
 
@@ -170,7 +170,7 @@ That is, given the current noisy image $x_t$ and the real clean image $x_0$, the
 
 So how does MSE come out of the KL term?
 
-## 14.5.4 Why can the KL term become MSE?
+## 14.5.4 Why Can the KL Term Become MSE?
 
 From Section 14.3.1, we know that the true posterior is a Gaussian distribution:
 
@@ -253,7 +253,7 @@ This is the most classic DDPM training objective.
 
 At this point, starting from the ELBO, we have rigorously derived the DDPM training objective. In the end, we can see that the process of maximizing the ELBO is equivalent to minimizing the MSE between the noise predicted by the model and the true noise. This is where the ELBO in DDPM comes from.
 
-## 14.5.5 Why optimize only the intermediate terms during training?
+## 14.5.5 Why Optimize Only the Intermediate Terms During Training?
 
 By this point, you probably have a question: we only optimized the intermediate KL terms, right? Then what about the reconstruction term at the beginning and the prior matching term at the end? Are they not important?
 
@@ -277,7 +277,7 @@ That is, it is the reconstruction error of restoring $x_0$ from $x_1$ during the
 
 Of course, our ELBO derivation here omits many intermediate steps. The full ELBO involves solving a very complicated integral, and there are many details that need to be handled. Here, we mainly want to give everyone a rough idea and show how the DDPM training objective is derived from the perspective of probabilistic modeling. For the complete derivation, you can refer to the survey article [@luo2022UnderstandingDiffusionModels], which contains a very detailed ELBO derivation and the related mathematical details.
 
-## 14.5.6 Chapter summary
+## 14.5.6 Summary
 
 In this section, we answered a key question: why can the DDPM training objective be connected to the ELBO?
 

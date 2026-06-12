@@ -169,7 +169,7 @@ dnnl.set_matplotlib_format('svg')
 plt.show()
 ```
 
-## 14.2.4 Multi-step Expansion: $x_t$ Can Be Written Directly as a Combination of $x_0$ and Noise
+## 14.2.4 Multi-Step Expansion: $x_t$ Can Be Written Directly as a Combination of $x_0$ and Noise
 
 Although the forward process is defined step by step, DDPM has a very beautiful property:
 
@@ -326,7 +326,7 @@ So, the forward process plays the role of the problem setter in training. It is 
 
 This is much more concrete than directly asking the model to generate an image out of nothing.
 
-## 14.2.7 Chapter Summary
+## 14.2.7 Summary
 
 At this point, we can compress the core content of 14.2 into a few sentences.
 

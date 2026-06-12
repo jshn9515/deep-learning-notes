@@ -31,7 +31,7 @@ dnnl.set_matplotlib_format('highdpi')
 print('PyTorch version:', torch.__version__)
 ```
 
-## 14.1.1 Generation: the reverse process of adding noise
+## 14.1.1 Generation: The Reverse Process of Adding Noise
 
 Let's first think about a very simple process. Suppose we have a real image $x_0$. Now we continuously add a little bit of Gaussian noise to it:
 
@@ -78,7 +78,7 @@ From the figure above, we can find that when the noise is small, the general str
 
 So, going from a clear image to pure noise is not completed with a snap, but can be divided into many small steps. Then in reverse, from noise back to image, is it also possible to divide it into many small steps? In other words, we are completing a reverse process of adding noise. Then, why do we add noise step by step, instead of doing it all at once?
 
-## 14.1.2 Why is step by step easy, while one step is hard?
+## 14.1.2 Why Is Step by Step Easy, While One Step Is Hard?
 
 Suppose now you are asked to do two tasks.
 
@@ -94,7 +94,7 @@ This task is much simpler. Because at this time, part of the structure has alrea
 
 Therefore, the core strategy of Diffusion Model is: do not force the model to learn to generate an image directly from random numbers in one go, but split this hard problem into many simple small problems, and remove only a little noise at each step. This is very similar to a common idea in deep learning: if a complex mapping is split into many simple mappings, it is often easier to learn.
 
-## 14.1.3 The core idea of DDPM: first learn destruction, then learn recovery
+## 14.1.3 The Core Idea of DDPM: First Learn Destruction, Then Learn Recovery
 
 DDPM actually does two things.
 
@@ -148,7 +148,7 @@ Each step only makes a small modification, so the learning difficulty is lower a
 
 So, DDPM successfully turns an image generation problem into a denoising problem. We first manually make the image worse (adding noise), and then teach the network how to make the image better (denoising). This is its core idea. The output of the network at each step is how much noise we should remove from the image in this step.
 
-## 14.1.4 The training objective of DDPM: guess the noise
+## 14.1.4 The Training Objective of DDPM: Guess the Noise
 
 In the most common DDPM notation, we write the noisy sample at step $t$ as:
 
@@ -180,7 +180,7 @@ $$
 
 On the surface, it is only guessing noise, but in essence, it is learning how to slowly pull the sample from the noise direction back to the data distribution.
 
-## 14.1.5 Chapter summary
+## 14.1.5 Summary
 
 Now we can summarize the overall process of DDPM.
 

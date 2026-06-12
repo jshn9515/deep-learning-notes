@@ -4,7 +4,7 @@ date: 2026-04-01
 date-modified: 2026-04-16
 open-graph:
   title: ch14.4-ddpm-design-and-sampling
-  description: "14.4 DDPM Network Architecture and Sampling Process"
+  description: "14.4 DDPM Network Structure and Sampling Process"
 title: "14.4 DDPM Network Structure and Sampling Process"
 order: 4
 ---
@@ -45,7 +45,7 @@ device = dnnl.get_default_device()
 print('Using device:', device)
 ```
 
-## 14.4.1 Timestep $t$: letting the network know which step it is currently at
+## 14.4.1 Timestep $t$: Letting the Network Know Which Step It Is Currently at
 
 Let's first recall the training task. We start from a real image $x_0$, randomly sample a timestep $t$, and then construct the noisy image $x_t$ according to the forward process. Next, we input $(x_t, t)$ into the neural network and let it predict the noise in the current step:
 
@@ -69,7 +69,7 @@ That is to say, the timestep $t$ is part of the model input. This is a kind of c
 
 So DDPM is actually a conditional denoiser, and the condition is the current timestep $t$.
 
-## 14.4.2 Timestep embedding: vector representation of time information
+## 14.4.2 Timestep Embedding: Vector Representation of Time Information
 
 Now that we have the timestep $t$, the next question is: an image is a tensor, while the timestep $t$ is only an integer. How do we turn this integer into information that the neural network can effectively use?
 
@@ -143,7 +143,7 @@ Each row in this figure represents the encoding result of one timestep, and each
 
 Therefore, encoding dimensions with different frequencies together form a multi-scale time representation. This allows the network to both perceive small differences between timesteps and grasp the overall noise stage it is currently in. With the help of this time encoding, the network can distinguish different timesteps and learn to adopt different denoising strategies under different noise levels.
 
-## 14.4.3 U-Net: the classic choice for the denoising network
+## 14.4.3 U-Net: The Classic Choice for the Denoising Network
 
 At this point, we already know what the input and output are. The next question is, what structure should the denoising network use?
 
@@ -151,7 +151,7 @@ In theory, many networks can be tried. But in image diffusion models, the most c
 
 The input of DDPM is $x_t$, and the output is usually a noise tensor $\hat{\epsilon}$ with the same size as the image. That is to say, the model needs to give a prediction for every pixel position, and it also needs to understand both local texture information and global structure information. The design of U-Net exactly meets this need.
 
-### 14.4.3.1 Review of the basic idea of U-Net
+### 14.4.3.1 Review of the Basic Idea of U-Net
 
 In semantic segmentation, we explained the structure of U-Net in detail. Here we briefly review its core idea.
 
@@ -170,7 +170,7 @@ Doing this has several obvious benefits:
 
 And denoising itself requires looking at both the global and local levels. Globally, we need to know roughly what structure this image has; locally, we need to know how the noise near a certain pixel should be corrected. So U-Net and the task of diffusion models naturally fit very well.
 
-### 14.4.3.2 How is timestep information integrated into U-Net?
+### 14.4.3.2 How Is Timestep Information Integrated into U-Net?
 
 Earlier, we said that besides the image $x_t$, the model must also know the current timestep $t$. Then in U-Net, how is this time information usually integrated?
 
@@ -304,7 +304,7 @@ out = unet(x, timesteps)
 print(out.shape)
 ```
 
-## 14.3.4 DDPM sampling process: step-by-step denoising + a little randomness at each step
+## 14.3.4 DDPM Sampling Process: Step-by-Step Denoising + a Little Randomness at Each Step
 
 After training is finished, the model has learned to predict noise under different timesteps. So during generation, we can do this:
 
@@ -399,11 +399,11 @@ dnnl.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
-## 14.4.5 Simplified code for DDPM training and sampling
+## 14.4.5 Simplified Code for DDPM Training and Sampling
 
 At this point, we can write out the entire DDPM implementation process using PyTorch code. To make it convenient to introduce the Hugging Face diffusers library later, the API here stays consistent with the design of diffusers.
 
-### 14.4.5.1 Training process
+### 14.4.5.1 Training Process
 
 The training process is mainly divided into the following steps:
 
@@ -452,7 +452,7 @@ for x0, *_ in train_dl:
 print('Training step completed, loss:', loss.item())
 ```
 
-### 14.4.5.2 Sampling process
+### 14.4.5.2 Sampling Process
 
 The sampling process is mainly divided into the following steps:
 
@@ -491,7 +491,7 @@ print(xt.shape)
 
 Actually, from the sampling process, it is not difficult to see why DDPM sampling is usually relatively slow. Because it is not generated in one step, but needs to run many steps, and each step requires one U-Net forward pass, so the overall generation cost is relatively high. However, it is exactly because of this gradual process that DDPM can generate images with very high quality.
 
-## 14.4.6 Summary of this chapter
+## 14.4.6 Summary
 
 In this section, we looked at the network structure and sampling process of DDPM from the implementation perspective. It can be summarized in the following few sentences:
 

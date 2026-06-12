@@ -46,7 +46,7 @@ dnnl.set_matplotlib_format('highdpi')
 print('PyTorch version:', torch.__version__)
 ```
 
-## 14.3.1 If the forward process can move forward, why can't the reverse process move backward?
+## 14.3.1 If the Forward Process Can Move Forward, Why Can't the Reverse Process Move Backward?
 
 The forward process is designed by ourselves:
 
@@ -190,7 +190,7 @@ You see, we successfully recovered the original image! However, there is another
 
 This is where neural networks come in. We define a parameterized conditional distribution $p_\theta(x_{t-1} \mid x_t)$ and let it approximate $q(x_{t-1} \mid x_t, x_0)$.
 
-## 14.3.2 Reverse process: learning $p_\theta(x_{t-1} \mid x_t)$
+## 14.3.2 Reverse Process: Learning $p_\theta(x_{t-1} \mid x_t)$
 
 In essence, what the reverse process needs to learn is the reverse conditional distribution at each step:
 
@@ -234,7 +234,7 @@ $$
 
 That is, if we directly fix the covariance as $\tilde{\beta}_t I$, it is already enough. So in actual training, we usually only let the model predict the mean $\mu_\theta(x_t, t)$, and fix the covariance $\Sigma_\theta(x_t, t)$ as $\tilde{\beta}_t I$.
 
-## 14.3.3 Why is it finally often written as noise prediction?
+## 14.3.3 Why Is It Finally Often Written as Noise Prediction?
 
 At this point, you may feel that since the reverse distribution is Gaussian and the model mainly learns the mean $\mu_\theta(x_t, t)$, can't we just directly predict this mean during training?
 
@@ -283,7 +283,7 @@ $$
 The derivation here is not rigorous. We only explain intuitively why noise prediction is reasonable, and we have not strictly explained its theoretical basis. From the perspective of rigorous probabilistic modeling, the training objective of DDPM actually comes from the variational lower bound (ELBO), and the common noise prediction loss is an equivalent or approximately equivalent rewriting based on that objective. We will not expand the full derivation here for now, and will explain it in detail later. Interested readers can first look at [@luo2022UnderstandingDiffusionModels, eq. 46-58, 115-130].
 :::
 
-## 14.3.4 DDPM's training objective: a very simple MSE
+## 14.3.4 DDPM's Training Objective: A Very Simple MSE
 
 In the previous section, we wrote the training objective of DDPM as a mean squared error for noise prediction:
 
@@ -303,7 +303,7 @@ However, although it looks like just MSE on the surface, behind it is actually p
 
 You see, isn't it simple? Don't be fooled by it. Later, we will explain in detail where this training objective comes from and how it relates to probabilistic modeling.
 
-## 14.3.5 Chapter summary
+## 14.3.5 Summary
 
 At this point, we can connect Sections 14.1, 14.2, and 14.3 together.
 
