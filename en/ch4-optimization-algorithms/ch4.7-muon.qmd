@@ -4,7 +4,7 @@ date: 2026-06-05
 date-modified: 2026-06-05
 open-graph:
   title: ch4.7-muon
-  description: "4.7 Muon: Orthogonalized Matrix Updates"
+  description: "4.7 Muon: Orthogonalized Updates for Matrix Parameters"
 title: "4.7 Muon: Orthogonalized Updates for Matrix Parameters"
 order: 7
 ---

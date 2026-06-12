@@ -286,7 +286,7 @@ Therefore, Muon is used very differently from AdamW. Muon is mainly suitable for
 
 If you want to try Muon in your own experiments, it is best to keep an AdamW baseline first and clearly separate which parameters are handled by Muon and which are handled by AdamW.
 
-## 4.8.10 Chapter Summary
+## 4.8.10 Summary
 
 In this chapter, we started from the most basic gradient descent and gradually discussed how neural network parameters are updated.
 

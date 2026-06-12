@@ -61,7 +61,7 @@ dnnl.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 
-## 4.3.1 Why might one learning rate not be enough?
+## 4.3.1 Why Might One Learning Rate Not Be Enough?
 
 First consider a two-dimensional parameter:
 
@@ -90,7 +90,7 @@ So intuitively, we may want:
 
 This is the core motivation of Adagrad.
 
-## 4.3.2 The core idea of Adagrad
+## 4.3.2 The Core Idea of Adagrad
 
 The full name of Adagrad is **Adaptive Gradient Algorithm** [@Duchi2011Adagrad]. Its core is to maintain a historical sum of squared gradients for each parameter.
 
@@ -130,7 +130,7 @@ So Adagrad can be understood as:
 
 > **According to the accumulated magnitude of each parameter's past gradients, automatically reduce the learning rate of parameters that have often been updated by large amounts.**
 
-## 4.3.3 Understanding Adagrad through the effective learning rate
+## 4.3.3 Understanding Adagrad Through the Effective Learning Rate
 
 To see this more clearly, let us split the Adagrad update formula apart.
 
@@ -174,7 +174,7 @@ In the early stage of training, Adagrad's adaptive scaling is very helpful. It c
 
 This is also why later RMSprop and Adadelta continue to modify Adagrad: they want to keep the idea of adaptive scaling by parameter, but they do not want the historical sum of squared gradients to accumulate without bound. Otherwise, training becomes overly conservative in the later stage.
 
-## 4.3.4 Comparing the trajectories of Adagrad and SGD
+## 4.3.4 Comparing the Trajectories of Adagrad and SGD
 
 We first use a simple two-dimensional function to observe the behavior of Adagrad:
 
@@ -297,7 +297,7 @@ plt.show()
 
 We can see that the SGD trajectory oscillates more in the $y$ direction, while the Adagrad trajectory converges faster to a better point. This is because Adagrad automatically lowers the effective learning rate in the $y$ direction, making the updates more cautious. However, in the later stage of training, Adagrad's update step becomes very small, and the parameters almost stop moving.
 
-## 4.3.5 Visualizing the effective learning rate of Adagrad
+## 4.3.5 Visualizing the Effective Learning Rate of Adagrad
 
 The most important thing to pay attention to in Adagrad is not the parameter update formula itself, but the effective learning rate it produces.
 
@@ -326,7 +326,7 @@ $$
 
 As long as the gradient is not strictly 0, $s_t$ continues to increase. The larger the denominator, the smaller the effective learning rate. This also shows that Adagrad's adaptivity comes with a cost: it makes updates conservative by continuously accumulating historical gradients, but this accumulation process never forgets the past.
 
-## 4.3.6 Why is Adagrad suitable for sparse features?
+## 4.3.6 Why Is Adagrad Suitable for Sparse Features?
 
 One of the most classic advantages of Adagrad is that it is suitable for handling sparse features.
 
@@ -344,7 +344,7 @@ However, for modern deep neural networks, especially large models that require l
 
 Therefore, Adagrad is more like the starting point of adaptive learning rate methods, rather than the most commonly used default optimizer in modern deep learning.
 
-## 4.3.7 The relationship between Adagrad, SGD, and momentum
+## 4.3.7 The Relationship Between Adagrad, SGD, and Momentum
 
 At this point, we can compare SGD, momentum, and Adagrad together.
 

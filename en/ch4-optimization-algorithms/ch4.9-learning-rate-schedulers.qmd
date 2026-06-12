@@ -4,7 +4,7 @@ date: 2026-06-05
 date-modified: 2026-06-05
 open-graph:
   title: ch4.9-learning-rate-schedulers
-  description: "4.9 Learning Rate Schedulers: Controlling Learning Rate Dynamics During Training"
+  description: "4.9 Learning Rate Schedulers: Letting the Learning Rate Change During Training"
 title: "4.9 Learning Rate Schedulers: Letting the Learning Rate Change During Training"
 order: 9
 ---
@@ -571,7 +571,7 @@ Note that the scheduler parameters must be consistent with how often `scheduler.
 
 After understanding these basic usages, when we see various optimizer + scheduler combinations in real training, their design intent and usage will become much clearer.
 
-## 4.9.12 Chapter Summary
+## 4.9.12 Summary
 
 In this section, we introduced learning rate schedulers. The optimizer decides “given the gradients and learning rate, how should the parameters be updated,” while the scheduler decides “at the current stage of training, what should the learning rate be.”
 
