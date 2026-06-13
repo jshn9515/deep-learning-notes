@@ -78,10 +78,7 @@ $$
 x \rightarrow \text{Encoder} \rightarrow z \rightarrow \text{Decoder} \rightarrow \hat{x}
 $$
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.1-autoencoder.svg" style="height: 225px;">
-  <figcaption>图 1：AutoEncoder 网络结构 [@Mathworks2026AutoEncoder]</figcaption>
-</figure>
+![图 1：AutoEncoder 网络结构 [@Mathworks2026AutoEncoder]](figures/ch13.1-autoencoder.svg){height="225px"}
 
 到这里你可能会问，既然目标只是让输出尽量接近输入，那模型直接学一个恒等映射不就行了吗？
 
