@@ -12,7 +12,7 @@ on:
       - "**/ruff.toml"
       - "**/.git*"
       - "**/.github/*.json"
-      - "**/.github/workflows/dnnl-ci.yml"
+      - "**/.github/workflows/dnnlpy-ci.yml"
       - "**/.github/workflows/manual-publish.yml"
       - "**/.github/workflows/package-notebooks.yml"
       - "**/.github/workflows/render-check.yml"
