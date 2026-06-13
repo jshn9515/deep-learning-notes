@@ -75,7 +75,7 @@ jobs:
       - name: Notify dnnl-notebooks zh sync
         if: ${{ hashFiles('dnnl-zh.tar.gz') != '' }}
         run: |
-          curl -X POST \
+          curl --fail-with-body -X POST \
             -H "Authorization: Bearer ${{ secrets.DNNL_SYNC1_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/jshn9515/dnnl-notebooks/dispatches \
@@ -153,7 +153,7 @@ jobs:
       - name: Notify dnnl-notebooks en sync
         if: ${{ hashFiles('dnnl-en.tar.gz') != '' }}
         run: |
-          curl -X POST \
+          curl --fail-with-body -X POST \
             -H "Authorization: Bearer ${{ secrets.DNNL_SYNC1_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/jshn9515/dnnl-notebooks/dispatches \
