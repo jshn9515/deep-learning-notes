@@ -29,12 +29,7 @@ The content mainly includes:
 - The Hugging Face ecosystem and its practical use
 - Practical notes covering the full workflow from data processing to training, inference, and deployment
 
-To make the material easier to use, I also periodically prepare corresponding Jupyter Notebook versions:
-
-- Monthly Releases: provide relatively stable packaged Notebook versions
-- GitHub Actions Artifacts: provide the latest build outputs
-
-If you want a stable version, please check the Releases page. If you want the latest version, please check the Artifacts in GitHub Actions.
+The corresponding Jupyter Notebook version of this project is available at [jshn9515/dnnl-notebooks](https://github.com/jshn9515/dnnl-notebooks). This repository is kept in sync with the main repository, and the notebooks can be opened directly in Google Colab. GitHub Actions Artifacts can also serve as a backup source for accessing the latest build outputs when repository synchronization fails or is temporarily unavailable.
 
 If you prefer generating Notebook files from the source yourself, you can also install Quarto locally and use the `quarto convert` command to convert `.qmd` files into Jupyter Notebooks. For example:
 

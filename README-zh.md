@@ -29,12 +29,7 @@
 - Hugging Face 生态与实际应用
 - 从数据处理到训练、推理、部署的实践笔记
 
-为了方便读者使用，我会定期整理对应的 Jupyter Notebook 版本：
-
-- 每月发布一次 Release：提供相对稳定的 Notebook 打包版本
-- GitHub Actions Artifacts：提供最新构建结果
-
-如果你想获取稳定版本，请查看 Releases；如果你想获取最新版本，请查看 GitHub Actions 中的 Artifacts。
+项目对应的 Jupyter Notebook 版本在 [jshn9515/dnnl-notebooks](https://github.com/jshn9515/dnnl-notebooks)。这个仓库会与主仓库保持同步，其中的 notebooks 可以直接在 Google Colab 中打开。GitHub Actions Artifacts 也可以作为备用来源，在仓库同步失败或暂时不可用时，用于获取最新的构建输出。
 
 如果你希望自己从源码生成 Notebook，也可以在本地安装 Quarto 后，使用 `quarto convert` 命令将 `.qmd` 文件转换为 Jupyter Notebook。例如：
 
