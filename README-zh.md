@@ -1,7 +1,7 @@
 # 深度学习笔记
 
 [![publish](https://github.com/jshn9515/deep-learning-notes/actions/workflows/publish.yml/badge.svg)](https://github.com/jshn9515/deep-learning-notes/actions/workflows/publish.yml)
-[![build](https://github.com/jshn9515/deep-learning-notes/actions/workflows/dnnl-ci.yml/badge.svg)](https://github.com/jshn9515/deep-learning-notes/actions/workflows/dnnl-ci.yml)
+[![build](https://github.com/jshn9515/deep-learning-notes/actions/workflows/dnnlpy-ci.yml/badge.svg)](https://github.com/jshn9515/deep-learning-notes/actions/workflows/dnnlpy-ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.14-blue)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.12.0-ee4c2c?logo=pytorch)](https://pytorch.org/)
 [![Transformers](https://img.shields.io/badge/Transformers-5.12.0-ffcc00?logo=huggingface)](https://huggingface.co/docs/transformers/index)
@@ -51,7 +51,7 @@ quarto convert path/to/file.qmd
 
 完整依赖见 `requirements.txt`。
 
-在运行相关内容之前，请先进入 `dnnl` 文件夹，按照 `dnnl/README.md` 的说明安装 `dnnl` 库。这个库包含了笔记中使用的一些自定义实现和工具函数，安装完成后才能正常运行相关代码。
+在运行相关内容之前，请先进入 `dnnlpy` 文件夹，按照 `dnnlpy/README.md` 的说明安装 `dnnlpy` 库。这个库包含了笔记中使用的一些自定义实现和工具函数，安装完成后才能正常运行相关代码。
 
 > [!NOTE]
 > 本项目使用 **Transformers v5**。如果你参考的其他仓库或教程基于 v4，API 会有较大差异（如分词器、量化配置等），请参考 [官方迁移指南](https://github.com/huggingface/transformers/blob/main/MIGRATION_GUIDE_V5.md) 进行调整。
@@ -80,7 +80,7 @@ quarto convert path/to/file.qmd
 ## 📄 许可证
 
 - 本仓库中的笔记内容采用 **CC BY-NC 4.0 协议**。
-- `dnnl` 库采用 **MIT 协议**。
+- `dnnlpy` 库采用 **MIT 协议**。
 
 ## ⭐ Star History
 
