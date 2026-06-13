@@ -221,6 +221,7 @@ datasets/
 
 # Quarto
 _site/
+_jupyter/
 _site.zip
 _extensions/
 /.quarto/
