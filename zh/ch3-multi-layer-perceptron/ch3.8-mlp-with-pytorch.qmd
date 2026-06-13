@@ -41,7 +41,7 @@ $$
 ```{python}
 from collections import defaultdict
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -52,7 +52,7 @@ import torchvision.transforms.v2 as v2
 from torch import Tensor
 
 torch.manual_seed(42)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -283,7 +283,7 @@ zero_grad -> forward -> loss -> backward -> step
 接下来用 PyTorch 的标准方式加载 MNIST。
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 
 train_ds = datasets.MNIST(root, train=True, download=True, transform=transform)
@@ -312,7 +312,7 @@ test_dl = utils.DataLoader(test_ds, batch_size=256, shuffle=False)
 为了让代码自动选择合适的加速器，我们可以写：
 
 ```{python}
-device = dnnl.get_default_device()
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 

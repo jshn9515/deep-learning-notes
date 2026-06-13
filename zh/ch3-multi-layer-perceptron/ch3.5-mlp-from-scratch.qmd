@@ -53,7 +53,7 @@ $$
 ```{python}
 from typing import override
 
-import dnnl.models.mlp as mlp
+import dnnlpy.models.mlp as mlp
 import numpy as np
 
 rng = np.random.default_rng(42)

@@ -39,7 +39,7 @@ import warnings
 from typing import override
 
 import numpy as np
-from dnnl.models.mlp import Module
+from dnnlpy.models.mlp import Module
 
 print('NumPy version:', np.__version__)
 ```

@@ -28,7 +28,7 @@ order: 7
 ```{python}
 from collections.abc import Callable
 
-import dnnl.models.mlp as mlp
+import dnnlpy.models.mlp as mlp
 import numpy as np
 import numpy.linalg as npl
 import torch
