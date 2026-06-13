@@ -6,12 +6,12 @@ on:
     paths:
       - "dnnlpy/**"
       - "pyproject.toml"
-      - ".github/workflows/dnnl-ci.yml"
+      - ".github/workflows/dnnlpy-ci.yml"
   pull_request:
     paths:
       - "dnnlpy/**"
       - "pyproject.toml"
-      - ".github/workflows/dnnl-ci.yml"
+      - ".github/workflows/dnnlpy-ci.yml"
   workflow_dispatch:
 
 permissions:
@@ -25,8 +25,12 @@ concurrency:
 
 jobs:
   dnnlpy-test-build:
-    name: Test and Build dnnlpy package
+    name: Test and Build dnnlpy package (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
       - name: Check out repository
@@ -49,8 +53,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv python install 3.14
-          uv sync --python 3.14 --package dnnlpy --extra test
+          uv python install ${{ matrix.python-version }}
+          uv sync --python ${{ matrix.python-version }} --package dnnlpy --extra test
 
       - name: Test dnnlpy package
         run: uv run --package dnnlpy -m pytest dnnlpy/tests
@@ -68,7 +72,7 @@ jobs:
       - name: Upload package artifact
         uses: actions/upload-artifact@v7
         with:
-          name: dnnlpy-package-py314
+          name: dnnlpy-package-py${{ matrix.python-version }}
           path: |
             dist/*.tar.gz
             dist/*.whl
