@@ -14,7 +14,7 @@ execute:
 
 format:
   typst:
-    lang: zh
+    lang: en
     toc: true
     wrap: none
     engine: jupyter
