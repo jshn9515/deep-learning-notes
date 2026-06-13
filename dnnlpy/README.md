@@ -34,7 +34,22 @@ In short, this package serves as the code companion to the tutorial.
 
 ## Installation
 
-This project uses [uv](https://docs.astral.sh/uv/) for package management.
+Install the published package from PyPI with:
+
+```bash
+pip install dnnlpy
+```
+
+To install the latest version directly from this repository, use:
+
+```bash
+uv pip install "git+https://github.com/jshn9515/deep-learning-notes.git#subdirectory=dnnlpy"
+```
+
+> [!NOTE]
+> The package name has been renamed to `dnnlpy` due to PyPI naming constraints.
+
+This project uses [uv](https://docs.astral.sh/uv/) for local package development.
 
 ```bash
 git clone https://github.com/jshn9515/deep-learning-notes.git
