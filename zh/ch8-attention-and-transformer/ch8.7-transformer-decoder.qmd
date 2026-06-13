@@ -39,7 +39,7 @@ Encoder 负责第一件事，decoder 负责第二件事。
 ```{python}
 from collections.abc import Callable
 
-import dnnl.nn as dnn
+import dnnlpy.nn as dnn
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -23,8 +23,8 @@ order: 8
 from collections.abc import Callable
 import math
 
-import dnnl.nn as dnn
-import dnnl.nn.functional as dF
+import dnnlpy.nn as dnn
+import dnnlpy.nn.functional as dF
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
