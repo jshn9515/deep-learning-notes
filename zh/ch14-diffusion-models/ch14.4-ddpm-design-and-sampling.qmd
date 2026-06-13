@@ -321,10 +321,7 @@ print(out.shape)
 
 这是生成阶段的伪代码，同样也很简单：
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.4-ddpm-sampling.png" style="width: 60%;">
-  <figcaption>算法 2：DDPM 生成过程伪代码 [@ho2020DDPM, alg. 2]</figcaption>
-</figure>
+![算法 2：DDPM 生成过程伪代码 [@ho2020DDPM, alg. 2]](figures/ch14.4-ddpm-sampling.png){width="60%"}
 
 如果你仔细看这个伪代码就会发现，我们似乎在采样过程也加入了噪声（就是伪代码里的 $z$）。可是，我们明明不是都要生成图像了吗？为什么还要在每一步去噪的同时加入噪声呢？
 

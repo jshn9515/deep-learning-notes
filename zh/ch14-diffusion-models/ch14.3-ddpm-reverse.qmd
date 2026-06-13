@@ -295,10 +295,7 @@ $$
 
 但是，虽然表面上只是 MSE，背后其实对应着对反向扩散过程的概率建模。也就是说，这个简单的 MSE 损失函数，其实是从一个严谨的概率模型出发，经过一系列等价或近似等价的变换，最终得到的一个非常易于优化的训练目标。与很多深度学习网络不同，它的背后是有理论支撑的。我们用一段伪代码来描述这个过程：
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.3-ddpm-training.png" style="width: 60%;">
-  <figcaption>算法 1：DDPM 训练过程伪代码 [@ho2020DDPM, alg. 1]</figcaption>
-</figure>
+![算法 1：DDPM 训练过程伪代码 [@ho2020DDPM, alg. 1]](figures/ch14.3-ddpm-training.png){width="60%"}
 
 你看，是不是很简单？别被它迷惑了。我们在后面会详细说明这个训练目标是怎么来的，以及它和概率建模之间的关系。
 

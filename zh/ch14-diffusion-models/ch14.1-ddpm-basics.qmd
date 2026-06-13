@@ -122,10 +122,7 @@ $$
 
 于是，当我们想要生成图片时就很简单了：从一个随机高斯噪声开始，反复调用去噪网络，最后生成样本。所以，DDPM 的生成并不是像 GAN 那样直接生成，而是从噪声出发，逐步去噪。
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch14.1-ddpm-chain.png" style="width: 80%;">
-  <figcaption>图 1：DDPM 生成过程示意图 [@ho2020DDPM, fig. 2]</figcaption>
-</figure>
+![图 1：DDPM 生成过程示意图 [@ho2020DDPM, fig. 2]](figures/ch14.1-ddpm-chain.png){width="80%"}
 
 直觉上，我们已经觉得这件事合理了。从概率建模的角度看，它其实也很自然。
 
