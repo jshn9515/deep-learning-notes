@@ -32,8 +32,8 @@ $$
 ```{python}
 import random
 
-import dnnl
-import dnnl.models.ddpm.utils as dutils
+import dnnlpy
+import dnnlpy.models.ddpm.utils as dutils
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
@@ -41,7 +41,7 @@ import torchvision.transforms.v2 as v2
 from torch import Tensor
 
 plt.rc('figure', dpi=100)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -134,7 +134,7 @@ $$
 现在我们来做一个实验。使用 MNIST 数据集，假设我们手里有原始图像 $x_0$，我们先把一张图像按照前向公式加噪到高斯噪声，然后再从高斯噪声一步步走回去。我们来看看这个过程中图像的变化。
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 

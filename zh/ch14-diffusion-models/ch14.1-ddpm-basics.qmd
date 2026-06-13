@@ -20,14 +20,14 @@ order: 1
 ```{python}
 import random
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
 
 plt.rc('figure', dpi=100)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -52,7 +52,7 @@ print('PyTorch version:', torch.__version__)
 下面我们先不训练任何模型，只是拿一张图片来做一件简单的事：每隔几步，就给它加一些高斯噪声，并且噪声水平逐渐增大。我们来看看图像是如何逐渐失去结构的。
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 

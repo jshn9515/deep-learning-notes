@@ -21,7 +21,7 @@ order: 2
 import random
 import time
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
@@ -80,7 +80,7 @@ $$
 所以，这种设计保证了在不断加噪的同时，整体数值尺度不会失控。也就使网络的训练和推理过程更稳定，更容易分析。
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -116,7 +116,7 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
@@ -165,7 +165,7 @@ ax.plot(sqrt_cosine.betas, label='cosine')
 ax.set_yscale('log')
 ax.set_title('Cosine Schedule')
 fig.tight_layout()
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 plt.show()
 ```
 
@@ -216,7 +216,7 @@ $$
 这正好对应我们想要的效果：时间越往后，图像中的原始结构越少，噪声越多。
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -253,7 +253,7 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
