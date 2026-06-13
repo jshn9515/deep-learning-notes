@@ -41,7 +41,7 @@ In this section, we return to PyTorch and reimplement the same MLP with `nn.Modu
 ```{python}
 from collections import defaultdict
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -52,7 +52,7 @@ import torchvision.transforms.v2 as v2
 from torch import Tensor
 
 torch.manual_seed(42)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -283,7 +283,7 @@ This corresponds one-to-one with the NumPy version, except that PyTorch wraps th
 Next, we load MNIST in the standard PyTorch way.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 
 train_ds = datasets.MNIST(root, train=True, download=True, transform=transform)
@@ -312,7 +312,7 @@ In the NumPy version, we sliced mini-batches manually with indices. In PyTorch, 
 To let the code automatically choose a suitable accelerator, we can write:
 
 ```{python}
-device = dnnl.get_default_device()
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 

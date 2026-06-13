@@ -34,13 +34,13 @@ In this section, we first introduce several classic activation functions and der
 ```{python}
 from typing import override
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import numpy as np
-from dnnl.models.mlp import Module
+from dnnlpy.models.mlp import Module
 
 rng = np.random.default_rng(42)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 print('NumPy version:', np.__version__)
 ```
 
