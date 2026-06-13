@@ -16,6 +16,7 @@ format:
   typst:
     lang: en
     toc: true
+    toc-depth: 2
     wrap: none
     engine: jupyter
     code-annotations: below
