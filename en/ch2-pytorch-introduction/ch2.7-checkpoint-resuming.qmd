@@ -32,8 +32,8 @@ import os
 import signal
 from pathlib import Path
 
-import dnnl
-import dnnl.trainingtools as dt
+import dnnlpy
+import dnnlpy.trainingtools as dt
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -93,15 +93,15 @@ To demonstrate checkpoints, we first write a simple MLP to train MNIST.
 First, as in the previous section, set the random seed and get the currently available device:
 
 ```{python}
-dnnl.set_seed(42)
-device = dnnl.get_default_device()
+dnnlpy.set_seed(42)
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
 Then load the MNIST dataset and split out a training set and validation set:
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds_rng = torch.Generator().manual_seed(42)
 
@@ -234,7 +234,7 @@ Now train for a few epochs and save checkpoints along the way.
 
 ```{python}
 checkpoint_path = 'mnist-mlp-checkpoint.pt'
-device = dnnl.get_default_device()
+device = dnnlpy.get_default_device()
 
 model = MLP(num_classes=10).to(device)
 loss_fn = nn.CrossEntropyLoss()

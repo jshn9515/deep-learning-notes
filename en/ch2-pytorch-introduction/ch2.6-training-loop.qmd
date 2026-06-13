@@ -23,7 +23,7 @@ So in this section, we will not start from "what is training." Instead, we will 
 ```{python}
 import random
 
-import dnnl
+import dnnlpy
 import numpy as np
 import torch
 import torch.accelerator as accl
@@ -163,7 +163,7 @@ The training template below will handle this directly inside the functions.
 To keep the focus on the training template itself, we use the MNIST dataset directly here.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds_rng = torch.Generator().manual_seed(42)
 
