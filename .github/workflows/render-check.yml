@@ -53,7 +53,7 @@ jobs:
 
           echo "$changed_files"
 
-          if echo "$changed_files" | grep -Eq '^(dnnl/|pyproject\.toml)'; then
+          if echo "$changed_files" | grep -Eq '^(dnnlpy/|pyproject\.toml)'; then
             echo "external_changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "external_changed=false" >> "$GITHUB_OUTPUT"
@@ -101,7 +101,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: |
             pyproject.toml
-            dnnl/pyproject.toml
+            dnnlpy/pyproject.toml
 
       - name: Install Python dependencies
         run: |

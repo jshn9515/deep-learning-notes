@@ -85,7 +85,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: |
             pyproject.toml
-            dnnl/pyproject.toml
+            dnnlpy/pyproject.toml
 
       - name: Install dependencies
         run: |
