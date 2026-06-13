@@ -42,7 +42,7 @@ $$
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dnnl.models.vit import ViTConvPatchEmbedding
+from dnnlpy.models.vit import ViTConvPatchEmbedding
 from torch import Tensor
 
 print('PyTorch version:', torch.__version__)

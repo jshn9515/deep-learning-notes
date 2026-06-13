@@ -34,11 +34,11 @@ ViT 的答案很直接：使用标准 Transformer Encoder。每一层 encoder bl
 这一节我们就从这个问题出发，逐步实现 ViT Encoder。
 
 ```{python}
-import dnnl.nn as dnn
+import dnnlpy.nn as dnn
 import torch
 import torch.nn as nn
 from torch import Tensor
-from dnnl.models.vit import ViTEmbedding
+from dnnlpy.models.vit import ViTEmbedding
 
 print('PyTorch version:', torch.__version__)
 ```
