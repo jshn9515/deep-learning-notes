@@ -23,8 +23,8 @@ In this section, we explain the overall running process of DDPM from the perspec
 import math
 import random
 
-import dnnl
-import dnnl.models.ddpm as ddpm
+import dnnlpy
+import dnnlpy.models.ddpm as ddpm
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -33,7 +33,7 @@ import torch.nn.functional as F
 import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
-from dnnl.models.ddpm import DDPMScheduler, UNet2DModel
+from dnnlpy.models.ddpm import DDPMScheduler, UNet2DModel
 from torch import Tensor
 
 plt.rc('figure', dpi=100)
@@ -41,7 +41,7 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-device = dnnl.get_default_device()
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
@@ -135,7 +135,7 @@ ax.set_yticks(yticks + 0.5, timesteps.tolist())
 ax.set_xlabel('Embedding Dimension')
 ax.set_title('Illustration of sinusoidal time embedding')
 fig.colorbar(im)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 plt.show()
 ```
 
@@ -342,7 +342,7 @@ If there is no randomness at all, the sampling path may become too rigid. Proper
 Of course, later there were also many variants, such as DDIM, that rewrote the random sampling process of DDPM into an update process that can be deterministic. But in the most basic DDPM, **step-by-step sampling + a little randomness at each step** is the standard practice.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -392,7 +392,7 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 

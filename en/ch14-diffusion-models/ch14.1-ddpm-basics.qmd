@@ -20,14 +20,14 @@ In this section, we will not rush into the complete derivation first, but first 
 ```{python}
 import random
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
 
 plt.rc('figure', dpi=100)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -52,7 +52,7 @@ This is the most core idea of DDPM.
 Below, we first do not train any model. We just take one image and do a simple thing: every few steps, add some Gaussian noise to it, and gradually increase the noise level. Let's look at how the image gradually loses its structure.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 

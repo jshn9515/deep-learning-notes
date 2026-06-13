@@ -21,7 +21,7 @@ In this section, we will make the forward diffusion process clear. This part is 
 import random
 import time
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
@@ -80,7 +80,7 @@ In this way, we can understand each step as a kind of controlled interpolation. 
 So this design ensures that while noise is continuously added, the overall numerical scale will not go out of control. It also makes the training and inference processes of the network more stable and easier to analyze.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -116,7 +116,7 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
@@ -165,7 +165,7 @@ ax.plot(sqrt_cosine.betas, label='cosine')
 ax.set_yscale('log')
 ax.set_title('Cosine Schedule')
 fig.tight_layout()
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 plt.show()
 ```
 
@@ -216,7 +216,7 @@ The first half of this formula, namely $\sqrt{\bar{\alpha}_t}\,x_0$, represents 
 This corresponds exactly to the effect we want: the later the time step, the less original structure remains in the image, and the more noise there is.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
@@ -253,7 +253,7 @@ for i, ax in enumerate(axes):
     ax.axis('off')
     ax.set_title(f't={idx[i]}', fontsize=10)
 fig.tight_layout(pad=0.5)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 

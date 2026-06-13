@@ -33,8 +33,8 @@ In this section, we will clarify three things:
 ```{python}
 import random
 
-import dnnl
-import dnnl.models.ddpm.utils as dutils
+import dnnlpy
+import dnnlpy.models.ddpm.utils as dutils
 import matplotlib.pyplot as plt
 import torch
 import torchvision.datasets as datasets
@@ -42,7 +42,7 @@ import torchvision.transforms.v2 as v2
 from torch import Tensor
 
 plt.rc('figure', dpi=100)
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -135,7 +135,7 @@ For the full proof, see [@luo2022UnderstandingDiffusionModels, eq. 71-84]. Note 
 Now let's do an experiment. Using the MNIST dataset, suppose we have the original image $x_0$. We first add noise to one image according to the forward formula until it becomes Gaussian noise, and then walk back step by step from Gaussian noise. Let's see how the image changes during this process.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 ds = datasets.MNIST(root, train=False, download=True, transform=transform)
 
