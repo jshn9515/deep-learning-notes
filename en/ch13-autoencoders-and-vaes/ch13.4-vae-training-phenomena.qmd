@@ -34,14 +34,14 @@ In this section, we do not only talk about conclusions. Instead, we directly obs
 ```{python}
 from collections import defaultdict
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
-from dnnl.models.vae import VAE
+from dnnlpy.models.vae import VAE
 from sklearn.manifold import TSNE
 from torchmetrics.aggregation import MeanMetric
 from torchvision.utils import make_grid
@@ -51,8 +51,8 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-dnnl.set_seed(42)
-device = dnnl.get_default_device()
+dnnlpy.set_seed(42)
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
@@ -61,7 +61,7 @@ print('Using device:', device)
 Here we create the MNIST dataset.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 train_ds = datasets.MNIST(root, train=True, download=True, transform=transform)
 test_ds = datasets.MNIST(root, train=False, download=True, transform=transform)
@@ -138,7 +138,7 @@ for ax in axes:
 axes[0].legend(loc='upper right')
 axes[1].legend(loc='lower right')
 axes[1].set_yscale('log')
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 plt.show()
 ```
 
@@ -173,7 +173,7 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Original (top) vs Reconstructed (bottom)')
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
@@ -199,7 +199,7 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Randomly Generated Images from Latent Space')
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
@@ -232,7 +232,7 @@ fig.colorbar(scatter)
 ax.set_xlabel('z1')
 ax.set_ylabel('z2')
 ax.set_title('Latent means of test samples')
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 plt.show()
 ```
 
@@ -271,7 +271,7 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(x_hat, cmap='gray')
 ax.axis('off')
 ax.set_title('Interpolation in Latent Space')
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
@@ -341,7 +341,7 @@ for i, label in enumerate(row_labels):
 
 ax.axis('off')
 ax.set_title('Original vs Reconstructions with Different β Values')
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 

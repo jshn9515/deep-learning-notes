@@ -22,7 +22,7 @@ This process looks simple, but it is important. Because it tells us that neural 
 ```{python}
 import math
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -40,8 +40,8 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-dnnl.set_seed(42)
-device = dnnl.get_default_device()
+dnnlpy.set_seed(42)
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
@@ -213,7 +213,7 @@ You can see that the whole training process only does three things:
 This is the core training logic of AutoEncoder.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 
 train_ds = datasets.MNIST(root, train=True, download=True, transform=transform)
@@ -268,7 +268,7 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Original (top) vs Reconstructed (bottom)')
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
@@ -300,7 +300,7 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(grid, cmap='gray')
 ax.axis('off')
 ax.set_title('Randomly Generated Images from Latent Space')
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
 
@@ -331,7 +331,7 @@ ax.set_xlabel('z1')
 ax.set_ylabel('z2')
 ax.set_title('Latent means of test samples')
 fig.colorbar(scatter)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 plt.show()
 ```
 
