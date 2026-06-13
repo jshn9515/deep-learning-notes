@@ -1,0 +1,104 @@
+project:
+  type: book
+  output-dir: "_typst/zh"
+  render:
+    - "*.qmd"
+  pre-render:
+    - "utils/render_mermaid.py"
+  post-render:
+    - "utils/clean_mermaid_svg.py"
+
+execute:
+  enabled: false
+
+format:
+  typst:
+    lang: zh
+    toc: true
+    wrap: none
+    engine: jupyter
+    code-annotations: below
+    include-before-body:
+      - "utils/typst-header-zh.typ"
+
+book:
+  chapters:
+    - index.qmd
+    - part: "Chapter 1: 深度学习简介"
+      chapters:
+        - "zh/ch1-introduction/ch1.1-neural-network.qmd"
+        - "zh/ch1-introduction/ch1.3-computation-graph.qmd"
+    - part: "Chapter 2: PyTorch 入门"
+      chapters:
+        - "zh/ch2-pytorch-introduction/ch2.1-automatic-differentiation.qmd"
+        - "zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.qmd"
+        - "zh/ch2-pytorch-introduction/ch2.3-dataset-and-dataloader.qmd"
+        - "zh/ch2-pytorch-introduction/ch2.4-nn-module.qmd"
+        - "zh/ch2-pytorch-introduction/ch2.5-optimizer.qmd"
+        - "zh/ch2-pytorch-introduction/ch2.6-training-loop.qmd"
+        - "zh/ch2-pytorch-introduction/ch2.7-checkpoint-resuming.qmd"
+    - part: "Chapter 3: 多层感知机：从单层到深层的非线性建模"
+      chapters:
+        - "zh/ch3-multi-layer-perceptron/ch3.1-from-linear-model-to-mlp.qmd"
+        - "zh/ch3-multi-layer-perceptron/ch3.2-activation-functions.qmd"
+        - "zh/ch3-multi-layer-perceptron/ch3.3-softmax-cross-entropy.qmd"
+        - "zh/ch3-multi-layer-perceptron/ch3.4-linear-layer.qmd"
+        - "zh/ch3-multi-layer-perceptron/ch3.5-mlp-from-scratch.qmd"
+        - "zh/ch3-multi-layer-perceptron/ch3.6-train-mlp-on-mnist.qmd"
+        - "zh/ch3-multi-layer-perceptron/ch3.7-gradient-checking.qmd"
+        - "zh/ch3-multi-layer-perceptron/ch3.8-mlp-with-pytorch.qmd"
+    - part: "Chapter 4: 优化算法：神经网络如何更新参数"
+      chapters:
+        - "zh/ch4-optimization-algorithms/ch4.1-gradient-descent.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.2-momentum-nesterov.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.3-adagrad.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.4-rmsprop-adadelta.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.5-adam.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.6-adamw.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.7-muon.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.8-optimizer-practice.qmd"
+        - "zh/ch4-optimization-algorithms/ch4.9-learning-rate-schedulers.qmd"
+    - part: "Chapter 8: Attention 与 Transformer：从动态检索到序列建模"
+      chapters:
+        - "zh/ch8-attention-and-transformer/ch8.1-bahdanau-attention.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.2-cross-attention.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.3-self-attention.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.4-multi-head-attention.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.5-positional-encoding.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.6-transformer-encoder.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.7-transformer-decoder.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.8-encoder-decoder-transformer.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.9-kv-cache.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.10-transformer-architectures.qmd"
+        - "zh/ch8-attention-and-transformer/ch8.11-hugging-face-transformers-api.qmd"
+    - part: "Chapter 10: 高效 Attention 实现：从 Memory-Efficient Attention 到 FlashAttention"
+      chapters:
+        - "zh/ch10-efficient-attention/ch10.1-attention-is-io-bound.qmd"
+        - "zh/ch10-efficient-attention/ch10.2-flash-attention-v1.qmd"
+    - part: "Chapter 11: Vision Transformer：从图像分类到视觉序列建模"
+      chapters:
+        - "zh/ch11-vision-transformers/ch11.1-from-cnn-to-vit.qmd"
+        - "zh/ch11-vision-transformers/ch11.2-patch-embedding.qmd"
+        - "zh/ch11-vision-transformers/ch11.3-positional-embedding.qmd"
+        - "zh/ch11-vision-transformers/ch11.4-vit-encoder.qmd"
+        - "zh/ch11-vision-transformers/ch11.5-vit-as-backbone.qmd"
+    - part: "Chapter 12: GAN：在对抗中学习生成"
+      chapters:
+        - "zh/ch12-generative-adversarial-networks/ch12.1-gan-basics.qmd"
+    - part: "Chapter 13: VAE：从压缩重建到概率生成"
+      chapters:
+        - "zh/ch13-autoencoders-and-vaes/ch13.1-autoencoder.qmd"
+        - "zh/ch13-autoencoders-and-vaes/ch13.2-variational-autoencoder.qmd"
+        - "zh/ch13-autoencoders-and-vaes/ch13.3-elbo-vae-objective.qmd"
+        - "zh/ch13-autoencoders-and-vaes/ch13.4-vae-training-phenomena.qmd"
+        - "zh/ch13-autoencoders-and-vaes/ch13.5-vae-limitations-and-future-directions.qmd"
+    - part: "Chapter 14: Diffusion Models：从去噪到生成"
+      chapters:
+        - "zh/ch14-diffusion-models/ch14.1-ddpm-basics.qmd"
+        - "zh/ch14-diffusion-models/ch14.2-ddpm-forward.qmd"
+        - "zh/ch14-diffusion-models/ch14.3-ddpm-reverse.qmd"
+        - "zh/ch14-diffusion-models/ch14.4-ddpm-design-and-sampling.qmd"
+        - "zh/ch14-diffusion-models/ch14.5-elbo-for-ddpm.qmd"
+    - part: "Chapter 15: 视觉语言模型：从图文对齐到多模态对话"
+      chapters:
+        - "zh/ch15-vision-language-models/ch15.1-clip.qmd"
