@@ -3,6 +3,11 @@ project:
   output-dir: _jupyter
   render:
     - "*.qmd"
+  pre-render:
+    - "utils/render_mermaid.py"
+  post-render:
+    - "utils/clean_mermaid_svg.py"
+    - "utils/generate_toc.py"
 
 execute:
   enabled: false
