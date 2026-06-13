@@ -34,7 +34,7 @@ In this section, we will look at how the Transformer encoder turns self-attentio
 ```{python}
 from collections.abc import Callable
 
-import dnnl.nn as dnn
+import dnnlpy.nn as dnn
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

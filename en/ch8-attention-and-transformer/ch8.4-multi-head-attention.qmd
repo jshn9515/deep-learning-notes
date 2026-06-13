@@ -28,7 +28,7 @@ This is the problem that multi-head attention wants to solve. Its core idea is v
 ```{python}
 import math
 
-import dnnl
+import dnnlpy
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -36,7 +36,7 @@ import torch.nn as nn
 from torch import Tensor
 
 plt.rc('figure', dpi=100)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 
