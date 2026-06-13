@@ -26,7 +26,7 @@ This is precisely the key of FlashAttention v1. It uses the idea of online softm
 ```{python}
 import math
 
-import dnnl.nn.functional as dF
+import dnnlpy.nn.functional as dF
 import torch
 import torch.nn.functional as F
 
