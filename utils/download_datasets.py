@@ -1,3 +1,5 @@
+"""Download datasets used in the notes."""
+
 import torchvision.datasets as datasets
 
 import dnnl
