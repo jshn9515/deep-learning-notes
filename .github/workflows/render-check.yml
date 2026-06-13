@@ -16,6 +16,7 @@ on:
       - "**/.github/workflows/manual-publish.yml"
       - "**/.github/workflows/package-notebooks.yml"
       - "**/.github/workflows/publish.yml"
+      - "**/.github/workflows/release*.yml"
 
 env:
   DNNL_DATA_ROOT: ${{ github.workspace }}/datasets
