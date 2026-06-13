@@ -23,7 +23,7 @@ In this section, we will make the core idea of CLIP clear. You will see that it 
 import os
 import random
 
-import dnnl
+import dnnlpy
 import IPython.display as ipy
 import matplotlib.pyplot as plt
 import PIL.Image as Image
@@ -41,7 +41,7 @@ print('Transformers version:', transformers.__version__)
 ```
 
 ```{python}
-device = dnnl.get_default_device()
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
@@ -178,7 +178,7 @@ sns.heatmap(
 ax.set_xlabel('text')
 ax.set_ylabel('image')
 ax.set_title('CLIP similarity matrix')
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 plt.show()
 ```
 
@@ -263,7 +263,7 @@ That is to say, CLIP does not use a fixed linear layer to output categories like
 Of course, there is also a very important practical detail here. The text encoder of the original OpenAI CLIP was mainly trained on English data, so in many cases English prompts work obviously better than Chinese prompts. This is not a limitation of the CLIP theory itself, but a result of the training corpus distribution.
 
 ```{python}
-root = dnnl.get_data_root()
+root = dnnlpy.get_data_root()
 dataset = datasets.Caltech101(root, target_type='category', download=True)
 idx = random.randrange(len(dataset))
 image, label = dataset[idx]
@@ -284,7 +284,7 @@ ax = fig.add_subplot(1, 1, 1)
 ax.imshow(image)
 ax.axis('off')
 ax.set_title(f'GT: {dataset.categories[label]}')
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 
 z = zip(pred_names, pred_scores, strict=True)
@@ -346,7 +346,7 @@ ax.imshow(attacked_img)
 ax.set_title('apple with "iPod" text')
 ax.axis('off')
 fig.tight_layout()
-dnnl.set_matplotlib_format('highdpi')
+dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 
 z = zip(prompts, clean_probs, attacked_probs, strict=True)
