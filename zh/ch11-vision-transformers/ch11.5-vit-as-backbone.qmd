@@ -465,9 +465,7 @@ After fine-tuning:
  'eval_steps_per_second': 1.965}
 ```
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch11.5-vit-finetuning.svg" style="width: 70%;">
-</figure>
+![](figures/ch11.5-vit-finetuning.svg){width="70%"}
 
 这个例子的对比重点在于观察同一个预训练 ViT 在下游数据集上的变化：
 

@@ -123,10 +123,7 @@ $$
 
 从模块顺序上看，一个 encoder block 的计算流程是：
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch11.4-vit-encoder.svg" style="height: 750px;">
-  <figcaption>图 1：ViT Encoder 模型结构</figcaption>
-</figure>
+![图 1：ViT Encoder 模型结构](figures/ch11.4-vit-encoder.svg){height="750px"}
 
 这和我们前面讲过的 Transformer Encoder 非常接近。只不过现在 token 不再是词，而是图像 patch。
 

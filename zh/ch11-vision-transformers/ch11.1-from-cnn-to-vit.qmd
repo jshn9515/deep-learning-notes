@@ -172,10 +172,7 @@ $$
 \end{aligned}
 $$
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch11.1-vit.png" style="width: 70%;">
-  <figcaption>图 1：ViT 模型结构 [@dosovitskiy2021ViT, fig. 1]</figcaption>
-</figure>
+![图 1：ViT 模型结构 [@dosovitskiy2021ViT, fig. 1]](figures/ch11.1-vit.png){width="70%"}
 
 给定一张图像，ViT 会先把它切成多个 patch；然后把每个 patch 展平，并通过线性层映射成一个固定维度的向量；接着加入位置编码，让模型知道每个 patch 来自哪里；最后，把这些 patch embedding 输入 Transformer Encoder，通过 self-attention 建模不同 patch 之间的关系。
 

@@ -219,10 +219,7 @@ $$
 
 这样，我们就得到了一个 patch 序列。
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch11.2-unfold.png">
-  <figcaption>图 1：Tensor.unfold 计算流程</figcaption>
-</figure>
+![图 1：Tensor.unfold 计算流程](figures/ch11.2-unfold.png)
 
 
 ::: {.callout-tip}
