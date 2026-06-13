@@ -79,10 +79,7 @@ We can decompose this function into several simple operations:
 
 We can represent this process as a computational graph:
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch1.3-computation-graph.svg" style="width: 60%;">
-  <figcaption>Figure 1: A simple computational graph</figcaption>
-</figure>
+![Figure 1: A simple computational graph](figures/ch1.3-computation-graph.svg){width="60%"}
 
 In this computational graph, circles represent variables, boxes represent operations, and arrows represent the direction of data flow. The inputs $x$ and $y$ obtain the intermediate variable $z$ through the multiplication operation, and then $z$ obtains the output $f$ through the sine operation.
 
