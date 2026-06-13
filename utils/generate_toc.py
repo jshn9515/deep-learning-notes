@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-QUARTO_CONFIG = ROOT / '_quarto.yml'
+QUARTO_CONFIG = ROOT / '_quarto-html.yml'
 TITLE = 'Deep Learning Notes'
 
 FRONT_MATTER_TITLE_RE = re.compile(r'^title:\s*(?P<title>.+?)\s*$')
