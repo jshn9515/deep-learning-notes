@@ -46,4 +46,4 @@ jobs:
         run: uv build --package dnnlpy --out-dir dist
 
       - name: Publish to PyPI
-        run: uv publish --publish-url https://test.pypi.org/legacy/
+        run: uv publish
