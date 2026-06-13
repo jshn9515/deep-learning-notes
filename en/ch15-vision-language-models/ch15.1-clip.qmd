@@ -74,10 +74,7 @@ CLIP's structure can be summarized into two parts.
 - An image encoder $f_\theta(\cdot)$, which encodes images into vectors (for example, ResNet or ViT);
 - A text encoder $g_\phi(\cdot)$, which encodes text into vectors (for example, Transformer).
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch15.1-clip.png" style="width: 60%;">
-  <figcaption>Figure 1: CLIP network structure [@radford2021CLIP, fig. 1]</figcaption>
-</figure>
+![Figure 1: CLIP network structure [@radford2021CLIP, fig. 1]](figures/ch15.1-clip.png){width="60%"}
 
 Given an image $I_i$ and a text sentence $T_j$, we first get their features respectively:
 
@@ -257,10 +254,7 @@ But CLIP is different. What it outputs is not fixed category probabilities, but 
 
 Then encode these texts into vectors as well, and compute their similarity with the image vector. Whichever prompt is the closest, the image is assigned to that category.
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch15.1-clip-zero-shot.png" width="60%">
-  <figcaption>Figure 2: CLIP zero-shot classification [@radford2021CLIP, fig. 1]</figcaption>
-</figure>
+![Figure 2: CLIP zero-shot classification [@radford2021CLIP, fig. 1]](figures/ch15.1-clip-zero-shot.png){width="60%"}
 
 That is to say, CLIP does not use a fixed linear layer to output categories like traditional classification models. Instead, during inference, it uses a group of text descriptions to generate the corresponding category vectors, and then makes the judgment according to the similarity between the image and these vectors. This is the root of zero-shot:
 
