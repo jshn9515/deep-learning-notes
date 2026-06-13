@@ -119,7 +119,7 @@ def set_figure_format(shell: InteractiveShell, fmt: str, dpi_ratio: int = 3) -> 
     Args:
         shell (InteractiveShell):
             The main IPython instance.
-        format (str):
+        fmt (str):
             One figure format to enable: {'png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf'}.
         dpi_ratio (int, default: 3):
             The dpi ratio to use for 'highdpi' format. Default is 3, which means
