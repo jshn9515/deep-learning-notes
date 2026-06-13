@@ -20,7 +20,7 @@ from matplotlib.figure import Figure
 if TYPE_CHECKING:
     from IPython.core.interactiveshell import InteractiveShell
 
-type FigureFormat = Literal['png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf']
+type FigureFormat = Literal['png', 'retina', 'highdpi', 'jpg', 'jpeg', 'svg', 'pdf']
 
 __all__ = ['set_matplotlib_format']
 
