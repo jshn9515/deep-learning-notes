@@ -82,10 +82,7 @@ $$
 
 从整体结构上看，每个 head 都会先通过各自的线性投影得到一组 $Q$、$K$、$V$，然后独立计算 scaled dot-product attention。多个 head 的输出会被拼接起来，最后再经过一个线性层，融合成最终的 multi-head attention 输出。
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.4-mha.png" style="height: 300px;">
-  <figcaption>图 1：MHA 计算示意图 [@vaswani2023Attention, fig. 2]</figcaption>
-</figure>
+![图 1：MHA 计算示意图 [@vaswani2023Attention, fig. 2]](figures/ch8.4-mha.png){height="300px"}
 
 对于第 $i$ 个 head，会有自己独立的一组线性投影矩阵：
 

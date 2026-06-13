@@ -271,10 +271,7 @@ $$
 \operatorname{Attention}(Q, K, V) = \operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
 $$
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.2-sdpa.png" style="height: 250px;">
-  <figcaption>图 1：SDPA 计算示意图 [@vaswani2023Attention, fig. 2]</figcaption>
-</figure>
+![图 1：SDPA 计算示意图 [@vaswani2023Attention, fig. 2]](figures/ch8.2-sdpa.png){height="250px"}
 
 它和最原始的 attention 的差异，就是把分数除以 $\sqrt{d_k}$。
 

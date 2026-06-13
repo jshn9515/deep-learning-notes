@@ -271,10 +271,7 @@ $$
 
 相比没有 KV cache 时每一步重新计算完整的 $Q_{\le t}K_{\le t}^{\top}$，这部分从累计 $O(T^3d)$ 降到了 $O(T^2d)$。
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.9-kv-cache.svg">
-  <figcaption>图 1：KV Cache 示意图</figcaption>
-</figure>
+![图 1：KV Cache 示意图](figures/ch8.9-kv-cache.svg)
 
 因此，有 KV cache 时，模型并不是不再做 attention，而是只计算当前新 token 对历史 token 的 attention。历史 token 的 key/value 已经保存在缓存里，不需要重新计算；历史 token 自己对应的 attention 行也不需要重新计算。
 

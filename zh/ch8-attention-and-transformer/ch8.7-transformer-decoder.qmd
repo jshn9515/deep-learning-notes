@@ -253,10 +253,7 @@ $$
 
 因此，一个 decoder block 可以写成：
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.7-decoder-block.svg" alt="图 1：Transformer Decoder Block 结构图" style="height: 800px;">
-  <figcaption>图 1：Transformer Decoder Block 结构图</figcaption>
-</figure>
+![图 1：Transformer Decoder Block 结构图](figures/ch8.7-decoder-block.svg){height="800px"}
 
 和 encoder block 相比，decoder block 多了一个 cross-attention，并且 self-attention 需要 causal mask。
 

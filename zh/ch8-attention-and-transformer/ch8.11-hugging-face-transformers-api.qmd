@@ -62,10 +62,7 @@ ipy.clear_output()
 
 整体流程可以写成：
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.11-transformers-pipeline.svg">
-  <figcaption>图 1：Hugging Face Transformers 的基本调用流程</figcaption>
-</figure>
+![图 1：Hugging Face Transformers 的基本调用流程](figures/ch8.11-transformers-pipeline.svg)
 
 也就是：
 

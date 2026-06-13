@@ -94,10 +94,7 @@ $$
 
 完整 Encoder-Decoder Transformer 的信息流可以写成：
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.8-transformer.png" alt="图 1：Transformer 网络结构图" style="height: 600px;">
-  <figcaption>图 1：Transformer 网络结构图 [@vaswani2023Attention, fig. 1]</figcaption>
-</figure>
+![图 1：Transformer 网络结构图 [@vaswani2023Attention, fig. 1]](figures/ch8.8-transformer.png){height="600px"}
 
 图中左半部分是 encoder，右半部分是 decoder。
 

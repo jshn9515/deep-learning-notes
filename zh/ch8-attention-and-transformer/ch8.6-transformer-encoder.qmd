@@ -93,10 +93,7 @@ $$
 
 从数据流上看，就是：
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch8.6-encoder-block.svg" alt="图 1：Transformer Encoder Block 结构图" style="height: 600px;">
-  <figcaption>图 1：Transformer Encoder Block 结构图</figcaption>
-</figure>
+![图 1：Transformer Encoder Block 结构图](figures/ch8.6-encoder-block.svg){height="600px"}
 
 这就是最基本的 encoder block 结构。
 
