@@ -40,8 +40,8 @@ $$
 这一节我们不自己实现 scheduler，而是从直觉上总结常见学习率调度策略，并在最后用 PyTorch 演示它们的基本用法。
 
 ```{python}
-import dnnl
-import dnnl.optim as dopt
+import dnnlpy
+import dnnlpy.optim as dopt
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -50,7 +50,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr
 
 plt.rc('figure', dpi=100)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 

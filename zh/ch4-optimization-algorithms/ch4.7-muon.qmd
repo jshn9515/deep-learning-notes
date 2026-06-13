@@ -38,7 +38,7 @@ Muon 的全称是 **MomentUm Orthogonalized by Newton-Schulz**。从名字就能
 from collections.abc import Iterable
 from typing import override
 
-import dnnl.optim as dopt
+import dnnlpy.optim as dopt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

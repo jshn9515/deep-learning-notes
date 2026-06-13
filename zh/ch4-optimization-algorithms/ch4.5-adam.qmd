@@ -49,8 +49,8 @@ $$
 from collections.abc import Iterable
 from typing import override
 
-import dnnl
-import dnnl.optim as dopt
+import dnnlpy
+import dnnlpy.optim as dopt
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -58,7 +58,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 plt.rc('figure', dpi=100)
-dnnl.set_matplotlib_format('svg')
+dnnlpy.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 
