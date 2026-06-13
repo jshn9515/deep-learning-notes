@@ -17,8 +17,8 @@
     fallback: false,
     top-edge: "bounds",
     bottom-edge: "bounds",
-    lang: "zh",
-    region: "cn",
+    lang: "en",
+    region: "us",
 )
 
 #set par(
