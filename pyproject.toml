@@ -50,4 +50,4 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.uv.workspace]
-members = ["dnnl"]
+members = ["dnnlpy"]
