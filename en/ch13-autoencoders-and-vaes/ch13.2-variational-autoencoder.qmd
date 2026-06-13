@@ -64,10 +64,7 @@ As a result, one sample $x$ no longer corresponds to a single point in the laten
 
 The following is a schematic diagram of the VAE network structure:
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.2-vae.png" style="width: 70%;">
-  <figcaption>Figure 1: VAE network structure [@IBM2026VAE]</figcaption>
-</figure>
+![Figure 1: VAE network structure [@IBM2026VAE]](figures/ch13.2-vae.png){width="70%"}
 
 So, the latent space of a normal AutoEncoder is like assigning each image an exact coordinate. What VAE wants to do is to let the neighborhood around these coordinate points also carry some probability density, so that each image corresponds to a small cloud. At the same time, these clouds should be connected and smooth as much as possible, and should overall stay close to a simple prior distribution, usually a standard normal distribution. In this way, the latent space is no longer fragmented, but becomes more continuous and more suitable for sampling.
 

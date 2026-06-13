@@ -77,10 +77,7 @@ $$
 x \rightarrow \text{Encoder} \rightarrow z \rightarrow \text{Decoder} \rightarrow \hat{x}
 $$
 
-<figure class="figure" style="text-align: center;">
-  <img src="figures/ch13.1-autoencoder.svg" style="height: 225px;">
-  <figcaption>Figure 1: AutoEncoder Network Structure [@Mathworks2026AutoEncoder]</figcaption>
-</figure>
+![Figure 1: AutoEncoder Network Structure [@Mathworks2026AutoEncoder]](figures/ch13.1-autoencoder.svg){height="225px"}
 
 At this point you may ask: if the goal is only to make the output as close as possible to the input, why does the model not simply learn an identity mapping?
 
