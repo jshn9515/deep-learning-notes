@@ -138,6 +138,13 @@ jobs:
             git push
           fi
 
+      - name: Upload freeze artifact
+        if: ${{ hashFiles('_freeze/**') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: quarto-cache
+          path: _freeze/
+
       - name: Setup Pages
         uses: actions/configure-pages@v6
 
