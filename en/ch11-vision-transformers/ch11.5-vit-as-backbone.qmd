@@ -36,7 +36,7 @@ In this section, we start from this question and discuss how ViT is used as a vi
 import math
 from pprint import pprint
 
-import dnnl
+import dnnlpy
 import evaluate
 import IPython.display as ipy
 import numpy as np
@@ -51,8 +51,8 @@ print('PyTorch version:', torch.__version__)
 ```
 
 ```{python}
-dnnl.set_seed(42)
-device = dnnl.get_default_device()
+dnnlpy.set_seed(42)
+device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 

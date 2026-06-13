@@ -34,11 +34,11 @@ ViT's answer is direct: use a standard Transformer Encoder. Each encoder block c
 In this section, we start from this problem and implement the ViT Encoder step by step.
 
 ```{python}
-import dnnl.nn as dnn
+import dnnlpy.nn as dnn
 import torch
 import torch.nn as nn
 from torch import Tensor
-from dnnl.models.vit import ViTEmbedding
+from dnnlpy.models.vit import ViTEmbedding
 
 print('PyTorch version:', torch.__version__)
 ```
