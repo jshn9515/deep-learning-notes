@@ -1,19 +1,22 @@
 name: Convert and Package Notebooks
 
 on:
-  schedule:
-    - cron: "0 0 1 * *"
-      timezone: "America/New_York"
   push:
     branches: [main]
     paths:
       - "zh/**"
       - "en/**"
+      - "_quarto-jupyter.yml"
+      - "utils/render_mermaid.py"
+      - "utils/clean_attachments.py"
+      - "utils/clean_mermaid_svg.py"
       - ".github/workflows/package-notebooks.yml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   attestations: write
 
@@ -69,8 +72,8 @@ jobs:
         if: ${{ hashFiles('_jupyter/zh/**/*.ipynb') != '' }}
         uses: actions/upload-artifact@v7
         with:
-          name: dnnl-zh
           path: dnnl-zh.tar.gz
+          archive: false
 
       - name: Notify dnnl-notebooks zh sync
         if: ${{ hashFiles('dnnl-zh.tar.gz') != '' }}
@@ -84,11 +87,20 @@ jobs:
               "client_payload": {
                 "source_repo": "jshn9515/deep-learning-notes",
                 "run_id": "${{ github.run_id }}",
-                "artifact_name": "dnnl-zh",
+                "artifact_name": "dnnl-zh.tar.gz",
                 "archive_name": "dnnl-zh.tar.gz",
                 "lang": "zh"
               }
             }'
+
+      - name: Upload zh Notebooks to GitHub Release
+        if: ${{ github.event_name == 'release' && hashFiles('dnnl-zh.tar.gz') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dnnl-zh.tar.gz \
+            --clobber
 
   package-en:
     name: Package English Notebooks
@@ -147,8 +159,8 @@ jobs:
         if: ${{ hashFiles('_jupyter/en/**/*.ipynb') != '' }}
         uses: actions/upload-artifact@v7
         with:
-          name: dnnl-en
           path: dnnl-en.tar.gz
+          archive: false
 
       - name: Notify dnnl-notebooks en sync
         if: ${{ hashFiles('dnnl-en.tar.gz') != '' }}
@@ -162,8 +174,17 @@ jobs:
               "client_payload": {
                 "source_repo": "jshn9515/deep-learning-notes",
                 "run_id": "${{ github.run_id }}",
-                "artifact_name": "dnnl-en",
+                "artifact_name": "dnnl-en.tar.gz",
                 "archive_name": "dnnl-en.tar.gz",
                 "lang": "en"
               }
             }'
+
+      - name: Upload en Notebooks to GitHub Release
+        if: ${{ github.event_name == 'release' && hashFiles('dnnl-en.tar.gz') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dnnl-en.tar.gz \
+            --clobber
