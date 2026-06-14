@@ -1,8 +1,10 @@
+#import "@preview/showybox:2.0.4": showybox
+
 #set document(
-  title: "Deep Learning Notes",
-  author: "jshn9515",
-  description: "A collection of notes and code examples for deep learning concepts and techniques.",
-  keywords: (
+    title: "Deep Learning Notes",
+    author: "jshn9515",
+    description: "A collection of notes and code examples for deep learning concepts and techniques.",
+    keywords: (
         "Deep Learning Tutorial",
         "PyTorch",
         "Quarto",
@@ -19,13 +21,35 @@
     lang: "en",
     region: "us",
 )
-
 #set par(
+    first-line-indent: (amount: 2em, all: true),
     justify: true,
     spacing: 1em,
 )
+#set bibliography(style: "ieee")
+#set heading(numbering: none)
+#set figure(numbering: none)
+#set table(align: center)
+#set math.equation(numbering: none)
 
-#show math.equation: set block(breakable: true)
+#show heading: set par(first-line-indent: (amount: 0pt, all: false))
+#show figure: set align(center)
 #show figure: set block(breakable: true)
 #show figure.where(kind: table): set figure.caption(position: top)
-#show cite: it => { super(it) }
+#show raw: set text(font: "JetBrains Mono", size: 10pt, fallback: false)
+#show table: it => align(center, it)
+#show math.equation: set block(breakable: true)
+
+#show quote.where(block: true): it => showybox(
+    frame: (
+        border-color: gray,
+        thickness: 0.6pt,
+        radius: 4pt,
+    ),
+    body-style: (
+        fill: luma(248),
+        inset: 1em,
+    ),
+)[
+    #it
+]
