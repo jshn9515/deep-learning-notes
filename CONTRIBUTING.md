@@ -26,11 +26,21 @@ uv sync
 
 This will create or update the project environment according to the dependency lock file.
 
-## 3. Install `dnnl`
+## 3. Install `dnnlpy`
 
-Before running or modifying the notes, please enter the `dnnl` directory and install the `dnnl` library according to the instructions in `dnnl/README.md`.
+Before running or modifying the notes, please install the `dnnlpy` library:
 
-Some notebooks and examples rely on utilities and custom implementations provided by `dnnl`, so skipping this step may cause rendering or execution issues.
+```bash
+pip install dnnlpy
+```
+
+If you need the latest package code directly from this repository, use:
+
+```bash
+uv pip install "git+https://github.com/jshn9515/deep-learning-notes.git#subdirectory=dnnlpy"
+```
+
+Some notebooks and examples rely on utilities and custom implementations provided by `dnnlpy`, so skipping this step may cause rendering or execution issues.
 
 ## 4. Edit the `.qmd` files
 
@@ -53,6 +63,8 @@ This project uses a layered cache strategy for Quarto rendering:
 In short, `_freeze` helps cache rendered documents at the project/page level, while `.jupyter_cache` helps cache executed code blocks at a finer-grained level.
 
 When modifying executable examples, please make sure the rendered output and relevant cache files are kept consistent.
+
+For a broader overview of the repository structure and GitHub Actions workflows, see [architecture.md](architecture.md).
 
 ## 6. Re-render locally before submitting
 
