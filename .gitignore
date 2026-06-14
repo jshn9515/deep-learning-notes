@@ -227,3 +227,7 @@ _site.zip
 _extensions/
 /.quarto/
 **/*.quarto_ipynb
+
+# Typst
+_quarto-typst-local.yml
+utils/typst-header-local.typ
