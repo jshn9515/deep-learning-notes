@@ -3,20 +3,21 @@ name: Check Quarto Website Rendering
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "assets/**"
-      - "utils/**"
-      - "_freeze/**"
-      - "**/LICENSE.*"
-      - "**/*.md"
-      - "**/ruff.toml"
-      - "**/.git*"
-      - "**/.github/*.json"
-      - "**/.github/workflows/dnnlpy-ci.yml"
-      - "**/.github/workflows/manual-publish.yml"
-      - "**/.github/workflows/package-notebooks.yml"
-      - "**/.github/workflows/publish.yml"
-      - "**/.github/workflows/release*.yml"
+    paths:
+      - "zh/**"
+      - "en/**"
+      - "dnnlpy/**"
+      - "pyproject.toml"
+      - "styles.css"
+      - "refs-*.bib"
+      - "_quarto.yml"
+      - "_quarto-html.yml"
+      - "utils/download_datasets.py"
+      - "utils/render_mermaid.py"
+      - "utils/clean_checkpoints.py"
+      - "utils/clean_mermaid_svg.py"
+      - "utils/generate_toc.py"
+      - ".github/workflows/pr-render-check.yml"
 
 env:
   DNNL_DATA_ROOT: ${{ github.workspace }}/datasets
