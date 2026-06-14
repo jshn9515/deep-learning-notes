@@ -67,7 +67,7 @@ Notebook 打包由 `.github/workflows/package-notebooks.yml` 处理。
 
 该工作流会在以下情况下运行：
 
-- 推送到 `main` 且变更涉及 `zh/**`、`en/**`、Jupyter profile、Notebook 转换辅助脚本或该工作流本身；
+- 推送到 `main` 且变更涉及 `zh/**`、`en/**`、Jupyter profile、Notebook 清理辅助脚本或该工作流本身；
 - GitHub Releases；
 - 手动触发。
 
@@ -102,14 +102,14 @@ dispatch payload 包含源仓库、工作流运行 ID、artifact 名称、归档
 
 Typst PDF 编译由 `.github/workflows/render-pdf.yml` 处理。
 
-当推送到 `main` 且变更涉及源章节、Typst profiles、参考文献文件、Typst header 文件、Mermaid 渲染辅助脚本或该工作流本身时，该工作流会运行。它也会在 GitHub Releases 和手动触发时运行。
+当推送到 `main` 且变更涉及源章节、Typst profiles、参考文献文件、Typst header 文件、PDF 重命名辅助脚本或该工作流本身时，该工作流会运行。它也会在 GitHub Releases 和手动触发时运行。
 
 PDF 生成使用以下 Quarto profiles：
 
 - `_quarto-typst-en.yml`
 - `_quarto-typst-zh.yml`
 
-该工作流为中文和英文 PDF 分别设置 job。每个 job 会检出仓库，安装对应语言需要的字体，设置 Quarto，安装 Node.js 和 Mermaid CLI，将 Puppeteer 配置为使用 GitHub runner 上的 Chrome，然后渲染对应 profile：
+该工作流为中文和英文 PDF 分别设置 job。每个 job 会检出仓库，安装对应语言需要的字体，设置 Quarto，然后渲染对应 profile：
 
 ```bash
 quarto render --profile typst-zh
