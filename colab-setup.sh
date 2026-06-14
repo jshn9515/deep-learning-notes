@@ -16,7 +16,7 @@ sudo dpkg -i quarto-linux-latest-amd64.deb
 
 rm quarto-linux-latest-amd64.deb
 
-quarto --version
+echo "Quarto version: $(quarto --version)"
 
 echo "Quarto ${VER} installed successfully."
 
