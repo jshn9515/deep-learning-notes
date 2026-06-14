@@ -35,7 +35,7 @@ flowchart TD
     JUPYTER --> NOTEBOOKS
 ```
 
-## HTML Website Workflow
+## HTML Website Publishing Workflow
 
 The HTML website is built by `.github/workflows/quarto-publish.yml`.
 
@@ -45,14 +45,13 @@ On pushes to `main`, the workflow runs `quarto render --profile html`. The HTML 
 - `execute.cache: true`
 - Output directory: `_site`
 
-Before rendering, the workflow protects the committed `_freeze/` directory:
+Before rendering, the workflow combines two cache sources with explicit priority:
 
-1. Save the repository `_freeze/` directory into `/tmp/repo_freeze`.
-2. Remove `_freeze/`.
-3. Restore the GitHub Actions `_freeze` cache.
-4. Overlay the repository `_freeze/` back on top.
+1. The committed `_freeze/` directory has the highest priority and is always used.
+2. The GitHub Actions cache is used as a secondary source when dependencies have not changed.
+3. If `dnnlpy/` or the root `pyproject.toml` changes, the workflow skips restoring the GitHub Actions cache, but still keeps the committed `_freeze/` directory.
 
-This gives committed `_freeze/` files higher priority than the Actions cache. After rendering, Quarto writes updated execution results back into `_freeze/`. The workflow uploads `_freeze/` as a `quarto-cache` artifact, and the GitHub Actions cache action stores the updated cache for future runs.
+In practice, the workflow temporarily saves the repository `_freeze/`, restores the GitHub Actions cache when it is allowed, and then overlays the saved repository `_freeze/` back on top. This makes committed `_freeze/` entries override any matching entries from the GitHub Actions cache. After rendering, Quarto writes updated execution results back into `_freeze/`. The workflow uploads `_freeze/` as a `quarto-cache` artifact, and the GitHub Actions cache action stores the updated cache for future runs.
 
 The HTML render also runs `utils/generate_toc.py` through the profile post-render hooks. The publish workflow commits generated `zh/README.md` and `en/README.md` changes back to the repository when needed.
 
@@ -60,11 +59,9 @@ The HTML render also runs `utils/generate_toc.py` through the profile post-rende
 
 Pull requests use `.github/workflows/render-check.yml`.
 
-The PR workflow renders the site with the same HTML profile, but it uses `actions/cache/restore` only. It can read a cache, but it does not store a new cache back. This keeps PRs from poisoning the shared render cache.
+Pull requests follow the same cache priority rule. The committed `_freeze/` directory is always used. The GitHub Actions cache is restored only when dependencies have not changed, and PR runs use `actions/cache/restore` so they can read the cache without writing a new one back. This keeps PRs from poisoning the shared render cache.
 
-The PR workflow also detects dependency or package changes. If files under `dnnlpy/` or the root `pyproject.toml` changed, the workflow does not restore the GitHub Actions freeze cache. In that case, it keeps only the repository `_freeze/` files, because those are committed and represent the highest-priority cache for computationally expensive notebooks.
-
-## Jupyter Notebook Workflow
+## Jupyter Notebook Packaging Workflow
 
 Notebook packaging is handled by `.github/workflows/package-notebooks.yml`.
 
@@ -101,7 +98,7 @@ After packaging, it sends repository dispatch events to the notebook mirror:
 
 The dispatch payload includes the source repository, workflow run ID, artifact name, archive name, and language. The downstream mirror repository can then download the uploaded notebook archive and update itself. These notebooks are generated from this repository and are intended to be opened directly in Google Colab.
 
-## Typst PDF Flow
+## Typst PDF Compilation Workflow
 
 PDF generation is configured by:
 
@@ -122,7 +119,7 @@ The Typst outputs are first written under `_typst/en` and `_typst/zh`. `utils/re
 
 At the time of writing, there is no dedicated GitHub Actions workflow file for Typst PDF publishing. The PDF build is defined by the Quarto Typst profiles and the supporting utility scripts.
 
-## `dnnlpy` Package Workflow
+## `dnnlpy` Package CI Workflow
 
 The package CI workflow is `.github/workflows/dnnlpy-ci.yml`.
 
@@ -135,7 +132,7 @@ matrix:
 
 For each Python version, the workflow:
 
-1. Checks formatting with Ruff;
+1. Checks formatting with ruff;
 2. Installs the requested Python version with `uv python install`;
 3. Creates an isolated virtual environment with `uv venv --python`;
 4. Installs the package with `uv pip install --python .venv --torch-backend cpu -e "dnnlpy[test]"`;
@@ -189,4 +186,4 @@ The Renovate app checks the repository on its regular schedule, roughly every fo
 - Disables patch updates for PEP 621 dependencies;
 - Disables patch and minor updates for GitHub Actions.
 
-Renovate PRs go through the normal pull request handling path: they can use the committed `_freeze/` cache, but dependency-changing PRs avoid restoring the shared GitHub Actions freeze cache.
+Renovate PRs go through the normal pull request handling path: they can use the committed `_freeze/` cache, but dependency-changing PRs avoid restoring the shared GitHub Actions cache.
