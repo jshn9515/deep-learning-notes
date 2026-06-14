@@ -3,10 +3,7 @@ project:
   output-dir: "_typst/zh"
   render:
     - "*.qmd"
-  pre-render:
-    - "utils/render_mermaid.py"
   post-render:
-    - "utils/clean_mermaid_svg.py"
     - "utils/rename_pdf.py"
 
 execute:
