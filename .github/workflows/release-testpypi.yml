@@ -40,10 +40,11 @@ jobs:
       - name: Install dependencies
         run: |
           uv python install ${{ matrix.python-version }}
-          uv sync --python ${{ matrix.python-version }} --package dnnlpy --extra test
+          uv venv --python ${{ matrix.python-version }} .venv
+          uv pip install --python .venv --torch-backend cpu -e "dnnlpy[test]"
 
       - name: Test dnnlpy package
-        run: uv run --package dnnlpy -m pytest dnnlpy/tests
+        run: .venv/bin/python -m pytest dnnlpy/tests
 
   publish-testpypi:
     name: Publish to TestPyPI
@@ -70,7 +71,7 @@ jobs:
         run: uv python install 3.14
 
       - name: Build dnnlpy package
-        run: uv build --package dnnlpy --out-dir dist
+        run: uv build dnnlpy --out-dir dist
 
       - name: Publish to TestPyPI
         run: uv publish --publish-url https://test.pypi.org/legacy/
