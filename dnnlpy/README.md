@@ -1,8 +1,6 @@
 # dnnlpy
 
-**dnnlpy** is the companion Python package for **Deep Learning Notes Library**.
-
-It provides code examples, helper functions, and small utilities used throughout the tutorial, similar in spirit to the `d2l` package for _Dive into Deep Learning_.
+**dnnlpy** is the companion Python package for **Deep Learning Notes Library**. It provides code examples, helper functions, and small utilities used throughout the tutorial, similar in spirit to the `d2l` package for _Dive into Deep Learning_.
 
 The package structure is similar to PyTorch, but keeps a clear boundary between reusable neural network building blocks and complete model implementations:
 
@@ -29,7 +27,7 @@ In short, this package serves as the code companion to the tutorial.
 
 ## Requirements
 
-- Python 3.14 or newer
+- Python 3.12 or newer
 - PyTorch 3.10 or newer
 
 ## Installation
