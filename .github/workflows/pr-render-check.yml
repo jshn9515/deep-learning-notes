@@ -13,9 +13,7 @@ on:
       - "_quarto.yml"
       - "_quarto-html.yml"
       - "utils/download_datasets.py"
-      - "utils/render_mermaid.py"
       - "utils/clean_checkpoints.py"
-      - "utils/clean_mermaid_svg.py"
       - "utils/generate_toc.py"
       - ".github/workflows/pr-render-check.yml"
 
@@ -108,20 +106,6 @@ jobs:
         run: |
           uv python install 3.14
           uv sync --python 3.14 --all-packages
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - name: Install Mermaid CLI
-        run: |
-          npm init -y
-          npm install @mermaid-js/mermaid-cli
-
-      - name: Set Chrome path for Puppeteer
-        if: runner.os == 'Linux'
-        run: echo "PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable" >> "$GITHUB_ENV"
 
       - name: Download datasets for notebooks
         shell: bash
