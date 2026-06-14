@@ -67,8 +67,8 @@ Notebook packaging is handled by `.github/workflows/package-notebooks.yml`.
 
 This workflow runs on:
 
-- Pushes to `main` that touch `zh/**`, `en/**`, or the workflow itself;
-- A monthly schedule;
+- Pushes to `main` that touch `zh/**`, `en/**`, the Jupyter profile, the notebook conversion helpers, or the workflow itself;
+- GitHub Releases;
 - Manual dispatch.
 
 It renders notebooks with:
@@ -100,12 +100,23 @@ The dispatch payload includes the source repository, workflow run ID, artifact n
 
 ## Typst PDF Compilation Workflow
 
-PDF generation is configured by:
+Typst PDF compilation is handled by `.github/workflows/render-pdf.yml`.
+
+The workflow runs on pushes to `main` that touch the source chapters, Typst profiles, bibliography files, Typst header files, Mermaid rendering helpers, or the workflow itself. It also runs on GitHub Releases and manual dispatch.
+
+PDF generation uses these Quarto profiles:
 
 - `_quarto-typst-en.yml`
 - `_quarto-typst-zh.yml`
 
-These profiles compile the Quarto sources to Typst/PDF without executing code:
+The workflow has separate jobs for Chinese and English PDFs. Each job checks out the repository, installs the fonts needed by that language, sets up Quarto, installs Node.js and Mermaid CLI, configures Puppeteer to use the GitHub runner Chrome binary, and then renders the matching profile:
+
+```bash
+quarto render --profile typst-zh
+quarto render --profile typst-en
+```
+
+The Typst profiles compile the Quarto sources to Typst/PDF without executing code:
 
 ```yaml
 execute:
@@ -117,7 +128,7 @@ The Typst outputs are first written under `_typst/en` and `_typst/zh`. `utils/re
 - `_typst/deep-learning-notes-en.pdf`
 - `_typst/deep-learning-notes-zh.pdf`
 
-At the time of writing, there is no dedicated GitHub Actions workflow file for Typst PDF publishing. The PDF build is defined by the Quarto Typst profiles and the supporting utility scripts.
+After rendering, the workflow generates artifact attestations, uploads the PDFs as workflow artifacts without wrapping them in an additional archive, and attaches the PDFs to the GitHub Release when the workflow was triggered by a release event.
 
 ## `dnnlpy` Package CI Workflow
 

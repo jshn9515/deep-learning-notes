@@ -67,8 +67,8 @@ Notebook 打包由 `.github/workflows/package-notebooks.yml` 处理。
 
 该工作流会在以下情况下运行：
 
-- 推送到 `main` 且变更涉及 `zh/**`、`en/**` 或该工作流本身；
-- 每月定时运行；
+- 推送到 `main` 且变更涉及 `zh/**`、`en/**`、Jupyter profile、Notebook 转换辅助脚本或该工作流本身；
+- GitHub Releases；
 - 手动触发。
 
 它使用以下命令渲染 notebooks：
@@ -100,12 +100,23 @@ dispatch payload 包含源仓库、工作流运行 ID、artifact 名称、归档
 
 ## Typst PDF 编译工作流
 
-PDF 生成由以下配置文件定义：
+Typst PDF 编译由 `.github/workflows/render-pdf.yml` 处理。
+
+当推送到 `main` 且变更涉及源章节、Typst profiles、参考文献文件、Typst header 文件、Mermaid 渲染辅助脚本或该工作流本身时，该工作流会运行。它也会在 GitHub Releases 和手动触发时运行。
+
+PDF 生成使用以下 Quarto profiles：
 
 - `_quarto-typst-en.yml`
 - `_quarto-typst-zh.yml`
 
-这些 profiles 会将 Quarto 源文件编译为 Typst/PDF，但不执行代码：
+该工作流为中文和英文 PDF 分别设置 job。每个 job 会检出仓库，安装对应语言需要的字体，设置 Quarto，安装 Node.js 和 Mermaid CLI，将 Puppeteer 配置为使用 GitHub runner 上的 Chrome，然后渲染对应 profile：
+
+```bash
+quarto render --profile typst-zh
+quarto render --profile typst-en
+```
+
+Typst profiles 会将 Quarto 源文件编译为 Typst/PDF，但不执行代码：
 
 ```yaml
 execute:
@@ -117,7 +128,7 @@ Typst 输出会先写入 `_typst/en` 和 `_typst/zh`。随后，`utils/rename_pd
 - `_typst/deep-learning-notes-en.pdf`
 - `_typst/deep-learning-notes-zh.pdf`
 
-截至本文写作时，尚没有专门用于 Typst PDF 发布的 GitHub Actions 工作流文件。PDF 构建由 Quarto Typst profiles 及配套工具脚本定义。
+渲染完成后，工作流会生成 artifact attestations，将 PDF 作为工作流 artifacts 上传且不再额外包一层归档文件；如果工作流由 release 事件触发，还会把 PDF 附加到对应的 GitHub Release。
 
 ## `dnnlpy` 包 CI 工作流
 
