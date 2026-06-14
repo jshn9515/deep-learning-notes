@@ -27,3 +27,8 @@ uv pip install --upgrade pip
 uv pip install "git+https://github.com/jshn9515/deep-learning-notes.git#subdirectory=dnnlpy" --no-deps
 
 uv pip install jupyter-cache torchmetrics evaluate
+
+# Git user configuration
+
+git config --global user.name "jshn9515"
+git config --global user.email "jshn9510@gmail.com"
