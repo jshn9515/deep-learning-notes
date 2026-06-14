@@ -20,8 +20,6 @@ format:
     toc-indent: 0em
     wrap: none
     engine: jupyter
-    # TODO: Remove this when Quarto supports Typst 0.15
-    keep-typ: true
     papersize: a4
     fig-cap-location: bottom
     tbl-cap-location: top
