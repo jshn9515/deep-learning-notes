@@ -34,12 +34,13 @@ $$
 
 ```{python}
 import math
-from pprint import pprint
 
 import dnnlpy
 import evaluate
 import IPython.display as ipy
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -47,6 +48,7 @@ from datasets import load_dataset
 from torch import Tensor
 from transformers import Trainer, TrainingArguments
 
+dnnlpy.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -360,12 +362,7 @@ $$
 
 我们用 Hugging Face 的 `beans` 数据集做一个小实验。这个数据集是豆叶病害分类数据集，一共有 3 个类别。我们先加载一个 ImageNet 上预训练过的 ViT，然后把分类头替换成 3 类。这段代码现在看不懂也没关系，在章节末尾我们会专门介绍如何微调 ViT，以及如何把 ViT 应用到具体的下游任务上。
 
-::: {.callout-note}
-下面这段代码运行时间较长（XPU 需要约 10 分钟），因此默认不会在渲染文档时运行。如果你想自己运行，可以把 `eval: false` 改成 `eval: true`，或者直接复制代码到 Python 文件里运行。
-:::
-
 ```{python}
-#| eval: false
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 model_id = 'google/vit-base-patch16-224'
@@ -422,6 +419,7 @@ training_args = TrainingArguments(
     learning_rate=2e-5,
     logging_steps=10,
     save_strategy='no',
+    eval_strategy='steps',
     remove_unused_columns=False,
 )
 trainer = Trainer(
@@ -437,35 +435,51 @@ trainer = Trainer(
 before_finetuning = trainer.evaluate()
 trainer.train()
 after_finetuning = trainer.evaluate()
+ipy.clear_output()
 
 print('Before fine-tuning:')
-pprint(before_finetuning)
+print(before_finetuning)
 print('\n', end='')
 print('After fine-tuning:')
-pprint(after_finetuning)
+print(after_finetuning)
 ```
 
-```code
-Before fine-tuning:
-{'epoch': 0,
- 'eval_accuracy': 0.40601503759398494,
- 'eval_loss': 1.0192097425460815,
- 'eval_model_preparation_time': 0.003,
- 'eval_runtime': 8.7041,
- 'eval_samples_per_second': 15.28,
- 'eval_steps_per_second': 1.034}
+可视化一下 loss 和 accuracy 曲线：
 
-After fine-tuning:
-{'epoch': 5.0,
- 'eval_accuracy': 0.9849624060150376,
- 'eval_loss': 0.020609118044376373,
- 'eval_model_preparation_time': 0.003,
- 'eval_runtime': 4.5798,
- 'eval_samples_per_second': 29.041,
- 'eval_steps_per_second': 1.965}
+```{python}
+log_df = pd.DataFrame(trainer.state.log_history)
+train_df = log_df[log_df.loss.notna()]
+eval_df = log_df[log_df.eval_loss.notna()]
+
+fig = plt.figure(1, figsize=(6, 4))
+ax1 = fig.add_subplot(1, 1, 1)
+line1 = ax1.plot(
+    train_df.step,
+    train_df.loss,
+    color='tab:blue',
+    marker='o',
+    label='Training Loss',
+)
+ax1.set_xlabel('Step')
+ax1.set_ylabel('Training Loss')
+ax1.set_title('ViT Training Loss Curve')
+
+ax2 = ax1.twinx()
+line2 = ax2.plot(
+    eval_df.step,
+    eval_df.eval_accuracy,
+    color='tab:orange',
+    marker='o',
+    label='Evaluation Accuracy'
+)
+ax2.set_ylabel('Evaluation Accuracy', rotation=-90, labelpad=12)
+
+lines = line1 + line2
+labels = [line.get_label() for line in lines]
+ax1.legend(lines, labels, loc='center right')
+
+plt.show()
 ```
-
-![](figures/ch11.5-vit-finetuning.svg){width="70%"}
 
 这个例子的对比重点在于观察同一个预训练 ViT 在下游数据集上的变化：
 
