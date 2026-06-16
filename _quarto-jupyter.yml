@@ -5,6 +5,7 @@ project:
     - "*.qmd"
   post-render:
     - "utils/clean_attachments.py"
+    - "utils/add_image_attrs.py"
 
 execute:
   enabled: false
