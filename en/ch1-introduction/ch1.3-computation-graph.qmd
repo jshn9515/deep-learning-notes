@@ -9,6 +9,8 @@ title: "1.3 Forward Propagation, Backpropagation, and Computation Graph"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch1-introduction/ch1.3-computation-graph.ipynb){fig-align="left"}
+
 **Computational Graph** is one of the most core concepts in deep learning. Once we understand computational graphs, we can understand how neural networks compute outputs, and how they automatically adjust parameters according to errors.
 
 In the previous chapters, we have introduced the loss function. The loss function measures the error of the model, and the goal of deep learning is to make the loss function as small as possible by adjusting parameters. But to do this, we must answer a key question: how does each parameter affect the loss function?
@@ -79,7 +81,7 @@ We can decompose this function into several simple operations:
 
 We can represent this process as a computational graph:
 
-![Figure 1: A simple computational graph](figures/ch1.3-computation-graph.svg){width="60%"}
+![Figure 1.3.2: A simple computational graph](figures/ch1.3-computation-graph.svg){width=60%}
 
 In this computational graph, circles represent variables, boxes represent operations, and arrows represent the direction of data flow. The inputs $x$ and $y$ obtain the intermediate variable $z$ through the multiplication operation, and then $z$ obtains the output $f$ through the sine operation.
 
