@@ -9,6 +9,8 @@ title: "4.2 Momentum 与 Nesterov Momentum"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.2-momentum-nesterov.ipynb){fig-align="left"}
+
 上一节我们从梯度下降讲到 mini-batch SGD。SGD 的更新规则非常简单：
 
 $$

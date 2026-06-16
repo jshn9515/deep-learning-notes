@@ -9,6 +9,8 @@ title: "4.6 AdamW：解耦权重衰减"
 order: 6
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.6-adamw.ipynb){fig-align="left"}
+
 上一节我们看到，Adam 把 momentum 和 RMSprop 的思想结合在了一起。它一方面维护梯度的一阶矩估计 $m_t$，用来平滑更新方向；另一方面维护平方梯度的二阶矩估计 $v_t$，用来为不同参数自适应地缩放步长。
 
 Adam 的更新步骤可以写成：

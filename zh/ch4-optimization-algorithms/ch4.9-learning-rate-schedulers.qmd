@@ -9,6 +9,8 @@ title: "4.9 学习率调度器：让学习率随训练过程变化"
 order: 9
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.9-learning-rate-schedulers.ipynb){fig-align="left"}
+
 前面几节里，我们一直把学习率 $\eta$ 当成优化器里的一个超参数。无论是 SGD、momentum、Adagrad、RMSprop、Adam 还是 AdamW，参数更新时都会出现某种形式的“步长”：
 
 $$

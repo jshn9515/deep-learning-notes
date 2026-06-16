@@ -9,6 +9,8 @@ title: "4.8 优化器地图：不同优化算法该在什么时候使用"
 order: 8
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.8-optimizer-practice.ipynb){fig-align="left"}
+
 前面几节里，我们沿着一条比较清晰的主线，依次介绍了 SGD、momentum、Adagrad、RMSprop、Adadelta、Adam、AdamW 和 Muon。
 
 如果只看公式，这些优化器很容易混在一起：有的维护动量，有的维护平方梯度，有的做权重衰减，有的做矩阵正交化。但是在真实训练中，我们更关心的问题是：

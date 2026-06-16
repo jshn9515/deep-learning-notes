@@ -9,6 +9,8 @@ title: "4.3 Adagrad：自适应学习率的起点"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.3-adagrad.ipynb){fig-align="left"}
+
 前两节我们从梯度下降讲到 SGD，又进一步引入了 momentum。
 
 SGD 的基本更新规则是：

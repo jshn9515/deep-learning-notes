@@ -9,6 +9,8 @@ title: "4.7 Muon：矩阵参数的正交化更新"
 order: 7
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.7-muon.ipynb){fig-align="left"}
+
 前面几节里，我们看到了一条比较经典的优化器演化线。
 
 SGD 直接沿着当前 mini-batch 梯度更新参数；momentum 进一步记住过去的更新方向，让参数更新具有惯性；Adagrad、RMSprop 和 Adam 则开始关心不同参数的梯度尺度，为每个参数调整有效学习率；AdamW 又把 weight decay 从 Adam 的自适应梯度更新中解耦出来。

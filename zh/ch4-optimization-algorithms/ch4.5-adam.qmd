@@ -9,6 +9,8 @@ title: "4.5 Adam：Momentum 与 RMSprop 的结合"
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.5-adam.ipynb){fig-align="left"}
+
 前面几节我们已经看到，基础 SGD 有两个重要问题。
 
 第一个问题是：mini-batch SGD 带有噪声。如果每一步都只看当前 batch 的梯度，参数更新方向可能会比较抖动，尤其是在训练初期，模型还没有学到什么有用的特征的时候。

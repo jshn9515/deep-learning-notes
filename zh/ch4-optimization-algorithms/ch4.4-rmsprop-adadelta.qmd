@@ -9,6 +9,8 @@ title: "4.4 RMSprop 与 Adadelta：修正学习率衰减"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.4-rmsprop-adadelta.ipynb){fig-align="left"}
+
 上一节我们介绍了 Adagrad。它的核心思想是：不要让所有参数共享同一个学习率，而是为每个参数维护历史平方梯度累计量：
 
 $$

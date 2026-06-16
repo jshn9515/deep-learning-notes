@@ -9,6 +9,8 @@ title: "4.1 从梯度下降到 SGD"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch4-optimization-algorithms/ch4.1-gradient-descent.ipynb){fig-align="left"}
+
 在前面的章节里，我们已经知道了神经网络可以看成一个带参数的函数。给定输入 $x$，模型会经过前向传播得到预测结果，再通过损失函数衡量预测和真实标签之间的差距。训练的目标，就是不断调整模型参数，让损失越来越小。
 
 如果用 $\theta$ 表示模型里的所有可学习参数，用 $L(\theta)$ 表示当前参数下的损失，那么训练神经网络本质上就是在解一个优化问题：
