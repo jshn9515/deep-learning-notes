@@ -9,6 +9,8 @@ title: "2.6 Training Loop in PyTorch: Connecting Data, Models, and Optimizers"
 order: 6
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch2-pytorch-introduction/ch2.6-training-loop.ipynb){fig-align="left"}
+
 In the previous sections, we have separately introduced the most important components in PyTorch training:
 
 - `nn.Module` organizes model parameters and forward computation.

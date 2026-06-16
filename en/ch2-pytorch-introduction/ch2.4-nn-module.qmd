@@ -9,6 +9,8 @@ title: "2.4 nn.Module in PyTorch: Organizing Models, Parameters, and State"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch2-pytorch-introduction/ch2.4-nn-module.ipynb){fig-align="left"}
+
 In the previous sections, we learned how PyTorch records computation graphs, how gradients are backpropagated, and how training data is usually organized into mini-batches through Dataset and DataLoader.
 
 But so far, we have not really answered one question: **how should the model itself be organized?**

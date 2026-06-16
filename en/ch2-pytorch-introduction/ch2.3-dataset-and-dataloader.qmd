@@ -9,6 +9,8 @@ title: "2.3 Data Loading in PyTorch: Dataset, DataLoader, and Batching"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch2-pytorch-introduction/ch2.3-dataset-and-dataloader.ipynb){fig-align="left"}
+
 In the previous two sections, we discussed PyTorch's automatic differentiation mechanism. We know that the forward pass builds a computation graph, and backpropagation sends gradients back along that graph; we also know that during validation and inference, `no_grad()` or `inference_mode()` can be used to disable gradient recording.
 
 But a complete training process is not only about models and gradients. There is a more fundamental question: where does the data come from?

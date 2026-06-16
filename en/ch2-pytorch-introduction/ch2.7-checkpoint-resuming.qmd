@@ -9,6 +9,8 @@ title: "2.7 Checkpoints in PyTorch: Resuming Training After Interruption"
 order: 7
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch2-pytorch-introduction/ch2.7-checkpoint-resuming.ipynb){fig-align="left"}
+
 In the previous section, we organized a training template that we will reuse later. This template helps us organize the model, data, optimizer, and evaluation metrics. With it, we can focus on the training logic itself instead of repeatedly writing boilerplate code every time.
 
 However, this template does not consider an important practical issue: **training may be interrupted.**

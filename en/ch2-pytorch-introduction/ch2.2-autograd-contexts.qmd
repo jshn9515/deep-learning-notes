@@ -9,6 +9,8 @@ title: "2.2 Gradient Modes in PyTorch: Controlling How Computation Graphs Are Re
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb){fig-align="left"}
+
 In the previous section, we discussed PyTorch's automatic differentiation. As long as a tensor requires gradients, PyTorch records dependencies and builds a computation graph during the forward pass. When `backward()` is called, gradients are propagated back along that graph.
 
 However, when we write code, we quickly run into a problem: not every computation needs to be recorded.

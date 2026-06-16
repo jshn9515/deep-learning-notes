@@ -9,6 +9,8 @@ title: "2.5 Optimizers in PyTorch: From Manual Updates to Parameter Groups and S
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch2-pytorch-introduction/ch2.5-optimizer.ipynb){fig-align="left"}
+
 In the previous sections, we have learned one thing: as long as the computation graph is recorded correctly, model parameters will receive gradients after calling `loss.backward()`.
 
 However, gradients themselves do not automatically modify parameters. They only tell us: if we want the loss to become smaller, in which direction should the parameters move? The component that actually updates parameters according to gradients is the **optimizer**.
