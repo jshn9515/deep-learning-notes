@@ -9,6 +9,8 @@ title: "8.7 Transformer Decoder：Masked Self-Attention 与 Cross-Attention"
 order: 7
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.7-transformer-decoder.ipynb){fig-align="left"}
+
 前面我们已经看了 Transformer Encoder。Encoder 的核心任务是：把输入序列中的每个 token 表示成一个带有上下文信息的向量。经过多层 self-attention 和 feed-forward network 以后，输入序列中的每个位置都已经能够融合来自其他位置的信息。
 
 如果只做文本分类、序列标注、图像分类这类任务，一个 encoder 往往就够了。因为这些任务通常只需要理解输入，然后基于输入表示做预测。
@@ -253,7 +255,7 @@ $$
 
 因此，一个 decoder block 可以写成：
 
-![图 1：Transformer Decoder Block 结构图](figures/ch8.7-decoder-block.svg){height="800px"}
+![图 8.7.4：Transformer Decoder Block 结构图](figures/ch8.7-decoder-block.svg){height=800px}
 
 和 encoder block 相比，decoder block 多了一个 cross-attention，并且 self-attention 需要 causal mask。
 

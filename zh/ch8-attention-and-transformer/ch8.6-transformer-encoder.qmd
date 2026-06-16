@@ -9,6 +9,8 @@ title: "8.6 Transformer Encoder：把 Self-Attention 堆起来"
 order: 6
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.6-transformer-encoder.ipynb){fig-align="left"}
+
 前面几节里，我们已经把 Transformer 里最核心的几个组件拆开看过了。
 
 Self-attention 让序列中的每个 token 都可以直接和其他 token 交换信息；multi-head attention 让模型可以从多个表示空间并行地观察序列；positional encoding 则补上了 self-attention 本身缺少的顺序信息。
@@ -93,7 +95,7 @@ $$
 
 从数据流上看，就是：
 
-![图 1：Transformer Encoder Block 结构图](figures/ch8.6-encoder-block.svg){height="600px"}
+![图 8.6.2：Transformer Encoder Block 结构图](figures/ch8.6-encoder-block.svg){height=600px}
 
 这就是最基本的 encoder block 结构。
 

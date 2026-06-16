@@ -9,6 +9,8 @@ title: "8.11 Hugging Face Transformers API：从结构到调用"
 order: 11
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.11-hugging-face-transformers-api.ipynb){fig-align="left"}
+
 前面几节里，我们已经从概念上讲完了 Transformer 的主要结构：
 
 - Token embedding 和 positional encoding；
@@ -62,7 +64,7 @@ ipy.clear_output()
 
 整体流程可以写成：
 
-![图 1：Hugging Face Transformers 的基本调用流程](figures/ch8.11-transformers-pipeline.svg)
+![图 8.11.1：Hugging Face Transformers 的基本调用流程](figures/ch8.11-transformers-pipeline.svg)
 
 也就是：
 

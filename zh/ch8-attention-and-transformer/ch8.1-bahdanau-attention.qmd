@@ -9,6 +9,8 @@ title: "8.1 Bahdanau Attention：从信息压缩到动态检索"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.1-bahdanau-attention.ipynb){fig-align="left"}
+
 在前面的序列模型里，我们已经见过一种很自然的思路：先用一个编码器读完整个输入序列，把它总结成一个向量，然后再让解码器根据这个向量一步一步生成输出。以机器翻译为例，编码器读入源语言句子，最后得到一个上下文向量；解码器再根据这个上下文向量生成目标语言句子。
 
 这种做法看起来很合理。既然输入是一句话，那我们把整句话压缩成一个表示，再用这个表示去生成另一句话，似乎就是一个标准的“编码-解码”过程。

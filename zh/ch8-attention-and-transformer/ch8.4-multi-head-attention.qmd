@@ -9,6 +9,8 @@ title: "8.4 Multi-Head Attention：从单一视角到多重视角"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.4-multi-head-attention.ipynb){fig-align="left"}
+
 在上一节里，我们已经看到，attention 让序列中的每个位置都可以直接和其他位置建立联系。对于某个 token 来说，它不再只能依赖前一个隐藏状态，也不需要通过很多层卷积才能间接看到远处的信息，而是可以一次性根据相关性，从整个序列中聚合上下文。
 
 如果只看这一点，attention 已经很强了。可是还有一个问题没有解决：一个 token 和其他 token 之间的关系，往往**不只有一种**。
@@ -82,7 +84,7 @@ $$
 
 从整体结构上看，每个 head 都会先通过各自的线性投影得到一组 $Q$、$K$、$V$，然后独立计算 scaled dot-product attention。多个 head 的输出会被拼接起来，最后再经过一个线性层，融合成最终的 multi-head attention 输出。
 
-![图 1：MHA 计算示意图 [@vaswani2023Attention, fig. 2]](figures/ch8.4-mha.png){height="300px"}
+![图 8.4.2：MHA 计算示意图 [@vaswani2023Attention, fig. 2]](figures/ch8.4-mha.png){height=300px}
 
 对于第 $i$ 个 head，会有自己独立的一组线性投影矩阵：
 

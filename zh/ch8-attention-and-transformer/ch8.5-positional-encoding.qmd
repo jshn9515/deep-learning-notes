@@ -9,6 +9,8 @@ title: "8.5 Positional Encoding：给 Attention 补上位置信息"
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.5-positional-encoding.ipynb){fig-align="left"}
+
 在前面的 self-attention 里，我们已经看到，每个 token 都可以直接和序列中的所有 token 建立联系。相比 RNN 只能一步一步传递信息，self-attention 的好处就是，它可以并行计算，也更容易捕捉长距离依赖。但 self-attention 也有一个很重要的问题：**它本身并不知道 token 的顺序。**
 
 也就是说，如果我们只把一组 token embedding 输入 self-attention，那么 attention 看到的只是一堆向量，而不是一个有顺序的句子。它可以计算 token 之间的相似度，可以决定该关注谁，但它并不能天然地区分某个 token 是出现在第一个位置，还是第五个位置。

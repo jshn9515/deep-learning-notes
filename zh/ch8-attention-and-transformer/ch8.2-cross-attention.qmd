@@ -9,6 +9,8 @@ title: "8.2 Cross-Attention：一个序列查询另一个序列"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.2-cross-attention.ipynb){fig-align="left"}
+
 在上一节里，我们从 Bahdanau attention 出发，看到了注意力机制最早的一个重要动机：不要把整句输入强行压缩成一个固定长度向量，而是在生成每个目标词时，动态地去源句中寻找当前最相关的信息。这个思想可以概括成一句话：
 
 > **当前时刻需要什么信息，就用当前状态去输入序列里查找什么信息。**
@@ -271,7 +273,7 @@ $$
 \operatorname{Attention}(Q, K, V) = \operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
 $$
 
-![图 1：SDPA 计算示意图 [@vaswani2023Attention, fig. 2]](figures/ch8.2-sdpa.png){height="250px"}
+![图 8.2.6：SDPA 计算示意图 [@vaswani2023Attention, fig. 2]](figures/ch8.2-sdpa.png){height=250px}
 
 它和最原始的 attention 的差异，就是把分数除以 $\sqrt{d_k}$。
 

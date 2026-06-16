@@ -9,6 +9,8 @@ title: "8.8 Encoder-Decoder Transformer：把 Encoder 和 Decoder 连接起来"
 order: 8
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch8-attention-and-transformer/ch8.8-encoder-decoder-transformer.ipynb){fig-align="left"}
+
 前面几节里，我们已经分别看过 Transformer Encoder 和 Transformer Decoder。Encoder 的核心任务是把输入序列编码成一组上下文表示；decoder 的核心任务是在 causal mask 的限制下，根据已有目标前缀继续预测后面的 token。
 
 这一节，我们不再重复拆解 encoder block 或 decoder block 的内部结构，而是把它们连接起来，从整体上看完整的 **Encoder-Decoder Transformer** 是如何完成序列到序列生成的。
@@ -94,7 +96,7 @@ $$
 
 完整 Encoder-Decoder Transformer 的信息流可以写成：
 
-![图 1：Transformer 网络结构图 [@vaswani2023Attention, fig. 1]](figures/ch8.8-transformer.png){height="600px"}
+![图 8.8.2：Transformer 网络结构图 [@vaswani2023Attention, fig. 1]](figures/ch8.8-transformer.png){height=600px}
 
 图中左半部分是 encoder，右半部分是 decoder。
 
@@ -212,13 +214,13 @@ Step 4 输入: <BOS>, y1, y2, y3
 
 这里的 $y_1, y_2, y_3$ 都是模型自己生成的 token。
 
-这就是**自回归生成（Autoregressive Generation）**。它和训练最大的区别就是，训练时 decoder 看到的前缀来自真实答案，而推理时 decoder 看到的前缀来自模型自己。如果模型第一步生成错了，那么第二步就只能基于这个错误 token 继续生成，导致错误在后续生成过程中不断累积。这种现象通常叫做 **Exposure Bias**。
+这就是**自回归生成（Autoregressive Generation）**。它和训练最大的区别就是，训练时 decoder 看到的前缀来自真实答案，而推理时 decoder 看到的前缀来自模型自己。如果模型第一步生成错了，那么第二步就只能基于这个错误 token 继续生成，导致错误在后续生成过程中不断累积。这种现象通常叫做 **exposure bias**。
 
-## 8.8.5 训练和推理的对比
-
-我们可以把训练和推理放在一起看。
+现在，我们可以把训练和推理放在一起看。
 
 :::{.list-table}
+表 8.8.4：Transformer 训练和推理的对比
+
 - - 阶段
   - Decoder 输入
   - 前缀来源
@@ -239,11 +241,13 @@ Step 4 输入: <BOS>, y1, y2, y3
 
 训练时，目标序列已经给定，所以可以用右移后的真实目标序列作为前缀，并行预测所有位置；推理时，真实目标序列不存在，模型只能把自己刚生成的 token 拼回输入，再继续预测下一个 token。
 
-## 8.8.6 Encoder-Decoder 中的 Mask
+## 8.8.5 Encoder-Decoder 中的 Mask
 
 完整 Encoder-Decoder Transformer 里通常会涉及几种 mask。前面我们已经重点讲过 causal mask，这里只简单梳理它们各自屏蔽什么。
 
 ::: {.list-table tbl-colwidths="[25,25,50]"}
+表 8.8.5：Transformer 中的常见 Mask
+
 - - Mask
   - 作用位置
   - 主要作用
@@ -274,7 +278,7 @@ Step 4 输入: <BOS>, y1, y2, y3
 > Padding mask：不要看 padding。\
 > Causal mask：不要看未来。
 
-## 8.8.7 Transformer 的 PyTorch 实现
+## 8.8.6 Transformer 的 PyTorch 实现
 
 接下来，我们来完整实现一下 Encoder-Decoder Transformer。我们直接使用 8.6 和 8.7 中实现的 encoder block 和 decoder block，来构建一个完整的 Transformer 模型。
 
@@ -435,7 +439,7 @@ output = transformer(
 print('Output shape:', output.shape)
 ```
 
-## 8.8.8 Seq2Seq Transformer 的 PyTorch 实现
+## 8.8.7 Seq2Seq Transformer 的 PyTorch 实现
 
 下面写一个简化版 Seq2Seq Transformer。这里直接使用前面写好的 `Transformer`，在它的基础上加上 token embedding、positional encoding 和输出投影层。
 
@@ -528,7 +532,7 @@ print('Output shape:', output.shape)
 
 这个模型的输入是 `src` 和 `tgt`，它们都是 token ids。模型内部会先把它们映射成 embedding，然后加上 positional encoding，再送入 Transformer。最后，Transformer 的输出会经过一个线性层映射到目标词表大小，得到每个位置的预测 logits。对于每个位置，logits 的形状是 `(batch_size, tgt_vocab_size)`，表示模型对该位置每个 token 的预测分数。
 
-## 8.8.9 Seq2Seq Transformer 的训练流程
+## 8.8.8 Seq2Seq Transformer 的训练流程
 
 要想训练这个模型，我们需要先构造 decoder 输入和 labels。
 
@@ -587,7 +591,7 @@ print('Loss:', loss.item())
 
 这里的含义是：对每个 decoder 位置，模型都要根据当前位置之前的真实 token，以及源序列表示，预测当前位置的真实 token。
 
-## 8.8.10 一个简单的自回归生成示例
+## 8.8.9 一个简单的自回归生成示例
 
 推理时，我们从 `<BOS>` 开始，不断把模型生成的新 token 接到 decoder 输入后面。
 
@@ -667,7 +671,7 @@ $$
 
 > **生成一个 token，把它接回 Decoder 输入，再生成下一个 token。**
 
-## 8.8.11 本章小结
+## 8.8.10 本章小结
 
 这一节里，我们把 encoder 和 decoder 放到完整的 seq2seq 任务中，理解 Encoder-Decoder Transformer 是如何工作的。
 
@@ -689,4 +693,4 @@ $$
 
 下一节，我们继续看一个和推理效率密切相关的问题：既然自回归生成必须一步一步进行，为什么实际推理时不需要每一步都重复计算过去 token 的 key 和 value？
 
-这就引出了 KV Cache。
+这就引出了 KV cache。
