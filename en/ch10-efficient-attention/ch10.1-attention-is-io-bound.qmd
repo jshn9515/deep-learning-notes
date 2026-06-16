@@ -9,6 +9,8 @@ title: "10.1 Why Attention Is IO-Bound"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch10-efficient-attention/ch10.1-attention-is-io-bound.ipynb){fig-align="left"}
+
 In the previous chapters, we already learned the basic computation process of self-attention. Given $Q, K, V$, the computation of attention (ignoring scaling) is usually written as:
 
 $$
@@ -127,7 +129,7 @@ So, from the perspective of computation amount, attention is indeed not cheap. T
 
 Let us write the execution process of standard attention more accurately:
 
-![Algorithm 1: Execution flow of standard attention [@dao2022FlashAttentionv1, alg. 0]](figures/ch10.1-attn-forward.png){width="100%"}
+![Algorithm 10.1.2.2: Execution flow of standard attention [@dao2022FlashAttentionv1, alg. 0]](figures/ch10.1-attn-forward.png){width=100%}
 
 Assume we use `float32`, and each element takes 4 bytes. We make a very rough estimate and only keep the dominant terms.
 

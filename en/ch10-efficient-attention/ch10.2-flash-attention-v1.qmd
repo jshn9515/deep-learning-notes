@@ -9,6 +9,8 @@ title: "10.2 FlashAttention v1: Eliminating the IO Bottleneck in Attention Mecha
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch10-efficient-attention/ch10.2-flash-attention-v1.ipynb){fig-align="left"}
+
 In 10.1, we already saw that the real bottleneck of standard attention is not compute, but IO. It is slow not because the two matrix multiplications themselves are too hard, but because the two large intermediate matrices $S$ and $P$ both need to be explicitly written back to HBM, and then read out again in later stages for computation. For long sequences, these two $N\times N$ intermediate matrices create enormous bandwidth pressure.
 
 Since this is where the problem comes from, a very natural idea is: can we avoid storing $S$ and $P$ in HBM?
@@ -218,13 +220,13 @@ The overall idea is:
 5. after all $K, V$ blocks have been scanned, obtain the final output corresponding to this $Q_i$ block;
 6. repeat this process until all $Q$ blocks have been processed.
 
-![Figure 1: FlashAttention v1 forward pass flow [@dao2022FlashAttentionv1, fig. 1]](figures/ch10.2-fa1-loop.png){width="50%"}
+![Figure 10.2.3: FlashAttention v1 forward pass flow [@dao2022FlashAttentionv1, fig. 1]](figures/ch10.2-fa1-loop.png){width=50%}
 
 The biggest difference between this process and standard attention is that standard attention is “first obtain the full $S$, then obtain the full $P$, and finally obtain $O$”; while FlashAttention v1 is “scan one block, update the statistics once, and at the same time accumulate part of the output.” In other words, it no longer treats softmax as a separate stage that must be completed on the whole matrix, but instead integrates softmax into the tiled scanning process.
 
 This has two benefits. First, the intermediate matrices do not need to be written to HBM. $S$ and $P$ only exist briefly in on-chip SRAM during the computation of the current block, and can be discarded immediately after computation, without being written back to memory as full tensors. Second, the HBM access pattern becomes closer to a streaming scan. After each $K_j, V_j$ block is loaded into on-chip SRAM, it immediately participates in score computation, softmax update, and output accumulation, rather than first producing a bunch of intermediate results to be handled in the next stage. This improves data reuse and reduces unnecessary reads and writes. Moreover, in terms of the final result, the forward pass of FlashAttention v1 still computes the exact standard attention, not approximate attention. What it changes is the execution strategy, not the mathematical definition.
 
-![Algorithm 1: Pseudocode of the FlashAttention v1 forward pass [@dao2022FlashAttentionv1, alg. 2]](figures/ch10.2-fa1-forward.png){width="100%"}
+![Algorithm 10.2.3: Pseudocode of the FlashAttention v1 forward pass [@dao2022FlashAttentionv1, alg. 2]](figures/ch10.2-fa1-forward.png){width=100%}
 
 Next, let us implement it in PyTorch.
 
@@ -302,7 +304,7 @@ $$
 
 This formula shows that as long as we can recompute the current block’s $P_{ij}$, together with one scalar $\delta_i$ for each row, we can recover the gradient of softmax, without having to save the full $P$ during the forward pass. This is exactly the key that allows FlashAttention v1 to make the backward pass blockwise as well.
 
-![Algorithm 2: Pseudocode of the FlashAttention v1 backward pass [@dao2022FlashAttentionv1, alg. 4]](figures/ch10.2-fa1-backward.png){width="100%"}
+![Algorithm 10.2.4: Pseudocode of the FlashAttention v1 backward pass [@dao2022FlashAttentionv1, alg. 4]](figures/ch10.2-fa1-backward.png){width=100%}
 
 On the surface, recomputing $S_{ij}$ and $P_{ij}$ during the backward pass seems to add extra computation; but from a systems perspective, this is usually worthwhile. Compared with “save in forward, read back in backward,” recomputation does more FLOPs, but saves a large amount of HBM accesses. And as we already saw in 10.1, the bottleneck of attention is often not computation, but IO. So the strategy of FlashAttention v1 is still fundamentally the same idea: use more on-chip computation and recomputation in exchange for less memory traffic.
 
