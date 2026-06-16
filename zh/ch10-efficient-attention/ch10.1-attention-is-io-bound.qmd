@@ -9,6 +9,8 @@ title: "10.1 为什么 Attention 是 IO-Bound"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch10-efficient-attention/ch10.1-attention-is-io-bound.ipynb){fig-align="left"}
+
 在前面的章节里，我们已经知道了 self-attention 的基本计算过程。给定 $Q, K, V$，attention 的计算（忽略缩放）通常写成：
 
 $$
@@ -126,7 +128,7 @@ $$
 
 我们把标准 attention 的执行过程写得更准确一些：
 
-![算法 1：标准 attention 的执行流程 [@dao2022FlashAttentionv1, alg. 0]](figures/ch10.1-attn-forward.png){width="100%"}
+![算法 10.1.2.2：标准 attention 的执行流程 [@dao2022FlashAttentionv1, alg. 0]](figures/ch10.1-attn-forward.png){width=100%}
 
 假设我们使用 `float32`，每个元素占 4 字节。我们做一个很粗略的估算，只抓主导项。
 
