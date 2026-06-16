@@ -9,6 +9,8 @@ title: "2.3 PyTorch 中的数据加载：Dataset、DataLoader 与批处理"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch2-pytorch-introduction/ch2.3-dataset-and-dataloader.ipynb){fig-align="left"}
+
 前面两节里，我们讨论了 PyTorch 的自动微分机制。我们知道，前向传播会构建计算图，反向传播会沿着计算图把梯度传回去；也知道在验证和推理时，可以用 `no_grad()` 或 `inference_mode()` 关闭梯度记录。
 
 但是，一个完整的训练过程不只有模型和梯度，还有一个更基础的问题：数据从哪里来？

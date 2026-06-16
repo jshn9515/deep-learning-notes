@@ -9,6 +9,8 @@ title: "2.5 PyTorch 中的优化器：从手动更新到参数组与状态管理
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch2-pytorch-introduction/ch2.5-optimizer.ipynb){fig-align="left"}
+
 前面几节里，我们已经知道一件事：只要计算图被正确记录，调用 `loss.backward()` 之后，模型参数就会得到梯度。
 
 但是，梯度本身不会自动修改参数。它只是告诉我们：如果想让 loss 变小，参数应该往哪个方向移动。真正根据梯度更新参数的，是**优化器（optimizer）**。

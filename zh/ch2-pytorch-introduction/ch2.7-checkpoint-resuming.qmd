@@ -9,6 +9,8 @@ title: "2.7 PyTorch 中的 Checkpoint：中断训练后如何继续"
 order: 7
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch2-pytorch-introduction/ch2.7-checkpoint-resuming.ipynb){fig-align="left"}
+
 上一节里，我们整理了一套后面会反复使用的训练模板。这个模板能帮我们把模型、数据、优化器和评估指标组织起来。有了这个模板，我们就可以专注于训练逻辑本身，而不用每次都重复写那些样板代码。
 
 但是，这个模板没有考虑一个重要的实际问题：**训练过程中可能会中断。**

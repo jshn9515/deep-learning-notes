@@ -9,6 +9,8 @@ title: "2.6 PyTorch 中的训练循环：把数据、模型和优化器连接起
 order: 6
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch2-pytorch-introduction/ch2.6-training-loop.ipynb){fig-align="left"}
+
 前面几节里，我们已经分别认识了 PyTorch 训练中最重要的几个组件：
 
 - `nn.Module` 负责组织模型参数和前向计算；

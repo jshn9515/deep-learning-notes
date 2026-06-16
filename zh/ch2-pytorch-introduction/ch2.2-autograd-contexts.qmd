@@ -9,6 +9,8 @@ title: "2.2 PyTorch 中的梯度模式：控制计算图的记录"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch2-pytorch-introduction/ch2.2-autograd-contexts.ipynb){fig-align="left"}
+
 在上一节里，我们讨论了 PyTorch 的自动微分。只要某个张量需要梯度，PyTorch 就会在前向传播时记录依赖关系并搭建计算图，在调用 `backward()` 时沿着这张图把梯度传回去。
 
 但是，当我们写代码时，很快会遇到一个问题：并不是所有计算都需要被记录。

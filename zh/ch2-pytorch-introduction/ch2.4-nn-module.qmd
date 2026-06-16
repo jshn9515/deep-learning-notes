@@ -9,6 +9,8 @@ title: "2.4 PyTorch 中的 nn.Module：组织模型、参数与状态"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch2-pytorch-introduction/ch2.4-nn-module.ipynb){fig-align="left"}
+
 在前面几节里，我们已经知道 PyTorch 如何记录计算图，如何反向传播梯度，也知道训练时数据通常通过 Dataset 和 DataLoader 组织成 mini-batch。
 
 但是，到目前为止，我们还没有真正回答一个问题：**模型本身应该怎么组织？**
