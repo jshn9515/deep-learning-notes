@@ -9,6 +9,8 @@ title: "3.5 用 NumPy 搭建完整 MLP"
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch3-multi-layer-perceptron/ch3.5-mlp-from-scratch.ipynb){fig-align="left"}
+
 前面几节中，我们已经分别实现了 MLP 需要的几个基本组件：
 
 1. `Linear` 层负责做可学习的线性变换；

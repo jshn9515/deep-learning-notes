@@ -9,6 +9,8 @@ title: "3.4 线性层的前向传播与反向传播"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch3-multi-layer-perceptron/ch3.4-linear-layer.ipynb){fig-align="left"}
+
 前面几节中，我们已经分别讨论了 MLP 中的几个关键组件：
 
 1. 线性变换负责把输入映射到新的特征空间；
@@ -17,7 +19,7 @@ order: 4
 
 现在我们回到 MLP 中最基础、也最常出现的模块：**线性层（linear layer）**。在进入具体公式之前，我们先从 MLP 的整体结构中看一下线性层出现在哪里。注意，实践中我们通常会在隐藏层后面加上激活函数，但是这里先暂时忽略。
 
-![图 1：MLP 模型 [@zhang2023d2l, fig. 4.1.1]](figures/ch3.1-mlp.svg)
+![图 3.4.0：MLP 模型 [@zhang2023d2l, fig. 4.1.1]](figures/ch3.1-mlp.svg)
 
 从图中可以看到，MLP 中相邻两层之间通常是全连接的。 每一条边都对应一个可学习的权重，而从一层到下一层的整体计算， 就可以写成一个线性变换。
 

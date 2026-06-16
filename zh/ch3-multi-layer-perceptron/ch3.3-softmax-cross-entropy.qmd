@@ -9,6 +9,8 @@ title: "3.3 Softmax 与 Cross Entropy：从 logits 到分类损失"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch3-multi-layer-perceptron/ch3.3-softmax-cross-entropy.ipynb){fig-align="left"}
+
 前面两节我们已经得到了 MLP 的基本形式：
 
 $$

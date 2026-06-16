@@ -9,6 +9,8 @@ title: "3.2 激活函数：给神经网络加入非线性"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch3-multi-layer-perceptron/ch3.2-activation-functions.ipynb){fig-align="left"}
+
 上一节我们看到，如果只是把多个线性层堆在一起，那么整个模型仍然等价于一个线性层：
 
 $$

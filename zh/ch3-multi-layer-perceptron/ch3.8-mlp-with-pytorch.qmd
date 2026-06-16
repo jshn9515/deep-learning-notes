@@ -9,6 +9,8 @@ title: "3.8 用 PyTorch nn.Module 重新实现 MLP"
 order: 8
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch3-multi-layer-perceptron/ch3.8-mlp-with-pytorch.ipynb){fig-align="left"}
+
 前面几节中，我们用 NumPy 从零实现了一个两层 MLP：
 
 $$

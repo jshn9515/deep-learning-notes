@@ -9,6 +9,8 @@ title: "3.6 用 NumPy 在 MNIST 上训练 MLP"
 order: 6
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch3-multi-layer-perceptron/ch3.6-train-mlp-on-mnist.ipynb){fig-align="left"}
+
 前面一节中，我们已经用 NumPy 搭好了一个可以执行 `forward`、`backward` 和 `update` 的两层 MLP。不过上一节使用的是随机生成的小数据，只能检查模型结构是否跑通。真正训练一个神经网络，还需要把它放到真实数据集上，重复执行很多次参数更新。
 
 这一节我们用 MNIST 数据集训练前面实现的 MLP。为了让重点集中在神经网络本身，我们仍然使用 NumPy 手写模型、损失函数、反向传播和参数更新，不过数据集读取可以借助 `torchvision` 库提供的 `MNIST`。

@@ -9,6 +9,8 @@ title: "3.7 反向传播检查：用数值梯度验证手写 backward"
 order: 7
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch3-multi-layer-perceptron/ch3.7-gradient-checking.ipynb){fig-align="left"}
+
 前面几节中，我们已经用 NumPy 手写了 MLP 的 forward、backward 和参数更新，并且在 MNIST 上完成了训练。不过这里还有一个很自然的问题：
 
 > **我们怎么知道自己写的 backward 真的是对的？**
