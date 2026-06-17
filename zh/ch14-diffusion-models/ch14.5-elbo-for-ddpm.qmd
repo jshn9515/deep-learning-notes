@@ -9,6 +9,8 @@ title: "14.5 从变分推导看 DDPM：ELBO 从哪里来"
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch14-diffusion-models/ch14.5-elbo-for-ddpm.ipynb){fig-align="left"}
+
 前面几节里，我们已经从直觉和算法实现的角度理解了 DDPM。但是，很多读者会有一个新的疑问：
 
 > **它们到底是经验上好用的小技巧，还是能从概率建模里严格推出来？**

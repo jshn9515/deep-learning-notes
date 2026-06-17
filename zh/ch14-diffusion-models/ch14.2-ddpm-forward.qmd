@@ -9,6 +9,8 @@ title: "14.2 DDPM 的前向加噪过程"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch14-diffusion-models/ch14.2-ddpm-forward.ipynb){fig-align="left"}
+
 上一节我们先从直觉上理解了 DDPM 的核心想法：先把真实图像一步一步变成噪声，再学习这个过程的逆过程。如果你已经接受了这个大方向，那么接下来的问题就是：
 
 - 这个加噪过程到底怎么定义？

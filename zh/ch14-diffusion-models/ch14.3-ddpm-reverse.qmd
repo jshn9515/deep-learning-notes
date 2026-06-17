@@ -9,6 +9,8 @@ title: "14.3 DDPM 的反向去噪过程与训练目标"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch14-diffusion-models/ch14.3-ddpm-reverse.ipynb){fig-align="left"}
+
 上一节我们已经把 DDPM 的前向过程讲清楚了。
 
 我们知道，它先定义了一个固定的加噪链：
@@ -295,7 +297,7 @@ $$
 
 但是，虽然表面上只是 MSE，背后其实对应着对反向扩散过程的概率建模。也就是说，这个简单的 MSE 损失函数，其实是从一个严谨的概率模型出发，经过一系列等价或近似等价的变换，最终得到的一个非常易于优化的训练目标。与很多深度学习网络不同，它的背后是有理论支撑的。我们用一段伪代码来描述这个过程：
 
-![算法 1：DDPM 训练过程伪代码 [@ho2020DDPM, alg. 1]](figures/ch14.3-ddpm-training.png){width="60%"}
+![算法 14.3.4：DDPM 训练过程伪代码 [@ho2020DDPM, alg. 1]](figures/ch14.3-ddpm-training.png){width=60%}
 
 你看，是不是很简单？别被它迷惑了。我们在后面会详细说明这个训练目标是怎么来的，以及它和概率建模之间的关系。
 

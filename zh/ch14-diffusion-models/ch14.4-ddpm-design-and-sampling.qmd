@@ -9,6 +9,8 @@ title: "14.4 DDPM 的网络结构与采样过程"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch14-diffusion-models/ch14.4-ddpm-design-and-sampling.ipynb){fig-align="left"}
+
 前面几节里，我们已经把 DDPM 最核心的想法搭起来了：
 
 - 先定义一个前向加噪过程，把真实图像一步一步变成噪声；
@@ -304,7 +306,7 @@ out = unet(x, timesteps)
 print(out.shape)
 ```
 
-## 14.3.4 DDPM 的采样过程：逐步去噪 + 每步带一点随机性
+## 14.4.4 DDPM 的采样过程：逐步去噪 + 每步带一点随机性
 
 训练完成之后，模型已经学会了在不同时间步下预测噪声。于是生成时，我们就可以这样做：
 
@@ -321,7 +323,7 @@ print(out.shape)
 
 这是生成阶段的伪代码，同样也很简单：
 
-![算法 2：DDPM 生成过程伪代码 [@ho2020DDPM, alg. 2]](figures/ch14.4-ddpm-sampling.png){width="60%"}
+![算法 14.4.4：DDPM 生成过程伪代码 [@ho2020DDPM, alg. 2]](figures/ch14.4-ddpm-sampling.png){width="60%"}
 
 如果你仔细看这个伪代码就会发现，我们似乎在采样过程也加入了噪声（就是伪代码里的 $z$）。可是，我们明明不是都要生成图像了吗？为什么还要在每一步去噪的同时加入噪声呢？
 
