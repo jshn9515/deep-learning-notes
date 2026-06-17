@@ -9,6 +9,8 @@ title: "15.1 CLIP: Mapping Images and Text into the Same Semantic Space"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch15-vision-language-models/ch15.1-clip.ipynb){fig-align="left"}
+
 In the previous chapters, we have seen many vision and text models. Whether for classification, detection, or generation, most of these models only process one modality, that is, the image or the text itself. But if we take one step back, the supervision signals in the real world are not always neat category labels. More often, what we get is an image paired with a natural language description, such as "this is a cat lying on a sofa", "a blue car parked by the road", or "a person surfing by the sea".
 
 Then, a natural question is:
@@ -74,7 +76,7 @@ CLIP's structure can be summarized into two parts.
 - An image encoder $f_\theta(\cdot)$, which encodes images into vectors (for example, ResNet or ViT);
 - A text encoder $g_\phi(\cdot)$, which encodes text into vectors (for example, Transformer).
 
-![Figure 1: CLIP network structure [@radford2021CLIP, fig. 1]](figures/ch15.1-clip.png){width="60%"}
+![Figure 15.1.2: CLIP network structure [@radford2021CLIP, fig. 1]](figures/ch15.1-clip.png){width=60%}
 
 Given an image $I_i$ and a text sentence $T_j$, we first get their features respectively:
 
@@ -254,7 +256,7 @@ But CLIP is different. What it outputs is not fixed category probabilities, but 
 
 Then encode these texts into vectors as well, and compute their similarity with the image vector. Whichever prompt is the closest, the image is assigned to that category.
 
-![Figure 2: CLIP zero-shot classification [@radford2021CLIP, fig. 1]](figures/ch15.1-clip-zero-shot.png){width="60%"}
+![Figure 15.1.4: CLIP zero-shot classification [@radford2021CLIP, fig. 1]](figures/ch15.1-clip-zero-shot.png){width=60%}
 
 That is to say, CLIP does not use a fixed linear layer to output categories like traditional classification models. Instead, during inference, it uses a group of text descriptions to generate the corresponding category vectors, and then makes the judgment according to the similarity between the image and these vectors. This is the root of zero-shot:
 
