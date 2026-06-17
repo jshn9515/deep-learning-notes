@@ -9,6 +9,8 @@ title: "13.4 VAE Training Phenomena and Latent Space Intuition"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch13-autoencoders-and-vaes/ch13.4-vae-training-phenomena.ipynb){fig-align="left"}
+
 Previously, we already knew that the objective function of VAE consists of two parts:
 
 $$

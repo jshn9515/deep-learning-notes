@@ -9,6 +9,8 @@ title: "13.5 VAE: Advantages, Limitations, and Future Developments"
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch13-autoencoders-and-vaes/ch13.5-vae-limitations-and-future-directions.ipynb){fig-align="left"}
+
 In the previous few sections, we have discussed:
 
 - How AutoEncoder learns latent representation through compression and reconstruction

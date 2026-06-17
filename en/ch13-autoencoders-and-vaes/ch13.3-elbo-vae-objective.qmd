@@ -9,6 +9,8 @@ title: "13.3 ELBO: Where Does the VAE Objective Function Come From?"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch13-autoencoders-and-vaes/ch13.3-elbo-vae-objective.ipynb){fig-align="left"}
+
 In the previous section, we already understood the basic modeling idea of VAE:
 
 - First sample a latent variable from the prior distribution $p(z)$

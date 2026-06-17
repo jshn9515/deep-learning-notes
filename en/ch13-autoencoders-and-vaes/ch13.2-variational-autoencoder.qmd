@@ -9,6 +9,8 @@ title: "13.2 VAE: Probabilistic Modeling and the Reparameterization Trick"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch13-autoencoders-and-vaes/ch13.2-variational-autoencoder.ipynb){fig-align="left"}
+
 In the previous section, we introduced AutoEncoder. It uses an encoder to compress the input into latent space, and then uses a decoder to reconstruct the latent representation back into the original data. This structure is elegant and also intuitive.
 
 But a normal AutoEncoder has a fundamental problem:
@@ -64,7 +66,7 @@ As a result, one sample $x$ no longer corresponds to a single point in the laten
 
 The following is a schematic diagram of the VAE network structure:
 
-![Figure 1: VAE network structure [@IBM2026VAE]](figures/ch13.2-vae.png){width="70%"}
+![Figure 13.2.1: VAE network structure [@IBM2026VAE]](figures/ch13.2-vae.png){width=70%}
 
 So, the latent space of a normal AutoEncoder is like assigning each image an exact coordinate. What VAE wants to do is to let the neighborhood around these coordinate points also carry some probability density, so that each image corresponds to a small cloud. At the same time, these clouds should be connected and smooth as much as possible, and should overall stay close to a simple prior distribution, usually a standard normal distribution. In this way, the latent space is no longer fragmented, but becomes more continuous and more suitable for sampling.
 
