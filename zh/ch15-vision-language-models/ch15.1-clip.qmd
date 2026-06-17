@@ -9,6 +9,8 @@ title: "15.1 CLIP：把图像和文本映射到同一个语义空间"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch15-vision-language-models/ch15.1-clip.ipynb){fig-align="left"}
+
 在前面的章节里，我们见过很多视觉和文本模型。无论是分类、检测、还是生成，这些模型大多都只处理一种模态，也就是图像或文本本身。但如果我们退一步想，现实世界里的监督信号并不总是整齐的类别标签。更多时候，我们拿到的是图像配上一段自然语言描述，例如“这是一只趴在沙发上的猫”、“一辆停在路边的蓝色汽车”或者“一个人在海边冲浪”。
 
 那么，一个自然的问题就是：
@@ -74,7 +76,7 @@ CLIP 的结构可以概括成两部分。
 - 一个图像编码器 $f_\theta(\cdot)$，把图片编码成向量（比如 ResNet 或 ViT）；
 - 一个文本编码器 $g_\phi(\cdot)$，把文本编码成向量（比如 Transformer）。
 
-![图 1：CLIP 网络结构 [@radford2021CLIP, fig. 1]](figures/ch15.1-clip.png){width="60%"}
+![图 15.1.2：CLIP 网络结构 [@radford2021CLIP, fig. 1]](figures/ch15.1-clip.png){width=60%}
 
 给定一张图片 $I_i$ 和一句文本 $T_j$，我们先分别得到它们的特征：
 
@@ -252,7 +254,7 @@ print('text -> image predictions:', pred_image_idx.tolist())
 
 然后把这些文本也编码成向量，和图像向量算相似度。哪个 prompt 最接近，就把图像判成哪个类别。
 
-![图 2：CLIP zero-shot 分类 [@radford2021CLIP, fig. 1]](figures/ch15.1-clip-zero-shot.png){width="60%"}
+![图 15.1.4：CLIP zero-shot 分类 [@radford2021CLIP, fig. 1]](figures/ch15.1-clip-zero-shot.png){width=60%}
 
 也就是说，CLIP 并不像传统分类模型那样用一个固定的线性层来输出类别，而是在推理时用一组文本描述生成对应的类别向量，再根据图像和这些向量的相似度来做判断。这就是 zero-shot 的根源：
 
