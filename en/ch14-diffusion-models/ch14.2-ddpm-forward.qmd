@@ -9,6 +9,8 @@ title: "14.2 The Forward Process of DDPM: From Image to Noise"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch14-diffusion-models/ch14.2-ddpm-forward.ipynb){fig-align="left"}
+
 In the previous section, we first understood the core idea of DDPM from an intuitive perspective: first turn a real image into noise step by step, and then learn the reverse process of this process. If you have already accepted this general direction, then the next questions are:
 
 - How exactly is this noising process defined?

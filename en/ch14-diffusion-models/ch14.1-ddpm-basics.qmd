@@ -9,6 +9,8 @@ title: "14.1 DDPM: From Denoising to Generation"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch14-diffusion-models/ch14.1-ddpm-basics.ipynb){fig-align="left"}
+
 Previously, we have already seen several types of generative models. GAN is like an adversarial game, letting the generator produce realistic samples in one step; AutoEncoder learns compression and reconstruction; VAE starts to explicitly model probability distributions and can sample from latent variables; and when it comes to Diffusion Model, its idea is quite different again:
 
 > **It does not draw the image in one step, but starts from a ball of noise and washes the image out little by little.**
@@ -122,7 +124,7 @@ That is, input the current noisy image, predict how much noise should be removed
 
 Then, when we want to generate an image, it is very simple: start from random Gaussian noise, repeatedly call the denoising network, and finally generate a sample. So, DDPM's generation is not direct generation like GAN, but starts from noise and denoises gradually.
 
-![Figure 1: Schematic diagram of the DDPM generation process [@ho2020DDPM, fig. 2]](figures/ch14.1-ddpm-chain.png){width="80%"}
+![Figure 14.1.3: Schematic diagram of the DDPM generation process [@ho2020DDPM, fig. 2]](figures/ch14.1-ddpm-chain.png){width=80%}
 
 Intuitively, we already feel that this makes sense. From the perspective of probabilistic modeling, it is actually also very natural.
 

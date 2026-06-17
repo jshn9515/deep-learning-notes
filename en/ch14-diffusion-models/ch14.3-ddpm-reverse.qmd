@@ -9,6 +9,8 @@ title: "14.3 DDPM's Reverse Denoising Process and Training Objective"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch14-diffusion-models/ch14.3-ddpm-reverse.ipynb){fig-align="left"}
+
 In the previous section, we clarified the forward process of DDPM.
 
 We know that it first defines a fixed noise-adding chain:
@@ -296,7 +298,7 @@ Here, $x_0$ is sampled from the real data $p_{\text{data}}$, $t$ is a randomly s
 
 However, although it looks like just MSE on the surface, behind it is actually probabilistic modeling of the reverse diffusion process. In other words, this simple MSE loss function actually starts from a rigorous probabilistic model, goes through a series of equivalent or approximately equivalent transformations, and finally becomes a training objective that is very easy to optimize. Unlike many deep learning networks, it has theoretical support behind it. We use a piece of pseudocode to describe this process:
 
-![Algorithm 1: DDPM training process pseudocode [@ho2020DDPM, alg. 1]](figures/ch14.3-ddpm-training.png){width="60%"}
+![Algorithm 14.3.4: DDPM training process pseudocode [@ho2020DDPM, alg. 1]](figures/ch14.3-ddpm-training.png){width=60%}
 
 You see, isn't it simple? Don't be fooled by it. Later, we will explain in detail where this training objective comes from and how it relates to probabilistic modeling.
 

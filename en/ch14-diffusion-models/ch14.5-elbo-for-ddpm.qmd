@@ -9,6 +9,8 @@ title: "14.5 DDPM from a Variational Derivation: Where Does the ELBO Come From?"
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch14-diffusion-models/ch14.5-elbo-for-ddpm.ipynb){fig-align="left"}
+
 In the previous sections, we understood DDPM from the perspectives of intuition and algorithm implementation. But many readers may have a new question:
 
 > **Are these just empirically useful tricks, or can they be rigorously derived from probabilistic modeling?**

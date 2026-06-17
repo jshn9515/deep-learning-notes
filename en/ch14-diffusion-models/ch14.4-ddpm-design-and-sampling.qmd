@@ -9,6 +9,8 @@ title: "14.4 DDPM Network Structure and Sampling Process"
 order: 4
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch14-diffusion-models/ch14.4-ddpm-design-and-sampling.ipynb){fig-align="left"}
+
 In the previous sections, we have already built up the most core ideas of DDPM:
 
 - First define a forward noising process, turning a real image into noise step by step;
@@ -304,7 +306,7 @@ out = unet(x, timesteps)
 print(out.shape)
 ```
 
-## 14.3.4 DDPM Sampling Process: Step-by-Step Denoising + a Little Randomness at Each Step
+## 14.4.4 DDPM Sampling Process: Step-by-Step Denoising + a Little Randomness at Each Step
 
 After training is finished, the model has learned to predict noise under different timesteps. So during generation, we can do this:
 
@@ -321,7 +323,7 @@ So generation is not completed in one step, but is a step-by-step denoising proc
 
 This is the pseudocode for the generation stage, and it is also very simple:
 
-![Algorithm 2: DDPM generation process pseudocode [@ho2020DDPM, alg. 2]](figures/ch14.4-ddpm-sampling.png){width="60%"}
+![Algorithm 14.4.4: DDPM generation process pseudocode [@ho2020DDPM, alg. 2]](figures/ch14.4-ddpm-sampling.png){width=60%}
 
 If you look carefully at this pseudocode, you will find that we seem to also add noise during the sampling process, which is the $z$ in the pseudocode. But aren't we already trying to generate an image? Why do we still add noise while denoising at each step?
 
