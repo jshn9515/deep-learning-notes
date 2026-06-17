@@ -9,6 +9,8 @@ title: "12.1 GAN 基础：生成对抗网络的核心思想与训练流程"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch12-generative-adversarial-networks/ch12.1-gan-basics.ipynb){fig-align="left"}
+
 在前面的章节里，我们接触过很多判别式模型。无论是卷积神经网络，还是 Transformer，它们大多都在做同一类事情：给定输入，预测输出。例如，输入一张图片，判断它属于哪一类；输入一句话，预测下一个词是什么。
 
 但深度学习里还有另一类非常重要的问题：生成。
@@ -17,7 +19,7 @@ order: 1
 
 **GAN (Generative Adversarial Network)** [@goodfellow2014GAN] 就是这一方向中最经典的方法之一。它的想法很直观：不是只训练一个生成模型，而是同时训练两个彼此对抗的模型。一个模型负责生成样本，另一个模型负责判断样本是真是假。生成器想尽办法骗过判别器，而判别器则想尽办法识别出伪造样本。就在这种不断对抗的过程中，生成器逐渐学会如何生成越来越逼真的数据。
 
-![图 1：GAN 网络结构 [@zhang2023d2l, fig. 20.1.1]](figures/ch12.1-gan.svg){height="225px"}
+![图 12.1.0：GAN 网络结构 [@zhang2023d2l, fig. 20.1.1]](figures/ch12.1-gan.svg){height="225px"}
 
 这一节我们先把 GAN 最基本的四个问题理清楚：
 
