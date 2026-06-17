@@ -9,6 +9,8 @@ title: "11.3 Class Token 与 Positional Embedding：让序列表示整张图"
 order: 3
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-vision-transformers/ch11.3-positional-embedding.ipynb){fig-align="left"}
+
 上一节里，我们已经把图像从原始张量
 
 $$

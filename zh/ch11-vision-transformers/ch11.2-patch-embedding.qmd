@@ -9,6 +9,8 @@ title: "11.2 Patch Embedding：把图像切成 Token"
 order: 2
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-vision-transformers/ch11.2-patch-embedding.ipynb){fig-align="left"}
+
 在上一节里，我们讨论了 Vision Transformer 的基本想法：既然 Transformer 擅长处理序列，那么能不能把图像也变成一个序列，再交给 Transformer 来建模？
 
 这个想法听起来很自然，但它马上带来一个具体问题：Transformer 接收的不是原始图像，而是 token embedding 序列。在自然语言处理中，输入通常是一串 token，每个 token 会被映射成一个 embedding；而图像原本是一个二维网格，并没有现成的 token。
@@ -219,8 +221,7 @@ $$
 
 这样，我们就得到了一个 patch 序列。
 
-![图 1：Tensor.unfold 计算流程](figures/ch11.2-unfold.png)
-
+![图 11.2.3：Tensor.unfold 计算流程](figures/ch11.2-unfold.png)
 
 ::: {.callout-tip}
 `Tensor.unfold(dim, size, step)` 会沿着第 `dim` 个维度取滑动窗口，其中 `size` 是窗口长度，`step` 是窗口步长。每取到一个窗口，它就把这个窗口摞起来，多出的维度表示这是第几个窗口。

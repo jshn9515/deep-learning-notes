@@ -9,6 +9,8 @@ title: "11.1 从 CNN 到 Vision Transformer：把图像当成序列"
 order: 1
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-vision-transformers/ch11.1-from-cnn-to-vit.ipynb){fig-align="left"}
+
 在前面的章节里，我们已经看到 Transformer 如何处理序列。无论是机器翻译里的 Encoder-Decoder Transformer，还是只使用 encoder 或 decoder 的模型，它们的输入本质上都是一个 token 序列：
 
 $$
@@ -172,7 +174,7 @@ $$
 \end{aligned}
 $$
 
-![图 1：ViT 模型结构 [@dosovitskiy2021ViT, fig. 1]](figures/ch11.1-vit.png){width="70%"}
+![图 11.1.5：ViT 模型结构 [@dosovitskiy2021ViT, fig. 1]](figures/ch11.1-vit.png){width=70%}
 
 给定一张图像，ViT 会先把它切成多个 patch；然后把每个 patch 展平，并通过线性层映射成一个固定维度的向量；接着加入位置编码，让模型知道每个 patch 来自哪里；最后，把这些 patch embedding 输入 Transformer Encoder，通过 self-attention 建模不同 patch 之间的关系。
 

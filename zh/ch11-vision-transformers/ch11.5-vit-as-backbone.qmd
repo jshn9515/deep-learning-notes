@@ -9,6 +9,8 @@ title: "11.5 ViT Backbone：预训练与微调"
 order: 5
 ---
 
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-vision-transformers/ch11.5-vit-as-backbone.ipynb){fig-align="left"}
+
 上一节里，我们已经把一个最基本的 Vision Transformer 串了起来：
 
 $$
