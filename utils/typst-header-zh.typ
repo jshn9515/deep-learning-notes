@@ -31,6 +31,8 @@
 #set heading(numbering: none)
 #set figure(numbering: none)
 #set table(align: center)
+#set list(indent: 2em)
+#set enum(indent: 2em)
 #set math.equation(numbering: none)
 
 #show heading: set par(first-line-indent: (amount: 0pt, all: false))
