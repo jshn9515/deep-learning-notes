@@ -109,3 +109,12 @@ book:
     - part: "Chapter 15: 视觉语言模型：从图文对齐到多模态对话"
       chapters:
         - "zh/ch15-vision-language-models/ch15.1-clip.qmd"
+    - part: "Chapter 18: 从零实现 GPT-2：语言模型训练的核心结构"
+      chapters:
+        - "zh/ch18-gpt2-from-scratch/ch18.1-next-token-prediction.qmd"
+        - "zh/ch18-gpt2-from-scratch/ch18.2-minigpt.qmd"
+        - "zh/ch18-gpt2-from-scratch/ch18.3-tokenizer.qmd"
+        - "zh/ch18-gpt2-from-scratch/ch18.4-weight-tying.qmd"
+        - "zh/ch18-gpt2-from-scratch/ch18.5-train-minigpt.qmd"
+        - "zh/ch18-gpt2-from-scratch/ch18.6-generation.qmd"
+        - "zh/ch18-gpt2-from-scratch/ch18.7-gpt2-vs-minigpt.qmd"
