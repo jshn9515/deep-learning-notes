@@ -16,11 +16,22 @@ class Optimizer(ABC):
         Args:
             params (Iterable[Tensor]): Parameters whose gradients drive the
                 optimizer updates.
-            **defaults (Any): Additional keyword arguments to store as attributes.
-                These may be used by concrete optimizer implementations.
+            **defaults (Any): Hyperparameters to expose through ``defaults``
+                and compact optimizer representations.
         """
         self.params = list(params)
         self.defaults = defaults
+
+    def extra_repr(self) -> str:
+        """Return optimizer hyperparameters displayed inside ``repr``."""
+        return ', '.join(f'{name}={value!r}' for name, value in self.defaults.items())
+
+    def __repr__(self) -> str:
+        """Return a compact optimizer representation."""
+        extra = self.extra_repr()
+        if extra:
+            return f'{self.__class__.__name__}({extra})'
+        return f'{self.__class__.__name__}()'
 
     @abstractmethod
     def step(self):
