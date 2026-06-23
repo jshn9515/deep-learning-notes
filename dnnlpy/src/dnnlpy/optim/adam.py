@@ -32,7 +32,13 @@ class Adam(Optimizer):
             weight_decay (float, default: 0.0): Coefficient applied to the
                 parameters before adding them to the gradient.
         """
-        super().__init__(params)
+        super().__init__(
+            params,
+            lr=lr,
+            betas=betas,
+            eps=eps,
+            weight_decay=weight_decay,
+        )
         self.lr = lr
         self.beta1 = betas[0]
         self.beta2 = betas[1]

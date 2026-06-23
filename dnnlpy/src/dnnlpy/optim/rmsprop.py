@@ -34,7 +34,14 @@ class RMSprop(Optimizer):
                 parameters before adding them to the gradient.
             momentum (float, default: 0.0): Momentum coefficient.
         """
-        super().__init__(params)
+        super().__init__(
+            params,
+            lr=lr,
+            rho=rho,
+            eps=eps,
+            weight_decay=weight_decay,
+            momentum=momentum,
+        )
         self.lr = lr
         self.rho = rho
         self.eps = eps

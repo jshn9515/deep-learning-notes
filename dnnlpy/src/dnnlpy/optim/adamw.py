@@ -33,7 +33,13 @@ class AdamW(Optimizer):
                 coefficient applied directly to parameters before the Adam
                 update.
         """
-        super().__init__(params)
+        super().__init__(
+            params,
+            lr=lr,
+            betas=betas,
+            eps=eps,
+            weight_decay=weight_decay,
+        )
         self.lr = lr
         self.beta1 = betas[0]
         self.beta2 = betas[1]

@@ -81,7 +81,16 @@ class Muon(Optimizer):
             eps (float, default: 1e-7): Small value used when normalizing the
                 update matrix.
         """
-        super().__init__(params)
+        super().__init__(
+            params,
+            lr=lr,
+            weight_decay=weight_decay,
+            momentum=momentum,
+            nesterov=nesterov,
+            ns_coefficients=ns_coefficients,
+            ns_steps=ns_steps,
+            eps=eps,
+        )
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum

@@ -25,7 +25,7 @@ class SimpleSGD(Optimizer):
             params (Iterable[Tensor]): Parameters to update.
             lr (float, default: 1e-3): Learning rate used to scale each gradient update.
         """
-        super().__init__(params)
+        super().__init__(params, lr=lr)
         self.lr = lr
 
     @override
@@ -56,7 +56,7 @@ class SimpleSGDWithWeightDecay(Optimizer):
             weight_decay (float, default: 0.0): Coefficient applied to the parameters
                 before adding them to the gradient. Must be non-negative.
         """
-        super().__init__(params)
+        super().__init__(params, lr=lr, weight_decay=weight_decay)
         self.lr = lr
         self.weight_decay = weight_decay
 
@@ -91,7 +91,7 @@ class SimpleSGDWithMomentum(Optimizer):
             momentum (float, default: 0.0): Coefficient applied to the previous
                 velocity before adding the current gradient.
         """
-        super().__init__(params)
+        super().__init__(params, lr=lr, momentum=momentum)
         self.lr = lr
         self.momentum = momentum
         self.velocity = [torch.zeros_like(p) for p in self.params]
@@ -125,7 +125,7 @@ class SimpleSGDWithNesterovMomentum(Optimizer):
             momentum (float, default: 0.0): Coefficient applied to the previous
                 velocity before adding the current gradient.
         """
-        super().__init__(params)
+        super().__init__(params, lr=lr, momentum=momentum)
         self.lr = lr
         self.momentum = momentum
         self.velocity = [torch.zeros_like(p) for p in self.params]
@@ -166,7 +166,13 @@ class SGD(Optimizer):
                 before adding them to the gradient. Must be non-negative.
             nesterov (bool, default: False): Whether to use Nesterov momentum.
         """
-        super().__init__(params)
+        super().__init__(
+            params,
+            lr=lr,
+            momentum=momentum,
+            weight_decay=weight_decay,
+            nesterov=nesterov,
+        )
         self.lr = lr
         self.momentum = momentum
         self.weight_decay = weight_decay

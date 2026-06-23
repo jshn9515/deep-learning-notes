@@ -34,7 +34,14 @@ class Adagrad(Optimizer):
             eps (float, default: 1e-10): Small value added to the denominator
                 for numerical stability.
         """
-        super().__init__(params)
+        super().__init__(
+            params,
+            lr=lr,
+            lr_decay=lr_decay,
+            weight_decay=weight_decay,
+            initial_accumulator_value=initial_accumulator_value,
+            eps=eps,
+        )
         self.lr = lr
         self.lr_decay = lr_decay
         self.weight_decay = weight_decay
