@@ -7,7 +7,7 @@ from torch import Tensor
 from .activation import softmax
 
 __all__ = [
-    'attention',
+    'naive_attention',
     'scaled_dot_product_attention',
     'multi_head_attention',
     'generate_causal_mask',
@@ -16,7 +16,7 @@ __all__ = [
 type AttentionOutput = tuple[Tensor, Tensor | None]
 
 
-def attention(
+def naive_attention(
     query: Tensor,
     key: Tensor,
     value: Tensor,
@@ -135,6 +135,8 @@ def multi_head_attention(
     dropout: float = 0.0,
     training: bool = True,
     need_weights: bool = False,
+    *,
+    fast: bool = False,
 ) -> AttentionOutput:
     """Compute batch-first multi-head attention from explicit projection weights.
 
@@ -173,6 +175,8 @@ def multi_head_attention(
         raise AssertionError('`query`, `key`, and `value` batch sizes must match.')
     if key.size(1) != value.size(1):
         raise AssertionError('`key` and `value` must have the same sequence length.')
+    if not 0.0 <= dropout <= 1.0:
+        raise AssertionError('`dropout` must be between 0 and 1.')
 
     head_dim = embed_dim // num_heads
 
@@ -191,14 +195,26 @@ def multi_head_attention(
     k = k.view(batch_size, source_len, num_heads, head_dim).transpose(1, 2)
     v = v.view(batch_size, source_len, num_heads, head_dim).transpose(1, 2)
 
-    head_output, attn_weights = scaled_dot_product_attention(
-        q, k, v,
-        attn_mask=attn_mask,
-        is_causal=is_causal,
-        dropout=dropout,
-        training=training,
-        need_weights=need_weights,
-    )  # fmt: skip
+    if fast:
+        if attn_mask is not None and attn_mask.dtype == torch.bool:
+            attn_mask = ~attn_mask
+
+        head_output = F.scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=attn_mask,
+            dropout_p=dropout if training else 0.0,
+            is_causal=is_causal,
+        )  # fmt: skip
+        attn_weights = None
+    else:
+        head_output, attn_weights = scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=attn_mask,
+            is_causal=is_causal,
+            dropout=dropout,
+            training=training,
+            need_weights=need_weights,
+        )  # fmt: skip
 
     output = head_output.transpose(1, 2)
     output = output.reshape(batch_size, target_len, embed_dim)
