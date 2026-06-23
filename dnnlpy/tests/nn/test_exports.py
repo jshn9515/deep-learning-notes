@@ -26,6 +26,10 @@ def test_functional_exports_new_functions():
         'gelu',
         'softmax',
         'log_softmax',
+        'naive_attention',
+        'scaled_dot_product_attention',
+        'multi_head_attention',
+        'generate_causal_mask',
         'cross_entropy',
     ]:
         assert hasattr(dF, name)

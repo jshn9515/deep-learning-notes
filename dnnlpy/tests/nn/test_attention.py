@@ -1,5 +1,6 @@
 import math
 
+import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -22,7 +23,7 @@ def test_naive_attention():
     key = torch.randn(batch_size, src_len, d_model)
     value = torch.randn(batch_size, src_len, d_model)
 
-    output, weights = dF.attention(query, key, value)
+    output, weights = dF.naive_attention(query, key, value)
     expected_weights = F.softmax(query @ key.transpose(-2, -1), dim=-1)
 
     assert weights is not None
@@ -265,6 +266,131 @@ def test_multi_head_attention_matches_torch_cross_attention_with_bias():
     assert expected_weights is not None
     assert torch.allclose(actual, expected, atol=1e-5)
     assert torch.allclose(actual_weights, expected_weights, atol=1e-6)
+
+
+def test_fast_multi_head_attention_matches_slow_boolean_mask():
+    query = torch.randn(batch_size, tgt_len, d_model)
+    key = torch.randn(batch_size, src_len, key_dim)
+    value = torch.randn(batch_size, src_len, value_dim)
+    q_weight = torch.randn(d_model, d_model)
+    k_weight = torch.randn(key_dim, d_model)
+    v_weight = torch.randn(value_dim, d_model)
+    out_weight = torch.randn(d_model, d_model)
+    attn_mask = torch.zeros(tgt_len, src_len, dtype=torch.bool)
+    attn_mask[:, -1] = True
+
+    expected, expected_weights = dF.multi_head_attention(
+        query,
+        key,
+        value,
+        num_heads=num_heads,
+        q_proj_weight=q_weight,
+        k_proj_weight=k_weight,
+        v_proj_weight=v_weight,
+        out_proj_weight=out_weight,
+        attn_mask=attn_mask,
+    )
+    actual, actual_weights = dF.multi_head_attention(
+        query,
+        key,
+        value,
+        num_heads=num_heads,
+        q_proj_weight=q_weight,
+        k_proj_weight=k_weight,
+        v_proj_weight=v_weight,
+        out_proj_weight=out_weight,
+        attn_mask=attn_mask,
+        fast=True,
+    )
+
+    assert expected_weights is None
+    assert actual_weights is None
+    assert torch.allclose(actual, expected, atol=1e-6)
+
+
+def test_fast_multi_head_attention_respects_training_dropout_flag():
+    query = torch.randn(batch_size, tgt_len, d_model)
+    key = torch.randn(batch_size, src_len, key_dim)
+    value = torch.randn(batch_size, src_len, value_dim)
+    q_weight = torch.randn(d_model, d_model)
+    k_weight = torch.randn(key_dim, d_model)
+    v_weight = torch.randn(value_dim, d_model)
+    out_weight = torch.randn(d_model, d_model)
+
+    expected, _ = dF.multi_head_attention(
+        query,
+        key,
+        value,
+        num_heads=num_heads,
+        q_proj_weight=q_weight,
+        k_proj_weight=k_weight,
+        v_proj_weight=v_weight,
+        out_proj_weight=out_weight,
+        dropout=0.8,
+        training=False,
+    )
+    actual, actual_weights = dF.multi_head_attention(
+        query,
+        key,
+        value,
+        num_heads=num_heads,
+        q_proj_weight=q_weight,
+        k_proj_weight=k_weight,
+        v_proj_weight=v_weight,
+        out_proj_weight=out_weight,
+        dropout=0.8,
+        training=False,
+        fast=True,
+    )
+
+    assert actual_weights is None
+    assert torch.allclose(actual, expected, atol=1e-6)
+
+
+def test_fast_multi_head_attention_returns_no_weights():
+    query = torch.randn(batch_size, tgt_len, d_model)
+    key = torch.randn(batch_size, src_len, key_dim)
+    value = torch.randn(batch_size, src_len, value_dim)
+    q_weight = torch.randn(d_model, d_model)
+    k_weight = torch.randn(key_dim, d_model)
+    v_weight = torch.randn(value_dim, d_model)
+    out_weight = torch.randn(d_model, d_model)
+
+    expected, expected_weights = dF.multi_head_attention(
+        query,
+        key,
+        value,
+        num_heads=num_heads,
+        q_proj_weight=q_weight,
+        k_proj_weight=k_weight,
+        v_proj_weight=v_weight,
+        out_proj_weight=out_weight,
+        need_weights=True,
+    )
+    actual, actual_weights = dF.multi_head_attention(
+        query,
+        key,
+        value,
+        num_heads=num_heads,
+        q_proj_weight=q_weight,
+        k_proj_weight=k_weight,
+        v_proj_weight=v_weight,
+        out_proj_weight=out_weight,
+        need_weights=True,
+        fast=True,
+    )
+
+    assert expected_weights is not None
+    assert torch.allclose(actual, expected)
+    assert actual_weights is None
+
+
+def test_fast_multihead_attention_module_rejects_weight_return():
+    query = torch.randn(batch_size, tgt_len, d_model)
+    module = dnn.MultiheadAttention(d_model, num_heads, fast=True)
+
+    with pytest.raises(AssertionError, match='need_weights=True'):
+        module(query, query, query, need_weights=True)
 
 
 def test_multihead_attention_module_matches_torch_module():

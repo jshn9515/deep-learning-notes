@@ -38,6 +38,16 @@ def test_linear_module_matches_torch_module():
     assert torch.allclose(actual(x), expected(x))
 
 
+def test_fast_linear_module_matches_torch_module():
+    x = torch.randn(2, 4, 3)
+    actual = dnn.Linear(3, 5, fast=True)
+    expected = nn.Linear(3, 5)
+    expected.load_state_dict(actual.state_dict())
+
+    assert actual.fast is True
+    assert torch.allclose(actual(x), expected(x))
+
+
 def test_linear_module_supports_no_bias():
     x = torch.randn(2, 3)
     actual = dnn.Linear(3, 5, bias=False)

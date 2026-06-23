@@ -40,6 +40,18 @@ def test_cross_entropy_module_matches_torch_module():
     assert torch.allclose(actual(x, target), expected(x, target))
 
 
+def test_fast_cross_entropy_module_matches_torch_module():
+    x = torch.randn(5, 4)
+    target = torch.tensor([0, 3, 1, 2, 1])
+    weight = torch.tensor([1.0, 0.5, 2.0, 1.5])
+
+    actual = dnn.CrossEntropyLoss(weight=weight, reduction='sum', fast=True)
+    expected = nn.CrossEntropyLoss(weight=weight, reduction='sum')
+
+    assert actual.fast is True
+    assert torch.allclose(actual(x, target), expected(x, target))
+
+
 def test_cross_entropy_rejects_invalid_reduction():
     x = torch.randn(5, 4)
     target = torch.tensor([0, 3, 1, 2, 1])
