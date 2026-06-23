@@ -78,7 +78,7 @@ jobs:
 
       - name: Restore Quarto freeze cache
         if: steps.changes.outputs.external_changed == 'false'
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: _freeze
           key: quarto-freeze-${{ runner.os }}-${{ github.run_id }}
