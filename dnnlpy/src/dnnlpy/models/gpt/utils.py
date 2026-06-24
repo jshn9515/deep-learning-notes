@@ -18,7 +18,7 @@ def get_batch(
     token_ids: Tensor,
     block_size: int,
     batch_size: int,
-    device: Device,
+    device: Device = 'cpu',
 ) -> tuple[Tensor, Tensor]:
     """Cut out a batch of inputs and targets from the token stream."""
     max_start = len(token_ids) - block_size - 1
@@ -37,6 +37,7 @@ def greedy_sampling(logits: Tensor, temperature: float) -> Tensor:
 
 
 def top_k_sampling(logits: Tensor, top_k: int) -> Tensor:
+    """Sample the next token from the logits using top-k sampling."""
     if top_k <= 0:
         return logits
 
@@ -45,29 +46,30 @@ def top_k_sampling(logits: Tensor, top_k: int) -> Tensor:
     threshold = values[..., -1]
 
     logits = logits.masked_fill(logits < threshold, -torch.inf)
-    probs = dF.softmax(logits, dim=-1)
-    return probs
+    return logits
 
 
 def top_p_sampling(logits: Tensor, top_p: float) -> Tensor:
+    """Sample the next token from the logits using top-p sampling."""
     if not 0 < top_p <= 1:
         raise AssertionError('`top_p` must be in (0, 1].')
+
     if top_p == 1.0:
         return logits
 
-    logits, indices = logits.sort(descending=True, dim=-1)
-    probs = dF.softmax(logits, dim=-1)
-    cumulative_probs = probs.cumsum(dim=-1)
+    sorted_logits, sorted_indices = logits.sort(dim=-1, descending=True)
+    sorted_probs = dF.softmax(sorted_logits, dim=-1)
+    cumulative_probs = sorted_probs.cumsum(dim=-1)
 
     # Remove tokens whose cumulative probability is above top_p.
     mask = cumulative_probs > top_p
-
     # Keep the first token above the threshold as well, so the kept set reaches top_p.
-    remove_mask = F.pad(mask[..., :-1], (1, 0), value=False)
-    remove_mask = remove_mask.scatter(-1, indices, remove_mask)
+    mask = F.pad(mask[..., :-1], (1, 0), value=False)
+
+    remove_mask = torch.zeros_like(logits, dtype=torch.bool)
+    remove_mask.scatter_(dim=-1, index=sorted_indices, src=mask)
 
     logits = logits.masked_fill(remove_mask, -torch.inf)
-    logits = dF.softmax(logits, dim=-1)
     return logits
 
 
@@ -89,13 +91,13 @@ def sample_next_token(
         return next_token
 
     logits = logits / temperature
-    probs = torch.zeros_like(logits)
 
     if top_k is not None:
-        probs = top_k_sampling(logits, top_k=top_k)
+        logits = top_k_sampling(logits, top_k=top_k)
 
     if top_p is not None:
-        probs = top_p_sampling(logits, top_p=top_p)
+        logits = top_p_sampling(logits, top_p=top_p)
 
+    probs = dF.softmax(logits, dim=-1)
     next_token = probs.multinomial(num_samples=1)
     return next_token
