@@ -44,7 +44,7 @@ All code in this repository has been tested in the following environment:
 - Python 3.14
 - PyTorch 2.12
 
-See `requirements.txt` for the full list of dependencies.
+See `pyproject.toml` for the full list of dependencies.
 
 Before running the related content, please install the `dnnlpy` library. This library contains some custom implementations and utility functions used throughout the notes, and many examples will not run properly without it.
 

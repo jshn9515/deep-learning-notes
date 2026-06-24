@@ -44,7 +44,7 @@ quarto convert path/to/file.qmd
 - Python 3.14
 - PyTorch 2.12
 
-完整依赖见 `requirements.txt`。
+完整依赖见 `pyproject.toml`。
 
 在运行相关内容之前，请先安装 `dnnlpy` 库。这个库包含了笔记中使用的一些自定义实现和工具函数，安装完成后才能正常运行相关代码。
 
