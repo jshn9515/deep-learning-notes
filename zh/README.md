@@ -88,3 +88,13 @@
 ## Chapter 15: 视觉语言模型：从图文对齐到多模态对话
 
 - 15.1 CLIP：把图像和文本映射到同一个语义空间
+
+## Chapter 18: 从零实现 GPT-2：语言模型训练的核心结构
+
+- 18.1 语言模型在预测什么：Next-Token Prediction
+- 18.2 MiniGPT：从 Causal GPT Block 到语言模型
+- 18.3 Tokenizer：字符、BPE 与词表
+- 18.4 Embedding、LM Head 与 Weight Tying
+- 18.5 在 TinyStories 上训练 MiniGPT
+- 18.6 从训练到生成：Temperature、Top-k、Top-p
+- 18.7 GPT-2：从 MiniGPT 到预训练语言模型
