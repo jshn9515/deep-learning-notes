@@ -36,7 +36,7 @@ class Adadelta(Optimizer):
             lr=lr,
             rho=rho,
             eps=eps,
-            weight_decay=weight_decay
+            weight_decay=weight_decay,
         )
         self.lr = lr
         self.rho = rho
