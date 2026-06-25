@@ -1,4 +1,5 @@
 import torch
+from torch.testing import assert_close
 
 from dnnlpy.models.vae import VAE, AutoEncoder
 
@@ -39,8 +40,8 @@ def test_vae_loss_supports_mse_and_rejects_unknown_loss():
 
     loss, recon_loss, kl_loss = VAE.loss(x_hat, x, mu, logvar, loss_fn='mse', beta=0.5)
 
-    assert torch.allclose(loss, recon_loss)
-    assert torch.allclose(kl_loss, torch.tensor(0.0))
+    assert_close(loss, recon_loss)
+    assert_close(kl_loss, torch.tensor(0.0))
 
     try:
         VAE.loss(x_hat, x, mu, logvar, loss_fn='mae')  # type: ignore[arg-type]

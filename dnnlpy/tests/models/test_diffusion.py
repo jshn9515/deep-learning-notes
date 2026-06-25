@@ -1,4 +1,5 @@
 import torch
+from torch.testing import assert_close
 
 from dnnlpy.models.ddpm import (
     DDPMScheduler,
@@ -39,7 +40,7 @@ def test_ddpm_scheduler_add_noise_and_timestep_schedule():
     noisy = scheduler.add_noise(original_samples, noise, timesteps)
     expected = scheduler.alphas_cumprod[timesteps].sqrt().view(-1, 1, 1, 1)
 
-    assert torch.allclose(noisy, expected * original_samples)
+    assert_close(noisy, expected * original_samples)
 
     scheduler.set_timesteps(5)
     assert scheduler.timesteps.tolist() == [9, 6, 4, 2, 0]

@@ -1,6 +1,7 @@
 import pytest
 import torch
 import torch.nn.functional as F
+from torch.testing import assert_close
 
 from dnnlpy.models.gpt import MiniGPT
 
@@ -106,7 +107,7 @@ def test_minigpt_loss_shifts_inputs_when_targets_are_omitted():
         input_ids[:, 1:].reshape(-1),
     )
 
-    assert torch.allclose(loss, expected)
+    assert_close(loss, expected)
 
 
 def test_minigpt_loss_uses_provided_targets_without_shifting():
@@ -129,7 +130,7 @@ def test_minigpt_loss_uses_provided_targets_without_shifting():
         targets.reshape(-1),
     )
 
-    assert torch.allclose(loss, expected)
+    assert_close(loss, expected)
 
 
 def test_minigpt_generate_returns_greedy_next_token_from_last_position():

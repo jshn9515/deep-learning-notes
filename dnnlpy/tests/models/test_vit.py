@@ -1,5 +1,6 @@
 import pytest
 import torch
+from torch.testing import assert_close
 
 from dnnlpy.models.vit import (
     ViTClassificationHead,
@@ -80,7 +81,7 @@ def test_vit_positional_embedding_adds_positions_and_validates_length():
     output = module(x)
 
     assert output.shape == x.shape
-    assert torch.allclose(output, module.pos_embed.expand_as(output))
+    assert_close(output, module.pos_embed.expand_as(output))
 
     with pytest.raises(AssertionError, match='Expected sequence length'):
         module(torch.zeros(2, 4, 6))
@@ -99,7 +100,7 @@ def test_vit_positional_embedding_interpolates_with_and_without_cls_token():
 
     assert cls_output.shape == (1, 10, 6)
     assert patch_output.shape == (1, 9, 6)
-    assert torch.allclose(cls_output[:, :1], with_cls.pos_embed[:, :1])
+    assert_close(cls_output[:, :1], with_cls.pos_embed[:, :1])
 
 
 def test_vit_positional_embedding_rejects_mismatched_old_grid():
