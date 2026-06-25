@@ -1,9 +1,14 @@
+from collections.abc import Callable
 from typing import Any
 
 import pytest
 import torch
+import torch.optim as optim
+from torch.testing import assert_close
 
 import dnnlpy.optim as dopt
+
+type Optimizer = Callable[..., optim.Optimizer]
 
 
 @pytest.mark.parametrize(
@@ -16,7 +21,7 @@ import dnnlpy.optim as dopt
     ],
 )
 def test_adaptive_optimizers_apply_weight_decay_as_gradient_term(
-    optimizer_cls: type[dopt.Optimizer],
+    optimizer_cls: Optimizer,
     kwargs: Any,
 ):
     actual_param = torch.tensor([1.0, -2.0], requires_grad=True)
@@ -37,21 +42,27 @@ def test_adaptive_optimizers_apply_weight_decay_as_gradient_term(
         actual_optimizer.step()
         expected_optimizer.step()
 
-    assert torch.allclose(actual_param, expected_param)
+    assert_close(actual_param, expected_param)
 
 
 @pytest.mark.parametrize(
-    'optimizer_cls',
-    [dopt.Adagrad, dopt.RMSprop, dopt.Adadelta, dopt.Adam],
+    ('optimizer_cls', 'kwargs'),
+    [
+        (dopt.Adagrad, {'lr': 0.1, 'eps': 0.0}),
+        (dopt.RMSprop, {'lr': 0.1, 'rho': 0.9, 'eps': 1e-8}),
+        (dopt.Adadelta, {'lr': 1.0, 'rho': 0.9, 'eps': 1e-6}),
+        (dopt.Adam, {'lr': 0.1, 'betas': (0.9, 0.999), 'eps': 1e-8}),
+    ],
 )
-def test_adaptive_optimizers_leave_parameters_without_gradients_unchanged(
-    optimizer_cls: type[dopt.Optimizer],
+def test_adaptive_optimizers_do_not_mutate_gradients(
+    optimizer_cls: Optimizer,
+    kwargs: Any,
 ):
-    trained = torch.tensor([1.0], requires_grad=True)
-    skipped = torch.tensor([2.0], requires_grad=True)
-    trained.grad = torch.tensor([0.5])
-    optimizer = optimizer_cls([trained, skipped], weight_decay=0.2)
+    param = torch.tensor([1.0, -2.0], requires_grad=True)
+    param.grad = torch.tensor([0.5, -0.25])
+    expected_grad = param.grad.clone()
+    optimizer = optimizer_cls([param], weight_decay=0.2, **kwargs)
 
     optimizer.step()
 
-    assert torch.allclose(skipped, torch.tensor([2.0]))
+    assert_close(param.grad, expected_grad)

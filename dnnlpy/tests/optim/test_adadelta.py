@@ -1,6 +1,7 @@
 import inspect
 
 import torch
+from torch.testing import assert_close
 
 import dnnlpy.optim as dopt
 import dnnlpy.optim.adadelta as adadelta
@@ -30,13 +31,11 @@ def test_adadelta_accumulates_state_and_updates_parameters():
     expected_square_avg = torch.tensor([0.025, 0.00625])
     expected_update = torch.tensor([-0.0031622, 0.0031620])
     expected_accumulate_update = 0.1 * expected_update.square()
-    expected_effective_lr = (expected_accumulate_update + 1e-6).sqrt() / (
-        expected_square_avg + 1e-6
-    ).sqrt()
-    assert torch.allclose(optimizer.ema_of_sq_grads[0], expected_square_avg)
-    assert torch.allclose(optimizer.ema_of_sq_updates[0], expected_accumulate_update)
-    assert torch.allclose(param, torch.tensor([0.9968378, -1.9968380]))
-    assert torch.allclose(optimizer.get_effective_lr()[0], expected_effective_lr)
+
+    state = optimizer.state[param]
+    assert_close(state['square_avg'], expected_square_avg)
+    assert_close(state['acc_delta'], expected_accumulate_update)
+    assert_close(param, torch.tensor([0.9968378, -1.9968380]))
 
 
 def test_adadelta_skips_parameters_without_gradients():
@@ -47,7 +46,6 @@ def test_adadelta_skips_parameters_without_gradients():
 
     optimizer.step()
 
-    assert torch.allclose(trained, torch.tensor([0.9968378]))
-    assert torch.allclose(skipped, torch.tensor([2.0]))
-    assert torch.equal(optimizer.ema_of_sq_grads[1], torch.zeros_like(skipped))
-    assert torch.equal(optimizer.ema_of_sq_updates[1], torch.zeros_like(skipped))
+    assert_close(trained, torch.tensor([0.9968378]))
+    assert_close(skipped, torch.tensor([2.0]))
+    assert optimizer.state[skipped] == {}

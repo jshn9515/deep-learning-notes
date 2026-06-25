@@ -1,6 +1,7 @@
 import inspect
 
 import torch
+from torch.testing import assert_close
 
 import dnnlpy.optim as dopt
 import dnnlpy.optim.adam as adam
@@ -27,10 +28,11 @@ def test_adam_accumulates_moments_and_updates_parameters():
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
 
-    assert optimizer.step_count == 1
-    assert torch.allclose(optimizer.exp_avg[0], torch.tensor([0.05, -0.025]))
-    assert torch.allclose(optimizer.exp_avg_sq[0], torch.tensor([0.00025, 0.0000625]))
-    assert torch.allclose(param, torch.tensor([0.9, -1.9]))
+    state = optimizer.state[param]
+    assert state['step'] == 1
+    assert_close(state['exp_avg'], torch.tensor([0.05, -0.025]))
+    assert_close(state['exp_avg_sq'], torch.tensor([0.00025, 0.0000625]))
+    assert_close(param, torch.tensor([0.9, -1.9]))
 
 
 def test_adam_skips_parameters_without_gradients():
@@ -41,7 +43,6 @@ def test_adam_skips_parameters_without_gradients():
 
     optimizer.step()
 
-    assert torch.allclose(trained, torch.tensor([0.9]))
-    assert torch.allclose(skipped, torch.tensor([2.0]))
-    assert torch.equal(optimizer.exp_avg[1], torch.zeros_like(skipped))
-    assert torch.equal(optimizer.exp_avg_sq[1], torch.zeros_like(skipped))
+    assert_close(trained, torch.tensor([0.9]))
+    assert_close(skipped, torch.tensor([2.0]))
+    assert optimizer.state[skipped] == {}

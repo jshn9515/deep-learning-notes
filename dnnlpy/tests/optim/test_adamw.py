@@ -1,6 +1,7 @@
 import inspect
 
 import torch
+from torch.testing import assert_close
 
 import dnnlpy.optim as dopt
 import dnnlpy.optim.adamw as adamw
@@ -33,13 +34,11 @@ def test_adamw_applies_decoupled_weight_decay_and_updates_parameters():
     param.grad = torch.tensor([0.5, -0.25])
     optimizer.step()
 
-    assert optimizer.step_count == 1
-    assert torch.allclose(optimizer.first_moments[0], torch.tensor([0.05, -0.025]))
-    assert torch.allclose(
-        optimizer.second_moments[0],
-        torch.tensor([0.00025, 0.0000625]),
-    )
-    assert torch.allclose(param, torch.tensor([0.88, -1.86]))
+    state = optimizer.state[param]
+    assert state['step'] == 1
+    assert_close(state['exp_avg'], torch.tensor([0.05, -0.025]))
+    assert_close(state['exp_avg_sq'], torch.tensor([0.00025, 0.0000625]))
+    assert_close(param, torch.tensor([0.88, -1.86]))
 
 
 def test_adamw_skips_parameters_without_gradients():
@@ -50,7 +49,6 @@ def test_adamw_skips_parameters_without_gradients():
 
     optimizer.step()
 
-    assert torch.allclose(trained, torch.tensor([0.88]))
-    assert torch.allclose(skipped, torch.tensor([2.0]))
-    assert torch.equal(optimizer.first_moments[1], torch.zeros_like(skipped))
-    assert torch.equal(optimizer.second_moments[1], torch.zeros_like(skipped))
+    assert_close(trained, torch.tensor([0.88]))
+    assert_close(skipped, torch.tensor([2.0]))
+    assert optimizer.state[skipped] == {}
