@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.testing import assert_close
 
 import dnnlpy.nn as dnn
 import dnnlpy.nn.functional as dF
@@ -14,7 +15,7 @@ def test_linear_function_matches_torch_with_bias():
     actual = dF.linear(x, weight, bias)
     expected = F.linear(x, weight, bias)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 def test_linear_function_matches_torch_without_bias_for_batched_input():
@@ -24,7 +25,7 @@ def test_linear_function_matches_torch_without_bias_for_batched_input():
     actual = dF.linear(x, weight)
     expected = F.linear(x, weight)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 def test_linear_module_matches_torch_module():
@@ -35,7 +36,7 @@ def test_linear_module_matches_torch_module():
 
     assert actual.in_features == expected.in_features
     assert actual.out_features == expected.out_features
-    assert torch.allclose(actual(x), expected(x))
+    assert_close(actual(x), expected(x))
 
 
 def test_fast_linear_module_matches_torch_module():
@@ -45,7 +46,7 @@ def test_fast_linear_module_matches_torch_module():
     expected.load_state_dict(actual.state_dict())
 
     assert actual.fast is True
-    assert torch.allclose(actual(x), expected(x))
+    assert_close(actual(x), expected(x))
 
 
 def test_linear_module_supports_no_bias():
@@ -55,7 +56,7 @@ def test_linear_module_supports_no_bias():
     expected.load_state_dict(actual.state_dict())
 
     assert actual.bias is None
-    assert torch.allclose(actual(x), expected(x))
+    assert_close(actual(x), expected(x))
 
 
 def test_identity_module_returns_same_tensor():

@@ -4,6 +4,7 @@ import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.testing import assert_close
 
 import dnnlpy.nn as dnn
 import dnnlpy.nn.functional as dF
@@ -27,8 +28,8 @@ def test_naive_attention():
     expected_weights = F.softmax(query @ key.transpose(-2, -1), dim=-1)
 
     assert weights is not None
-    assert torch.allclose(weights, expected_weights)
-    assert torch.allclose(output, expected_weights @ value)
+    assert_close(weights, expected_weights)
+    assert_close(output, expected_weights @ value)
 
 
 def test_scaled_dot_product_attention():
@@ -42,8 +43,8 @@ def test_scaled_dot_product_attention():
     expected_weights = F.softmax((query @ key.transpose(-2, -1)) * scale, dim=-1)
 
     assert weights is not None
-    assert torch.allclose(output, expected, atol=1e-6)
-    assert torch.allclose(weights, expected_weights)
+    assert_close(output, expected, rtol=1e-5, atol=1e-6)
+    assert_close(weights, expected_weights)
 
 
 def test_scaled_dot_product_attention_boolean_mask():
@@ -67,10 +68,10 @@ def test_scaled_dot_product_attention_boolean_mask():
     expected = F.scaled_dot_product_attention(query, key, value, attn_mask=~attn_mask)
 
     assert weights is not None
-    assert torch.allclose(output, expected, atol=1e-6)
+    assert_close(output, expected, rtol=1e-5, atol=1e-6)
 
     masked_weights = weights.masked_select(attn_mask.expand_as(weights))
-    assert torch.allclose(masked_weights, torch.zeros_like(masked_weights))
+    assert_close(masked_weights, torch.zeros_like(masked_weights))
 
 
 def test_scaled_dot_product_attention_supports_additive_mask():
@@ -86,8 +87,8 @@ def test_scaled_dot_product_attention_supports_additive_mask():
     expected = F.scaled_dot_product_attention(query, key, value, attn_mask=attn_mask)
 
     assert weights is not None
-    assert torch.allclose(output, expected, atol=1e-6)
-    assert torch.allclose(weights[..., -1], torch.zeros_like(weights[..., -1]))
+    assert_close(output, expected, rtol=1e-5, atol=1e-6)
+    assert_close(weights[..., -1], torch.zeros_like(weights[..., -1]))
 
 
 def test_scaled_dot_product_attention_supports_causal_mode():
@@ -100,10 +101,10 @@ def test_scaled_dot_product_attention_supports_causal_mode():
     forbidden = torch.ones(tgt_len, src_len, dtype=torch.bool).triu(diagonal=1)
 
     assert weights is not None
-    assert torch.allclose(output, expected, atol=1e-6)
+    assert_close(output, expected, rtol=1e-5, atol=1e-6)
 
     masked_weights = weights[..., forbidden]
-    assert torch.allclose(masked_weights, torch.zeros_like(masked_weights))
+    assert_close(masked_weights, torch.zeros_like(masked_weights))
 
 
 def test_generate_causal_mask_masks_future_positions():
@@ -136,8 +137,8 @@ def test_scaled_dot_product_attention_causal_uses_boolean_mask():
 
     assert causal_weights is not None
     assert masked_weights is not None
-    assert torch.allclose(causal_output, masked_output)
-    assert torch.allclose(causal_weights, masked_weights)
+    assert_close(causal_output, masked_output)
+    assert_close(causal_weights, masked_weights)
 
 
 def test_scaled_dot_product_attention_respects_scale_and_training_dropout_flag():
@@ -157,7 +158,7 @@ def test_scaled_dot_product_attention_respects_scale_and_training_dropout_flag()
         scale=0.25,
     )  # fmt: skip
 
-    assert torch.allclose(output, expected, atol=1e-6)
+    assert_close(output, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_multi_head_attention_matches_explicit_cross_attention_with_bias():
@@ -205,8 +206,8 @@ def test_multi_head_attention_matches_explicit_cross_attention_with_bias():
 
     assert weights is not None
     assert expected_weights is not None
-    assert torch.allclose(weights, expected_weights)
-    assert torch.allclose(output, expected_output)
+    assert_close(weights, expected_weights)
+    assert_close(output, expected_output)
 
 
 def test_multi_head_attention_matches_torch_cross_attention_with_bias():
@@ -264,8 +265,8 @@ def test_multi_head_attention_matches_torch_cross_attention_with_bias():
 
     assert actual_weights is not None
     assert expected_weights is not None
-    assert torch.allclose(actual, expected, atol=1e-5)
-    assert torch.allclose(actual_weights, expected_weights, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-5)
+    assert_close(actual_weights, expected_weights, rtol=1e-5, atol=1e-6)
 
 
 def test_fast_multi_head_attention_matches_slow_boolean_mask():
@@ -305,7 +306,7 @@ def test_fast_multi_head_attention_matches_slow_boolean_mask():
 
     assert expected_weights is None
     assert actual_weights is None
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_fast_multi_head_attention_respects_training_dropout_flag():
@@ -344,7 +345,7 @@ def test_fast_multi_head_attention_respects_training_dropout_flag():
     )
 
     assert actual_weights is None
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_fast_multi_head_attention_returns_no_weights():
@@ -381,7 +382,7 @@ def test_fast_multi_head_attention_returns_no_weights():
     )
 
     assert expected_weights is not None
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
     assert actual_weights is None
 
 
@@ -447,8 +448,8 @@ def test_multihead_attention_module_matches_torch_module():
     )
     expected_output = expected_output.transpose(0, 1)
 
-    assert torch.allclose(actual_output, expected_output, atol=1e-6)
-    assert torch.allclose(actual_weights, expected_weights, atol=1e-6)
+    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
+    assert_close(actual_weights, expected_weights, rtol=1e-5, atol=1e-6)
 
 
 def test_multihead_attention_module_matches_torch_without_bias():
@@ -490,8 +491,8 @@ def test_multihead_attention_module_matches_torch_without_bias():
     )
     expected_output = expected_output.transpose(0, 1)
 
-    assert torch.allclose(actual_output, expected_output, atol=1e-6)
-    assert torch.allclose(actual_weights, expected_weights, atol=1e-6)
+    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
+    assert_close(actual_weights, expected_weights, rtol=1e-5, atol=1e-6)
 
 
 def test_sinusoidal_positional_encoding():
@@ -502,4 +503,4 @@ def test_sinusoidal_positional_encoding():
     expected = module.pe.expand_as(output)  # type: ignore
 
     assert output.shape == x.shape
-    assert torch.allclose(output, expected)
+    assert_close(output, expected)

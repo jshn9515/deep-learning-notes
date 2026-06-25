@@ -2,6 +2,7 @@ import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.testing import assert_close
 
 import dnnlpy.nn as dnn
 import dnnlpy.nn.functional as dF
@@ -16,7 +17,7 @@ def test_cross_entropy_function_matches_torch(reduction: str):
     actual = dF.cross_entropy(x, target, weight=weight, reduction=reduction)
     expected = F.cross_entropy(x, target, weight=weight, reduction=reduction)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 def test_cross_entropy_function_matches_torch_without_weight():
@@ -26,7 +27,7 @@ def test_cross_entropy_function_matches_torch_without_weight():
     actual = dF.cross_entropy(x, target)
     expected = F.cross_entropy(x, target)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 def test_cross_entropy_module_matches_torch_module():
@@ -37,7 +38,7 @@ def test_cross_entropy_module_matches_torch_module():
     actual = dnn.CrossEntropyLoss(weight=weight, reduction='sum')
     expected = nn.CrossEntropyLoss(weight=weight, reduction='sum')
 
-    assert torch.allclose(actual(x, target), expected(x, target))
+    assert_close(actual(x, target), expected(x, target))
 
 
 def test_fast_cross_entropy_module_matches_torch_module():
@@ -49,7 +50,7 @@ def test_fast_cross_entropy_module_matches_torch_module():
     expected = nn.CrossEntropyLoss(weight=weight, reduction='sum')
 
     assert actual.fast is True
-    assert torch.allclose(actual(x, target), expected(x, target))
+    assert_close(actual(x, target), expected(x, target))
 
 
 def test_cross_entropy_rejects_invalid_reduction():

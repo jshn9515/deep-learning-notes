@@ -2,6 +2,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 from torch import Tensor
+from torch.testing import assert_close
 
 from dnnlpy.nn.functional import flash_attention_v1_backward, flash_attention_v1_forward
 
@@ -32,7 +33,7 @@ def test_flash_attention_v1_forward_accepts_batch_input(is_causal: bool):
     expected = _torch_attention(query, key, value, is_causal=is_causal)
 
     assert actual.shape == expected.shape
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_flash_attention_v1_forward_keeps_2d_input_compatible():
@@ -44,7 +45,7 @@ def test_flash_attention_v1_forward_keeps_2d_input_compatible():
     expected = _torch_attention(query, key, value)
 
     assert actual.shape == expected.shape
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize('is_causal', [False, True])
@@ -70,9 +71,9 @@ def test_flash_attention_v1_backward_matches_autograd_for_batch_input(is_causal:
     assert query.grad is not None
     assert key.grad is not None
     assert value.grad is not None
-    assert torch.allclose(dQ, query.grad, atol=1e-6)
-    assert torch.allclose(dK, key.grad, atol=1e-6)
-    assert torch.allclose(dV, value.grad, atol=1e-6)
+    assert_close(dQ, query.grad, rtol=1e-5, atol=1e-6)
+    assert_close(dK, key.grad, rtol=1e-5, atol=1e-6)
+    assert_close(dV, value.grad, rtol=1e-5, atol=1e-6)
 
 
 def test_flash_attention_v1_backward_rejects_dropout():

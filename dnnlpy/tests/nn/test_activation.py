@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch.testing import assert_close
 
 import dnnlpy.nn as dnn
 import dnnlpy.nn.functional as dF
@@ -28,7 +29,7 @@ def test_elementwise_activation_functions_match_torch(
     actual = actual_fn(x)
     expected = expected_fn(x)
 
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
@@ -37,7 +38,7 @@ def test_softmax_function_matches_torch(dim: int):
     actual = dF.softmax(x, dim=dim)
     expected = F.softmax(x, dim=dim)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
@@ -46,7 +47,7 @@ def test_log_softmax_function_matches_torch(dim: int):
     actual = dF.log_softmax(x, dim=dim)
     expected = F.log_softmax(x, dim=dim)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 @pytest.mark.parametrize(
@@ -65,7 +66,7 @@ def test_elementwise_activation_modules_match_torch(
     actual = actual_module(x)
     expected = expected_module(x)
 
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize(
@@ -84,7 +85,7 @@ def test_fast_elementwise_activation_modules_match_torch(
     actual = actual_module(x)
     expected = expected_fn(x)
 
-    assert torch.allclose(actual, expected, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
@@ -93,7 +94,7 @@ def test_softmax_module_matches_torch(dim: int):
     actual = dnn.Softmax(dim=dim)(x)
     expected = nn.Softmax(dim=dim)(x)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
@@ -102,7 +103,7 @@ def test_fast_softmax_module_matches_torch(dim: int):
     actual = dnn.Softmax(dim=dim, fast=True)(x)
     expected = F.softmax(x, dim=dim)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
@@ -111,7 +112,7 @@ def test_log_softmax_module_matches_torch(dim: int):
     actual = dnn.LogSoftmax(dim=dim)(x)
     expected = nn.LogSoftmax(dim=dim)(x)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
@@ -120,7 +121,7 @@ def test_fast_log_softmax_module_matches_torch(dim: int):
     actual = dnn.LogSoftmax(dim=dim, fast=True)(x)
     expected = F.log_softmax(x, dim=dim)
 
-    assert torch.allclose(actual, expected)
+    assert_close(actual, expected)
 
 
 def test_softmax_modules_include_dim_in_repr():

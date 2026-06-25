@@ -1,6 +1,7 @@
 import pytest
 import torch
 import torch.nn as nn
+from torch.testing import assert_close
 
 import dnnlpy.nn as dnn
 import dnnlpy.nn.functional as dF
@@ -132,7 +133,7 @@ def test_transformer_encoder_layer_matches_torch(norm_first: bool):
         src_mask=src_mask,
         src_key_padding_mask=src_key_padding_mask,
     )
-    assert torch.allclose(actual_output, expected_output, atol=1e-6)
+    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_encoder_matches_torch_stack_with_norm():
@@ -157,7 +158,7 @@ def test_transformer_encoder_matches_torch_stack_with_norm():
     expected = nn.TransformerEncoder(layer2, num_layers=2, norm=norm2)
     _copy_encoder_to_torch(actual, expected)
 
-    assert torch.allclose(actual(src), expected(src), atol=1e-6)
+    assert_close(actual(src), expected(src), rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize('norm_first', [False, True])
@@ -204,7 +205,7 @@ def test_transformer_decoder_layer_matches_torch(norm_first: bool):
         memory_key_padding_mask=memory_key_padding_mask,
     )
 
-    assert torch.allclose(actual_output, expected_output, atol=1e-6)
+    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_decoder_matches_torch_stack_with_norm():
@@ -233,7 +234,7 @@ def test_transformer_decoder_matches_torch_stack_with_norm():
 
     actual_output = actual(tgt, memory)
     expected_output = expected(tgt, memory)
-    assert torch.allclose(actual_output, expected_output, atol=1e-6)
+    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_matches_torch_batch_first_transformer():
@@ -283,7 +284,7 @@ def test_transformer_matches_torch_batch_first_transformer():
         src_key_padding_mask=src_key_padding_mask,
         memory_key_padding_mask=src_key_padding_mask,
     )
-    assert torch.allclose(actual_output, expected_output, atol=1e-6)
+    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_omits_batch_first_parameter():
