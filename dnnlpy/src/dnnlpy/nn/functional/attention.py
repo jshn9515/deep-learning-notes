@@ -4,7 +4,9 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-from .activation import softmax
+from .. import functional as dF
+
+type AttentionOutput = tuple[Tensor, Tensor | None]
 
 __all__ = [
     'naive_attention',
@@ -34,7 +36,7 @@ def naive_attention(
         AttentionOutput: Tuple of output tensor and optional attention weights.
     """
     scores = query @ key.transpose(-2, -1)
-    attn_weights = softmax(scores, dim=-1)
+    attn_weights = dF.softmax(scores, dim=-1)
     output = attn_weights @ value
 
     if need_weights:
@@ -107,8 +109,8 @@ def scaled_dot_product_attention(
         else:
             scores = scores + attn_mask.to(device=query.device, dtype=query.dtype)
 
-    attn_weights = softmax(scores, dim=-1)
-    attn_weights = F.dropout(attn_weights, p=dropout, training=training)
+    attn_weights = dF.softmax(scores, dim=-1)
+    attn_weights = dF.dropout(attn_weights, p=dropout, training=training)
     output = attn_weights @ value
 
     if need_weights:
