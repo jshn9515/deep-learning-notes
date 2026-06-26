@@ -31,7 +31,7 @@ def naive_attention(
         need_weights (bool, default: True): Whether to return attention weights.
 
     Returns:
-        Tuple of output tensor and optional attention weights.
+        AttentionOutput: Tuple of output tensor and optional attention weights.
     """
     scores = query @ key.transpose(-2, -1)
     attn_weights = softmax(scores, dim=-1)
@@ -73,7 +73,7 @@ def scaled_dot_product_attention(
             If ``None``, defaults to ``1 / sqrt(embed_dim)``.
 
     Returns:
-        Tuple of output tensor and optional attention weights.
+        AttentionOutput: Tuple of output tensor and optional attention weights.
     """
     if query.size(-1) != key.size(-1):
         raise AssertionError(
@@ -164,7 +164,7 @@ def multi_head_attention(
         need_weights (bool, default: False): Whether to return per-head attention weights.
 
     Returns:
-        Tuple of output tensor and optional per-head attention weights.
+        AttentionOutput: Tuple of output tensor and optional per-head attention weights.
     """
     batch_size, target_len, embed_dim = query.size()
     source_len = key.size(1)
@@ -240,7 +240,7 @@ def generate_causal_mask(
         device (torch.device | None, default: None): Optional output device.
 
     Returns:
-        A square mask where positions above the diagonal are masked.
+        Tensor: A square mask where positions above the diagonal are masked.
     """
     mask = torch.full((sz, sz), -torch.inf, device=device)
     mask = mask.triu(diagonal=1)
