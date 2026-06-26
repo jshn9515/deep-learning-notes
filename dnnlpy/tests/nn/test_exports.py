@@ -13,6 +13,10 @@ def test_nn_exports_new_modules():
         'Softmax',
         'LogSoftmax',
         'CrossEntropyLoss',
+        'Dropout',
+        'Dropout1d',
+        'Dropout2d',
+        'Dropout3d',
     ]:
         assert hasattr(dnn, name)
 
@@ -26,6 +30,10 @@ def test_functional_exports_new_functions():
         'gelu',
         'softmax',
         'log_softmax',
+        'dropout',
+        'dropout1d',
+        'dropout2d',
+        'dropout3d',
         'naive_attention',
         'scaled_dot_product_attention',
         'multi_head_attention',
