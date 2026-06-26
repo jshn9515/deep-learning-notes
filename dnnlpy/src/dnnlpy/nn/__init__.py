@@ -8,6 +8,10 @@ from .affine import Identity as Identity
 from .affine import Linear as Linear
 from .attention import MultiheadAttention as MultiheadAttention
 from .loss import CrossEntropyLoss as CrossEntropyLoss
+from .regularization import Dropout as Dropout
+from .regularization import Dropout1d as Dropout1d
+from .regularization import Dropout2d as Dropout2d
+from .regularization import Dropout3d as Dropout3d
 from .transformer import LearnablePositionalEmbedding as LearnablePositionalEmbedding
 from .transformer import SinusoidalPositionalEncoding as SinusoidalPositionalEncoding
 from .transformer import Transformer as Transformer

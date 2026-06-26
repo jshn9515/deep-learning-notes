@@ -12,3 +12,7 @@ from .attention import scaled_dot_product_attention as scaled_dot_product_attent
 from .flash_attention import flash_attention_v1_backward as flash_attention_v1_backward
 from .flash_attention import flash_attention_v1_forward as flash_attention_v1_forward
 from .loss import cross_entropy as cross_entropy
+from .regularization import dropout as dropout
+from .regularization import dropout1d as dropout1d
+from .regularization import dropout2d as dropout2d
+from .regularization import dropout3d as dropout3d
