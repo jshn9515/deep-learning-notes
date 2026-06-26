@@ -31,7 +31,8 @@ class MultiheadAttention(nn.Module):
             kdim (int | None, default: None): Input dimension for keys.
             vdim (int | None, default: None): Input dimension for values.
             dropout (float, default: 0.0): Dropout probability applied to attention weights.
-            fast (bool, default: False): Whether to use PyTorch's built-in attention implementation.
+            fast (bool, default: False): If set to True, will use the fast implementation
+                from torch.nn.functional. Default: False.
         """
         super().__init__()
         self.embed_dim = embed_dim
@@ -46,10 +47,10 @@ class MultiheadAttention(nn.Module):
             raise AssertionError('`embed_dim` must be divisible by `num_heads`.')
         self.head_dim = embed_dim // num_heads
 
-        self.q_proj = Linear(embed_dim, embed_dim, bias=bias)
-        self.k_proj = Linear(self.kdim, embed_dim, bias=bias)
-        self.v_proj = Linear(self.vdim, embed_dim, bias=bias)
-        self.out_proj = Linear(embed_dim, embed_dim, bias=bias)
+        self.q_proj = Linear(embed_dim, embed_dim, bias=bias, fast=fast)
+        self.k_proj = Linear(self.kdim, embed_dim, bias=bias, fast=fast)
+        self.v_proj = Linear(self.vdim, embed_dim, bias=bias, fast=fast)
+        self.out_proj = Linear(embed_dim, embed_dim, bias=bias, fast=fast)
 
     def forward(
         self,
