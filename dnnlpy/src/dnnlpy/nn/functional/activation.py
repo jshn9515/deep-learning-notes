@@ -23,8 +23,10 @@ def tanh(x: Tensor) -> Tensor:
     return x.tanh()
 
 
-def relu(x: Tensor) -> Tensor:
+def relu(x: Tensor, inplace: bool = False) -> Tensor:
     """Apply the rectified linear unit function element-wise."""
+    if inplace:
+        return x.clamp_(min=0)
     return x.clamp(min=0)
 
 
