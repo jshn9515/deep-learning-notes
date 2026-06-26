@@ -3,11 +3,13 @@ from copy import deepcopy
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
+from . import functional as dF
+from .affine import Linear
 from .attention import MultiheadAttention
-from .functional import gelu, relu
-from .linear import Linear
+from .regularization import Dropout
 
 type Activation = Callable[[Tensor], Tensor]
 
@@ -22,15 +24,15 @@ __all__ = [
 ]
 
 
-def _get_activation_fn(activation: str | Activation) -> Activation:
+def _get_activation_fn(act_fn: str | Activation, *, fast: bool = False) -> Activation:
     """Resolve a transformer activation name or callable."""
-    if activation == 'relu':
-        return relu
-    if activation == 'gelu':
-        return gelu
-    if callable(activation):
-        return activation
-    raise ValueError('The activation must be `relu`, `gelu`, or a callable.')
+    if act_fn == 'relu':
+        return F.relu if fast else dF.relu
+    if act_fn == 'gelu':
+        return F.gelu if fast else dF.gelu
+    if callable(act_fn):
+        return act_fn
+    raise ValueError('The activation function must be `relu`, `gelu`, or a callable.')
 
 
 def _clone_module(module: nn.Module, num_layers: int) -> nn.ModuleList:
@@ -113,6 +115,8 @@ class TransformerEncoderLayer(nn.Module):
         activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
+        *,
+        fast: bool = False,
     ):
         """Initialize self-attention, feed-forward, and normalization blocks.
 
@@ -120,32 +124,32 @@ class TransformerEncoderLayer(nn.Module):
             d_model (int): Token embedding dimension.
             num_heads (int): Number of attention heads.
             dim_feedforward (int, default: 2048): Hidden dimension of the feed-forward block.
+            bias (bool, default: True): Whether linear and layer norm modules include bias.
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If ``True``, use pre-normalization.
-            bias (bool, default: True): Whether linear and layer norm modules include bias.
+            fast (bool, default: False): If set to True, will use the fast implementation
+                from torch.nn.functional. Default: False.
         """
         super().__init__()
         self.norm_first = norm_first
+        self.fast = fast
 
         self.self_attn = MultiheadAttention(
-            d_model,
-            num_heads,
-            dropout=dropout,
-            bias=bias,
+            d_model, num_heads, dropout=dropout, bias=bias, fast=fast
         )
 
-        self.linear1 = Linear(d_model, dim_feedforward, bias=bias)
-        self.dropout = nn.Dropout(dropout)
-        self.linear2 = Linear(dim_feedforward, d_model, bias=bias)
+        self.linear1 = Linear(d_model, dim_feedforward, bias=bias, fast=fast)
+        self.dropout = Dropout(dropout, fast=fast)
+        self.linear2 = Linear(dim_feedforward, d_model, bias=bias, fast=fast)
 
         self.norm1 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
         self.norm2 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
-        self.dropout1 = nn.Dropout(dropout)
-        self.dropout2 = nn.Dropout(dropout)
+        self.dropout1 = Dropout(dropout, fast=fast)
+        self.dropout2 = Dropout(dropout, fast=fast)
 
-        self.activation = _get_activation_fn(activation)
+        self.activation = _get_activation_fn(activation, fast=fast)
 
     def forward(
         self,
@@ -261,6 +265,8 @@ class TransformerDecoderLayer(nn.Module):
         activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
+        *,
+        fast: bool = False,
     ):
         """Initialize self-attention, cross-attention, and feed-forward blocks.
 
@@ -273,35 +279,32 @@ class TransformerDecoderLayer(nn.Module):
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If ``True``, use pre-normalization.
+            fast (bool, default: False): If set to True, will use the fast implementation
+                from torch.nn.functional. Default: False.
         """
         super().__init__()
         self.norm_first = norm_first
+        self.fast = fast
 
         self.self_attn = MultiheadAttention(
-            d_model,
-            num_heads,
-            dropout=dropout,
-            bias=bias,
+            d_model, num_heads, bias=bias, dropout=dropout, fast=fast
         )
         self.mha_attn = MultiheadAttention(
-            d_model,
-            num_heads,
-            dropout=dropout,
-            bias=bias,
+            d_model, num_heads, bias=bias, dropout=dropout, fast=fast
         )
 
-        self.linear1 = Linear(d_model, dim_feedforward, bias=bias)
-        self.dropout = nn.Dropout(dropout)
-        self.linear2 = Linear(dim_feedforward, d_model, bias=bias)
+        self.linear1 = Linear(d_model, dim_feedforward, bias=bias, fast=fast)
+        self.dropout = Dropout(dropout, fast=fast)
+        self.linear2 = Linear(dim_feedforward, d_model, bias=bias, fast=fast)
 
         self.norm1 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
         self.norm2 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
         self.norm3 = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
-        self.dropout1 = nn.Dropout(dropout)
-        self.dropout2 = nn.Dropout(dropout)
-        self.dropout3 = nn.Dropout(dropout)
+        self.dropout1 = Dropout(dropout, fast=fast)
+        self.dropout2 = Dropout(dropout, fast=fast)
+        self.dropout3 = Dropout(dropout, fast=fast)
 
-        self.activation = _get_activation_fn(activation)
+        self.activation = _get_activation_fn(activation, fast=fast)
 
     def forward(
         self,
@@ -463,6 +466,8 @@ class Transformer(nn.Module):
         activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
         norm_first: bool = False,
+        *,
+        fast: bool = False,
     ):
         """Initialize a full encoder-decoder Transformer.
 
@@ -472,15 +477,18 @@ class Transformer(nn.Module):
             num_encoder_layers (int, default: 6): Number of encoder layers.
             num_decoder_layers (int, default: 6): Number of decoder layers.
             dim_feedforward (int, default: 2048): Hidden dimension of feed-forward blocks.
+            bias (bool, default: True): Whether linear and layer norm modules include bias.
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If ``True``, use pre-normalization inside layers.
-            bias (bool, default: True): Whether linear and layer norm modules include bias.
+            fast (bool, default: False): If set to True, will use the fast implementation
+                from torch.nn.functional. Default: False.
         """
         super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads
+        self.fast = fast
 
         encoder_layer = TransformerEncoderLayer(
             d_model,
@@ -491,6 +499,7 @@ class Transformer(nn.Module):
             activation=activation,
             layer_norm_eps=layer_norm_eps,
             norm_first=norm_first,
+            fast=fast,
         )
         encoder_norm = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
         self.encoder = TransformerEncoder(
@@ -508,6 +517,7 @@ class Transformer(nn.Module):
             activation=activation,
             layer_norm_eps=layer_norm_eps,
             norm_first=norm_first,
+            fast=fast,
         )
         decoder_norm = nn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias)
         self.decoder = TransformerDecoder(
