@@ -15,8 +15,6 @@ __all__ = [
     'generate_causal_mask',
 ]
 
-type AttentionOutput = tuple[Tensor, Tensor | None]
-
 
 def naive_attention(
     query: Tensor,
@@ -86,10 +84,10 @@ def scaled_dot_product_attention(
     if is_causal and attn_mask is not None:
         raise AssertionError('`attn_mask` and `is_causal` cannot both be set.')
     if not 0.0 <= dropout <= 1.0:
-        raise AssertionError('dropout must be between 0 and 1.')
+        raise AssertionError('`dropout` must be between 0 and 1.')
 
-    target_len = query.size(-2)
-    source_len = key.size(-2)
+    tgt_len = query.size(-2)
+    src_len = key.size(-2)
 
     scale_factor = (1.0 / math.sqrt(query.size(-1))) if scale is None else scale
     scores = query @ key.transpose(-2, -1)
@@ -97,7 +95,7 @@ def scaled_dot_product_attention(
 
     if is_causal:
         causal_mask = torch.ones(
-            (target_len, source_len),
+            (tgt_len, src_len),
             dtype=torch.bool,
             device=query.device,
         ).triu(diagonal=1)
@@ -168,8 +166,8 @@ def multi_head_attention(
     Returns:
         AttentionOutput: Tuple of output tensor and optional per-head attention weights.
     """
-    batch_size, target_len, embed_dim = query.size()
-    source_len = key.size(1)
+    batch_size, tgt_len, embed_dim = query.size()
+    src_len = key.size(1)
 
     if embed_dim % num_heads != 0:
         raise AssertionError('`embed_dim` must be divisible by `num_heads`.')
@@ -193,13 +191,13 @@ def multi_head_attention(
     if v_proj_bias is not None:
         v = v + v_proj_bias
 
-    q = q.view(batch_size, target_len, num_heads, head_dim).transpose(1, 2)
-    k = k.view(batch_size, source_len, num_heads, head_dim).transpose(1, 2)
-    v = v.view(batch_size, source_len, num_heads, head_dim).transpose(1, 2)
+    q = q.view(batch_size, tgt_len, num_heads, head_dim).transpose(1, 2)
+    k = k.view(batch_size, src_len, num_heads, head_dim).transpose(1, 2)
+    v = v.view(batch_size, src_len, num_heads, head_dim).transpose(1, 2)
 
     if fast:
         if attn_mask is not None and attn_mask.dtype == torch.bool:
-            attn_mask = ~attn_mask
+            attn_mask = attn_mask.bitwise_not()
 
         head_output = F.scaled_dot_product_attention(
             q, k, v,
@@ -219,7 +217,8 @@ def multi_head_attention(
         )  # fmt: skip
 
     output = head_output.transpose(1, 2)
-    output = output.reshape(batch_size, target_len, embed_dim)
+    # Using `reshape` instead of `view` to avoid issues with non-contiguous tensors.
+    output = output.reshape(batch_size, tgt_len, embed_dim)
     output = output @ out_proj_weight
 
     if out_proj_bias is not None:
