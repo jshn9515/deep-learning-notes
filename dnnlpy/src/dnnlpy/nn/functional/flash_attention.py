@@ -61,7 +61,7 @@ def flash_attention_v1_forward(
             float32 for numerical stability. Default is True.
 
     Returns:
-        Attention output tensor with the same leading dimensions as query.
+        Tensor: Attention output tensor with the same leading dimensions as query.
 
     Raises:
         AssertionError: If query, key, value have mismatched dimensions or incorrect shapes.
@@ -214,7 +214,7 @@ def flash_attention_v1_backward(
             float32 for numerics. Default: True.
 
     Returns:
-        Tuple of (dQ, dK, dV), each with the same shape as query, key, and value.
+        Tensor: Tuple of (dQ, dK, dV), each with the same shape as query, key, and value.
 
     Raises:
         NotImplementedError: If dropout > 0.0 (exact backward with dropout mask needed).
