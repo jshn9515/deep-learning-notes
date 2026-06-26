@@ -30,9 +30,13 @@ def relu(x: Tensor, inplace: bool = False) -> Tensor:
     return x.clamp(min=0)
 
 
-def gelu(x: Tensor) -> Tensor:
+def gelu(x: Tensor, approximate: str = 'none') -> Tensor:
     """Apply the Gaussian Error Linear Unit function element-wise."""
-    return 0.5 * x * (1 + (x / math.sqrt(2)).erf())
+    if approximate == 'tanh':
+        scale = math.sqrt(2 / math.pi)
+        return 0.5 * x * (1.0 + tanh(scale * (x + 0.044715 * x.pow(3))))
+    else:
+        return 0.5 * x * (1.0 + (x / math.sqrt(2)).erf())
 
 
 def softmax(x: Tensor, dim: int) -> Tensor:
