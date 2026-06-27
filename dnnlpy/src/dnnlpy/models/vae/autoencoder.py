@@ -25,9 +25,7 @@ class AutoEncoder(nn.Module):
             latent_dim (int, default: 32): Size of the latent representation.
         """
         super().__init__()
-        self.input_shape = input_shape
         input_dim = math.prod(input_shape)
-        self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
             nn.Flatten(),  # 28x28 -> 784
             dnn.Linear(input_dim, hidden_dim),
