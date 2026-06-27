@@ -43,10 +43,10 @@ class SGD(optim.Optimizer):
     def step(self):  # type: ignore[override]
         """Update velocities from gradients and apply them to parameters."""
         for group in self.param_groups:
-            lr: float = group['lr']
-            momentum: float = group['momentum']
-            weight_decay: float = group['weight_decay']
-            nesterov: bool = group['nesterov']
+            lr = group['lr']
+            momentum = group['momentum']
+            weight_decay = group['weight_decay']
+            nesterov = group['nesterov']
 
             for p in group['params']:
                 p = cast(Tensor, p)

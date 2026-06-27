@@ -46,10 +46,10 @@ class Adagrad(optim.Optimizer):
     def step(self):  # type: ignore[override]
         """Accumulate squared gradients and apply an Adagrad update."""
         for group in self.param_groups:
-            lr: float = group['lr']
-            lr_decay: float = group['lr_decay']
-            weight_decay: float = group['weight_decay']
-            eps: float = group['eps']
+            lr = group['lr']
+            lr_decay = group['lr_decay']
+            weight_decay = group['weight_decay']
+            eps = group['eps']
 
             for p in group['params']:
                 p = cast(Tensor, p)

@@ -95,13 +95,13 @@ class Muon(optim.Optimizer):
     def step(self):  # type: ignore[override]
         """Update parameters using momentum and a Muon orthogonalized step."""
         for group in self.param_groups:
-            lr: float = group['lr']
-            weight_decay: float = group['weight_decay']
-            momentum: float = group['momentum']
-            nesterov: float = group['nesterov']
-            ns_coefficients: tuple[float, float, float] = group['ns_coefficients']
-            ns_steps: int = group['ns_steps']
-            eps: float = group['eps']
+            lr = group['lr']
+            weight_decay = group['weight_decay']
+            momentum = group['momentum']
+            nesterov = group['nesterov']
+            ns_coefficients = group['ns_coefficients']
+            ns_steps = group['ns_steps']
+            eps = group['eps']
 
             for p in group['params']:
                 p = cast(Tensor, p)
@@ -112,8 +112,8 @@ class Muon(optim.Optimizer):
                 if len(state) == 0:
                     state['momentum_buffer'] = torch.zeros_like(p)
 
-                grad = p.grad
                 # Decoupled weight decay: directly shrink parameters.
+                grad = p.grad
                 if weight_decay > 0:
                     p.mul_(1 - lr * weight_decay)
 

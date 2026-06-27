@@ -39,11 +39,10 @@ class AdamW(optim.Optimizer):
     def step(self):  # type: ignore[override]
         """Update parameters using Adam moments and decoupled weight decay."""
         for group in self.param_groups:
-            lr: float = group['lr']
-            beta1: float = group['betas'][0]
-            beta2: float = group['betas'][1]
-            eps: float = group['eps']
-            weight_decay: float = group['weight_decay']
+            lr = group['lr']
+            beta1, beta2 = group['betas']
+            eps = group['eps']
+            weight_decay = group['weight_decay']
 
             for p in group['params']:
                 p = cast(Tensor, p)
@@ -59,8 +58,8 @@ class AdamW(optim.Optimizer):
                 state['step'] += 1
                 step = state['step']
 
-                grad = p.grad
                 # Decoupled weight decay: directly shrink parameters.
+                grad = p.grad
                 if weight_decay > 0:
                     p.mul_(1 - lr * weight_decay)
 

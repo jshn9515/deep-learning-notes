@@ -42,10 +42,10 @@ class Adadelta(optim.Optimizer):
     def step(self):  # type: ignore[override]
         """Update parameters using the current Adadelta state."""
         for group in self.param_groups:
-            lr: float = group['lr']
-            rho: float = group['rho']
-            eps: float = group['eps']
-            weight_decay: float = group['weight_decay']
+            lr = group['lr']
+            rho = group['rho']
+            eps = group['eps']
+            weight_decay = group['weight_decay']
 
             for p in group['params']:
                 p = cast(Tensor, p)
