@@ -266,9 +266,7 @@ class ViTForImageClassification(nn.Module):
             dropout=dropout,
             attn_dropout=attn_dropout,
         )
-        self.head = ViTClassificationHead(
-            embed_dim=embed_dim, num_classes=num_classes
-        )
+        self.head = ViTClassificationHead(embed_dim=embed_dim, num_classes=num_classes)
 
     def forward(self, x: Tensor) -> Tensor:
         """Return image-class logits for a batch of images."""
