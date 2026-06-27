@@ -29,6 +29,9 @@ class Identity(nn.Module):
 class Linear(nn.Module):
     """Apply an affine transformation to the incoming data."""
 
+    weight: Tensor
+    bias: Tensor | None
+
     def __init__(
         self,
         in_features: int,
