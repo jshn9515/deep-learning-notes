@@ -81,4 +81,4 @@ docstring-code-line-length = "dynamic"
 force-single-line = false
 
 # Combines as imports on the same line. See isort's combine-as-imports option.
-combine-as-imports = false
+combine-as-imports = true
