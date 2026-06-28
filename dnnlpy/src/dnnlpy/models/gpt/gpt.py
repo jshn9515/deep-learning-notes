@@ -71,11 +71,11 @@ class MiniGPTBlock(nn.Module):
         dropout: float = 0.0,
     ):
         super().__init__()
-        self.norm1 = nn.LayerNorm(embed_dim, bias=bias)
+        self.norm1 = dnn.LayerNorm(embed_dim, bias=bias)
         self.attn = MiniGPTCausalSelfAttention(
             embed_dim, num_heads, bias=bias, dropout=dropout
         )
-        self.norm2 = nn.LayerNorm(embed_dim, bias=bias)
+        self.norm2 = dnn.LayerNorm(embed_dim, bias=bias)
         self.mlp = MiniGPTMLP(embed_dim, hidden_dim, bias=bias, dropout=dropout)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -136,7 +136,7 @@ class MiniGPT(nn.Module):
             ]
         )
 
-        self.final_norm = nn.LayerNorm(embed_dim, bias=bias)
+        self.final_norm = dnn.LayerNorm(embed_dim, bias=bias)
         self.lm_head = dnn.Linear(embed_dim, vocab_size, bias=bias)
 
         if weight_tying:
@@ -156,7 +156,7 @@ class MiniGPT(nn.Module):
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
 
-            elif isinstance(module, nn.LayerNorm):
+            elif isinstance(module, dnn.LayerNorm):
                 nn.init.ones_(module.weight)
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
