@@ -12,7 +12,7 @@ __all__ = ['CrossEntropyLoss']
 
 
 class CrossEntropyLoss(nn.Module):
-    """Combines `nn.LogSoftmax()` and `nn.NLLLoss()` in one single class."""
+    """This criterion computes the cross entropy loss between input logits and target."""
 
     def __init__(
         self,
@@ -47,6 +47,7 @@ class CrossEntropyLoss(nn.Module):
                 weight=self.weight,
                 reduction=self.reduction,
             )
+
         return dF.cross_entropy(
             x,
             target,
