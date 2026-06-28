@@ -17,8 +17,6 @@ def _validate_query_key_value(query: Tensor, key: Tensor, value: Tensor) -> None
         )
     if query.ndim not in (2, 3):
         raise AssertionError('`query`, `key`, and `value` must be 2D or 3D tensors.')
-    if query.shape[:-2] != key.shape[:-2] or query.shape[:-2] != value.shape[:-2]:
-        raise AssertionError('batch dimensions must match.')
     if query.size(-1) != key.size(-1):
         raise AssertionError('`query` and `key` must have the same embedding dim.')
     if key.size(-2) != value.size(-2):
