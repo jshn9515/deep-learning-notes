@@ -76,7 +76,7 @@ class ViTConvPatchEmbedding(nn.Module):
         self.patch_size = patch_size
         self.num_patches = (image_size // patch_size) ** 2
 
-        self.proj = nn.Conv2d(
+        self.proj = dnn.Conv2d(
             in_channels=in_channels,
             out_channels=embed_dim,
             kernel_size=patch_size,
