@@ -26,7 +26,13 @@ from .activation import (
     TanhShrink as TanhShrink,
     Threshold as Threshold,
 )
-from .affine import Identity as Identity, Linear as Linear
+from .affine import (
+    Bilinear as Bilinear,
+    Flatten as Flatten,
+    Identity as Identity,
+    Linear as Linear,
+    Unflatten as Unflatten,
+)
 from .attention import MultiheadAttention as MultiheadAttention
 from .loss import CrossEntropyLoss as CrossEntropyLoss
 from .normalization import (
