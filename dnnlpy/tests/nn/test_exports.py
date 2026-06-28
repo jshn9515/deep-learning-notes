@@ -4,16 +4,21 @@ import dnnlpy.nn.functional as dF
 
 def test_nn_exports_new_modules():
     for name in [
+        'Bilinear',
         'BatchNorm1d',
         'BatchNorm2d',
         'BatchNorm3d',
         'CELU',
+        'Conv1d',
+        'Conv2d',
+        'Conv3d',
         'CrossEntropyLoss',
         'Dropout',
         'Dropout1d',
         'Dropout2d',
         'Dropout3d',
         'ELU',
+        'Flatten',
         'GELU',
         'GroupNorm',
         'HardShrink',
@@ -47,6 +52,7 @@ def test_nn_exports_new_modules():
         'Tanh',
         'TanhShrink',
         'Threshold',
+        'Unflatten',
     ]:
         assert hasattr(dnn, name)
 
@@ -54,7 +60,11 @@ def test_nn_exports_new_modules():
 def test_functional_exports_new_functions():
     for name in [
         'batch_norm',
+        'bilinear',
         'celu',
+        'conv1d',
+        'conv2d',
+        'conv3d',
         'cross_entropy',
         'dropout',
         'dropout1d',
