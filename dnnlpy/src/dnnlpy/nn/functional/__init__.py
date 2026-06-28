@@ -33,6 +33,11 @@ from .attention import (
     naive_attention as naive_attention,
     scaled_dot_product_attention as scaled_dot_product_attention,
 )
+from .convolution import (
+    conv1d as conv1d,
+    conv2d as conv2d,
+    conv3d as conv3d,
+)
 from .flash_attention import (
     flash_attention_v1_backward as flash_attention_v1_backward,
     flash_attention_v1_forward as flash_attention_v1_forward,

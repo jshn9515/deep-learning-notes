@@ -34,6 +34,11 @@ from .affine import (
     Unflatten as Unflatten,
 )
 from .attention import MultiheadAttention as MultiheadAttention
+from .convolution import (
+    Conv1d as Conv1d,
+    Conv2d as Conv2d,
+    Conv3d as Conv3d,
+)
 from .loss import CrossEntropyLoss as CrossEntropyLoss
 from .normalization import (
     BatchNorm1d as BatchNorm1d,
