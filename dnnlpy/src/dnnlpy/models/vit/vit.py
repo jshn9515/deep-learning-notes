@@ -70,14 +70,14 @@ class ViTEncoderLayer(nn.Module):
                 self-attention.
         """
         super().__init__()
-        self.norm1 = nn.LayerNorm(embed_dim)
+        self.norm1 = dnn.LayerNorm(embed_dim)
         self.attn = dnn.MultiheadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
             dropout=attn_dropout,
         )
         self.dropout1 = dnn.Dropout(dropout)
-        self.norm2 = nn.LayerNorm(embed_dim)
+        self.norm2 = dnn.LayerNorm(embed_dim)
         self.mlp = ViTMLP(
             embed_dim=embed_dim,
             hidden_dim=hidden_dim,
@@ -136,7 +136,7 @@ class ViTEncoder(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        self.norm = nn.LayerNorm(embed_dim)
+        self.norm = dnn.LayerNorm(embed_dim)
 
     def forward(self, x: Tensor) -> Tensor:
         """Encode a sequence of ViT tokens."""
