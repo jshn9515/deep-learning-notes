@@ -67,6 +67,10 @@ website:
               contents: "zh/ch3-multi-layer-perceptron/*.qmd"
             - section: "Chapter 4: 优化算法：神经网络如何更新参数"
               contents: "zh/ch4-optimization-algorithms/*.qmd"
+        - section: "Part 2: 卷积神经网络"
+          contents:
+            - section: "Chapter 7: 正则化与归一化：让深层网络更稳定"
+              contents: "zh/ch7-regularization-and-normalization/*.qmd"
         - section: "Part 4: Attention 机制与 Transformer"
           contents:
             - section: "Chapter 8: Attention 与 Transformer：从动态检索到序列建模"
