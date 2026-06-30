@@ -65,6 +65,16 @@ book:
         - "zh/ch4-optimization-algorithms/ch4.7-muon.qmd"
         - "zh/ch4-optimization-algorithms/ch4.8-optimizer-practice.qmd"
         - "zh/ch4-optimization-algorithms/ch4.9-learning-rate-schedulers.qmd"
+    - part: "Chapter 7: 正则化与归一化：让深层网络更稳定"
+      chapters:
+        - "zh/ch7-regularization-and-normalization/ch7.1-why-regularization-and-normalization.qmd"
+        - "zh/ch7-regularization-and-normalization/ch7.2-dropout.qmd"
+        - "zh/ch7-regularization-and-normalization/ch7.3-batch-normalization.qmd"
+        - "zh/ch7-regularization-and-normalization/ch7.4-layer-normalization.qmd"
+        - "zh/ch7-regularization-and-normalization/ch7.5-instance-normalization.qmd"
+        - "zh/ch7-regularization-and-normalization/ch7.6-group-normalization.qmd"
+        - "zh/ch7-regularization-and-normalization/ch7.7-rms-normalization.qmd"
+        - "zh/ch7-regularization-and-normalization/ch7.8-normalization-unified-view.qmd"
     - part: "Chapter 8: Attention 与 Transformer：从动态检索到序列建模"
       chapters:
         - "zh/ch8-attention-and-transformer/ch8.1-bahdanau-attention.qmd"
