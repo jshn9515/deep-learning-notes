@@ -27,10 +27,10 @@ __all__ = [
 class _BatchNorm(ABC, nn.Module):
     """Base class for batch normalization modules."""
 
-    running_mean: Tensor | None
-    running_var: Tensor | None
     weight: Tensor | None
     bias: Tensor | None
+    running_mean: Tensor | None
+    running_var: Tensor | None
     num_batches_tracked: Tensor | None
 
     def __init__(
@@ -192,6 +192,9 @@ class BatchNorm3d(_BatchNorm):
 
 class GroupNorm(nn.Module):
     """Apply group normalization over channel groups."""
+    
+    weight: Tensor | None
+    bias: Tensor | None
 
     def __init__(
         self,
@@ -272,10 +275,10 @@ class GroupNorm(nn.Module):
 class _InstanceNorm(ABC, nn.Module):
     """Base class for instance normalization modules."""
 
-    running_mean: Tensor | None
-    running_var: Tensor | None
     weight: Tensor | None
     bias: Tensor | None
+    running_mean: Tensor | None
+    running_var: Tensor | None
 
     def __init__(
         self,
@@ -416,6 +419,9 @@ class InstanceNorm3d(_InstanceNorm):
 class LayerNorm(nn.Module):
     """Apply layer normalization over the trailing input dimensions."""
 
+    weight: Tensor | None
+    bias: Tensor | None
+
     def __init__(
         self,
         normalized_shape: int | tuple[int, ...],
@@ -544,6 +550,8 @@ class LocalResponseNorm(nn.Module):
 
 class RMSNorm(nn.Module):
     """Apply root mean square normalization over the trailing input dimensions."""
+
+    weight: Tensor | None
 
     def __init__(
         self,
