@@ -45,9 +45,9 @@ def batch_norm(
             '`running_mean` and `running_var` must either both be tensors or both be None.'
         )
 
-    # [N, C, H, W] -> reduce_dims = (0, 2, 3)
+    # (N, C, H, W) -> reduce_dims = (0, 2, 3)
     reduce_dims = (0, *range(2, x.ndim))
-    # [C] -> broadcast_shape = [1, C, 1, 1]
+    # (C,) -> broadcast_shape = (1, C, 1, 1)
     broadcast_shape = (1, x.size(1)) + (1,) * (x.ndim - 2)
 
     # Hit this branch when:
@@ -128,12 +128,12 @@ def group_norm(
             f'by `num_groups` ({num_groups}).'
         )
 
-    # [N, C, H, W] -> [N, G, C // G, H, W]
+    # (N, C, H, W) -> (N, G, C // G, H, W)
     grouped_shape = (x.size(0), num_groups, channels_per_group, *x.shape[2:])
     grouped_x = x.reshape(grouped_shape)
 
     # Reduce over the channels in each group and all spatial dimensions.
-    # [N, G, C // G, H, W] -> reduce_dims = (2, 3, 4)
+    # (N, G, C // G, H, W) -> reduce_dims = (2, 3, 4)
     reduce_dims = tuple(range(2, grouped_x.ndim))
 
     group_mean = grouped_x.mean(dim=reduce_dims, keepdim=True)
@@ -142,7 +142,7 @@ def group_norm(
     grouped_y = (grouped_x - group_mean) * (group_var + eps).rsqrt()
     y = grouped_y.reshape_as(x)
 
-    # [C] -> [1, C, 1, 1]
+    # (C,) -> (1, C, 1, 1)
     broadcast_shape = (1, num_channels) + (1,) * (x.ndim - 2)
 
     if weight is not None:
@@ -188,13 +188,13 @@ def instance_norm(
             '`running_mean` and `running_var` must either both be tensors or both be None.'
         )
 
-    # [N, C, H, W] -> reduce_dims = (2, 3)
+    # (N, C, H, W) -> reduce_dims = (2, 3)
     reduce_dims = tuple(range(2, x.ndim))
 
-    # Per-instance statistics have shape [N, C].
+    # Per-instance statistics have shape (N, C).
     input_stats_shape = (x.size(0), x.size(1)) + (1,) * (x.ndim - 2)
 
-    # Running statistics and affine parameters have shape [C].
+    # Running statistics and affine parameters have shape (C,).
     broadcast_shape = (1, x.size(1)) + (1,) * (x.ndim - 2)
 
     # Hit this branch when:
@@ -317,10 +317,10 @@ def local_response_norm(
         )
 
     # Move the channel dimension to the end:
-    # [N, C, ...] -> [N, ..., C]
+    # (N, C, ...) -> (N, ..., C)
     squared = x.square().movedim(1, -1)
 
-    # avg_pool1d expects an input with shape [B, C, L].
+    # avg_pool1d expects an input with shape (B, C, L).
     # Flatten every dimension except the channel dimension.
     flat_squared = squared.reshape(-1, 1, x.size(1))
 
