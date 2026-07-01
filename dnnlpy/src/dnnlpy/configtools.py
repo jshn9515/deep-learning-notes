@@ -13,7 +13,7 @@ __all__ = [
 
 
 def set_seed(
-    seed: int = 42,
+    seed: int | None = None,
     *,
     deterministic: bool = False,
     benchmark: bool = False,
@@ -22,7 +22,7 @@ def set_seed(
     """Seed Python, NumPy, and PyTorch random number generators.
 
     Args:
-        seed (int, default: 42): Seed value to apply to all supported random
+        seed (int, default: None): Seed value to apply to all supported random
             number generators.
         deterministic (bool, default: False): Whether to request deterministic
             PyTorch algorithms.
@@ -35,7 +35,11 @@ def set_seed(
     """
     random.seed(seed)
     np.random.seed(seed)
-    torch_rng = torch.manual_seed(seed)
+
+    if seed is not None:
+        torch_rng = torch.manual_seed(seed)
+    else:
+        torch_rng = torch.default_generator
 
     torch.use_deterministic_algorithms(deterministic, warn_only=warn_only)
     torch.backends.cudnn.deterministic = deterministic
