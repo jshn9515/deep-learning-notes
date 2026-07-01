@@ -34,10 +34,7 @@ def main():
         output_path = input_path.with_suffix('.svg')
 
         if output_path.exists():
-            print(
-                f'Skipping {input_path.name}; {output_path.name} already exists',
-                flush=True,
-            )
+            print(f'Skipping {input_path.name} as it already exists.', flush=True)
             skipped_count += 1
             continue
 

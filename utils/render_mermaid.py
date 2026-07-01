@@ -9,7 +9,7 @@ PUPPETEER_CONFIG = ROOT / 'utils' / 'puppeteer-config.json'
 
 def render_mmd(input_path: Path):
     output_path = input_path.with_suffix('.svg')
-    print(f'Rendering {input_path.name} -> {output_path.name}', flush=True)
+    print(f'Rendering {input_path.name} -> {output_path.name}.', flush=True)
 
     subprocess.run(
         [
