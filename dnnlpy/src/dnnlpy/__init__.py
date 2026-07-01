@@ -5,3 +5,4 @@ from .configtools import (
     set_seed as set_seed,
 )
 from .pylabtools import set_matplotlib_format as set_matplotlib_format
+from .trainingtools import Trainer as Trainer
