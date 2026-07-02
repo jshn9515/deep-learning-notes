@@ -47,19 +47,19 @@ class _BatchNorm(ABC, nn.Module):
         """Initialize a batch normalization module.
 
         Args:
-            num_features (int): Number of feature channels ``C`` in the input.
+            num_features (int): Number of feature channels `C` in the input.
             eps (float, default: 1e-5): Value added to the variance for numerical stability.
             momentum (float | None, default: 0.1): Momentum used to update running statistics.
-                If ``None``, use a cumulative moving average.
-            affine (bool, default: True): If ``True``, learn per-channel scale and shift
+                If `None`, use a cumulative moving average.
+            affine (bool, default: True): If `True`, learn per-channel scale and shift
                 parameters.
-            track_running_stats (bool, default: True): If ``True``, track running mean and
-                variance for evaluation. If ``False``, running statistics are ``None`` and
+            track_running_stats (bool, default: True): If `True`, track running mean and
+                variance for evaluation. If `False`, running statistics are `None` and
                 batch statistics are used in both training and evaluation.
-            bias (bool, default: True): If ``True`` and ``affine=True``, learn the additive
+            bias (bool, default: True): If `True` and `affine=True`, learn the additive
                 shift parameter.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.num_features = num_features
@@ -209,13 +209,13 @@ class GroupNorm(nn.Module):
 
         Args:
             num_groups (int): Number of channel groups used for normalization.
-            num_channels (int): Number of input channels ``C``. Must be divisible by
-                ``num_groups``.
+            num_channels (int): Number of input channels `C`. Must be divisible by
+                `num_groups`.
             eps (float, default: 1e-5): Value added to the variance for numerical stability.
-            affine (bool, default: True): If ``True``, learn per-channel scale and shift
+            affine (bool, default: True): If `True`, learn per-channel scale and shift
                 parameters.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         if num_channels % num_groups != 0:
@@ -294,18 +294,18 @@ class _InstanceNorm(ABC, nn.Module):
         """Initialize an instance normalization module.
 
         Args:
-            num_features (int): Number of feature channels ``C`` in the input.
+            num_features (int): Number of feature channels `C` in the input.
             eps (float, default: 1e-5): Value added to the variance for numerical stability.
             momentum (float, default: 0.1): Momentum used to update running statistics.
-            affine (bool, default: False): If ``True``, learn per-channel scale and shift
+            affine (bool, default: False): If `True`, learn per-channel scale and shift
                 parameters.
-            track_running_stats (bool, default: False): If ``True``, track running mean and
-                variance for evaluation. If ``False``, input statistics are used in both
+            track_running_stats (bool, default: False): If `True`, track running mean and
+                variance for evaluation. If `False`, input statistics are used in both
                 training and evaluation.
-            bias (bool, default: True): If ``True`` and ``affine=True``, learn the additive
+            bias (bool, default: True): If `True` and `affine=True`, learn the additive
                 shift parameter.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.num_features = num_features
@@ -437,12 +437,12 @@ class LayerNorm(nn.Module):
             normalized_shape (int | tuple[int, ...]): Shape of the trailing dimensions
                 to normalize. A single integer is treated as a singleton tuple.
             eps (float, default: 1e-5): Value added to the variance for numerical stability.
-            elementwise_affine (bool, default: True): If ``True``, learn scale and shift
-                parameters with shape ``normalized_shape``.
-            bias (bool, default: True): If ``True`` and ``elementwise_affine=True``, learn
+            elementwise_affine (bool, default: True): If `True`, learn scale and shift
+                parameters with shape `normalized_shape`.
+            bias (bool, default: True): If `True` and `elementwise_affine=True`, learn
                 the additive shift parameter.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         if isinstance(normalized_shape, int):
@@ -517,7 +517,7 @@ class LocalResponseNorm(nn.Module):
             beta (float, default: 0.75): Exponent applied to the normalization term.
             k (float, default: 1.0): Additive constant in the normalization term.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.size = size
@@ -567,11 +567,11 @@ class RMSNorm(nn.Module):
             normalized_shape (int | tuple[int, ...]): Shape of the trailing dimensions
                 to normalize. A single integer is treated as a singleton tuple.
             eps (float | None, default: None): Value added to the mean square for
-                numerical stability. If ``None``, use the machine epsilon of ``x.dtype``.
-            elementwise_affine (bool, default: True): If ``True``, learn a scale
-                parameter with shape ``normalized_shape``.
+                numerical stability. If `None`, use the machine epsilon of `x.dtype`.
+            elementwise_affine (bool, default: True): If `True`, learn a scale
+                parameter with shape `normalized_shape`.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         if isinstance(normalized_shape, int):

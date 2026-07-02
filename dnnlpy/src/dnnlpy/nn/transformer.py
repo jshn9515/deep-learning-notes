@@ -37,7 +37,7 @@ def _get_activation_fn(act_fn: str | Activation, *, fast: bool = False) -> Activ
 
 
 def _clone_module(module: nn.Module, num_layers: int) -> nn.ModuleList:
-    """Deep-copy a module into a ``ModuleList``."""
+    """Deep-copy a module into a `ModuleList`."""
     return nn.ModuleList(deepcopy(module) for _ in range(num_layers))
 
 
@@ -57,7 +57,7 @@ class LearnablePositionalEmbedding(nn.Module):
         self.pe = nn.Embedding(max_len, embed_dim)
 
     def forward(self, x: Tensor) -> Tensor:
-        """Add positional encodings to ``x``."""
+        """Add positional encodings to `x`."""
         if x.size(1) > self.max_len:
             raise AssertionError(f'Sequence length {x.size(1)} exceeds {self.max_len}.')
 
@@ -94,7 +94,7 @@ class SinusoidalPositionalEncoding(nn.Module):
         self.register_buffer('pe', pe.unsqueeze(0))
 
     def forward(self, x: Tensor) -> Tensor:
-        """Add positional encodings to ``x``."""
+        """Add positional encodings to `x`."""
         if x.size(1) > self.max_len:
             raise AssertionError(f'Sequence length {x.size(1)} exceeds {self.max_len}.')
 
@@ -129,9 +129,9 @@ class TransformerEncoderLayer(nn.Module):
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
-            norm_first (bool, default: False): If ``True``, use pre-normalization.
+            norm_first (bool, default: False): If `True`, use pre-normalization.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.norm_first = norm_first
@@ -279,9 +279,9 @@ class TransformerDecoderLayer(nn.Module):
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
-            norm_first (bool, default: False): If ``True``, use pre-normalization.
+            norm_first (bool, default: False): If `True`, use pre-normalization.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.norm_first = norm_first
@@ -482,9 +482,9 @@ class Transformer(nn.Module):
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
-            norm_first (bool, default: False): If ``True``, use pre-normalization inside layers.
+            norm_first (bool, default: False): If `True`, use pre-normalization inside layers.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.d_model = d_model
@@ -541,7 +541,7 @@ class Transformer(nn.Module):
         tgt_is_causal: bool = False,
         memory_is_causal: bool = False,
     ) -> Tensor:
-        """Encode ``src`` and decode ``tgt`` against the encoder memory."""
+        """Encode `src` and decode `tgt` against the encoder memory."""
         if src.size(-1) != self.d_model or tgt.size(-1) != self.d_model:
             raise AssertionError(
                 'The feature number of `src` and `tgt` must be equal to `d_model`.'

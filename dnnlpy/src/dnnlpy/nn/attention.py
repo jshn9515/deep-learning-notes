@@ -32,7 +32,7 @@ class MultiheadAttention(nn.Module):
             vdim (int | None, default: None): Input dimension for values.
             dropout (float, default: 0.0): Dropout probability applied to attention weights.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.embed_dim = embed_dim
@@ -66,19 +66,19 @@ class MultiheadAttention(nn.Module):
         """Compute attention over batch-first query, key, and value tensors.
 
         Args:
-            query (Tensor): Query tensor of shape ``(batch, target_len, embed_dim)``.
-            key (Tensor): Key tensor of shape ``(batch, source_len, kdim)``.
-            value (Tensor): Value tensor of shape ``(batch, source_len, vdim)``.
+            query (Tensor): Query tensor of shape `(batch, target_len, embed_dim)`.
+            key (Tensor): Key tensor of shape `(batch, source_len, kdim)`.
+            value (Tensor): Value tensor of shape `(batch, source_len, vdim)`.
             attn_mask (Tensor | None, default: None): Optional attention mask where
-                bool ``True`` masks out a position and float masks are additive biases.
+                bool `True` masks out a position and float masks are additive biases.
             key_padding_mask (Tensor | None, default: None): Optional mask of padded key positions.
             need_weights (bool, default: False): Whether to return attention weights with the output.
             is_causal (bool, default: False): Whether to apply a causal mask.
             average_attn_weights (bool, default: True): Whether to average returned weights over heads.
 
         Returns:
-            The attention output, or ``(output, weights)`` when
-            ``need_weights=True``.
+            The attention output, or `(output, weights)` when
+            `need_weights=True`.
         """
         if self.fast and need_weights:
             raise AssertionError(

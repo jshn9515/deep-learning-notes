@@ -23,7 +23,7 @@ class Dropout(nn.Module):
             inplace (bool, default: False): If set to True, will do this operation in-place.
                 Default: False.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         if not 0.0 <= p <= 1.0:

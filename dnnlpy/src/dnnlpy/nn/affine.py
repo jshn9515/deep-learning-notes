@@ -108,7 +108,7 @@ class Linear(nn.Module):
             out_features (int): Size of each output sample.
             bias (bool, default: True): Whether to learn an additive bias.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.in_features = in_features
@@ -165,7 +165,7 @@ class Bilinear(nn.Module):
             out_features (int): Size of each output sample.
             bias (bool, default: True): Whether to learn an additive bias.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.in1_features = in1_features

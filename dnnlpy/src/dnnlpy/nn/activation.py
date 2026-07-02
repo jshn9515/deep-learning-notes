@@ -55,7 +55,7 @@ class CELU(nn.Module):
             alpha (float, default: 1.0): Multiplicative factor for negative inputs.
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.alpha = alpha
@@ -87,7 +87,7 @@ class ELU(nn.Module):
             alpha (float, default: 1.0): Multiplicative factor for negative inputs.
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.alpha = alpha
@@ -114,7 +114,7 @@ class GELU(nn.Module):
                 method to use. Options are 'none' for the exact GELU function or 'tanh'
                 for the tanh approximation.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.approximate = approximate
@@ -135,7 +135,7 @@ class HardShrink(nn.Module):
         Args:
             lambd (float, default: 0.5): Lambda value for the shrinkage threshold.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.lambd = lambd
@@ -159,7 +159,7 @@ class HardSigmoid(nn.Module):
         Args:
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.inplace = inplace
@@ -180,7 +180,7 @@ class HardSwish(nn.Module):
         Args:
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.inplace = inplace
@@ -210,7 +210,7 @@ class HardTanh(nn.Module):
             max_val (float, default: 1.0): Maximum output value.
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.min_val = min_val
@@ -253,7 +253,7 @@ class LeakyReLU(nn.Module):
             negative_slope (float, default: 0.01): Slope used for negative inputs.
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.negative_slope = negative_slope
@@ -285,7 +285,7 @@ class LogSigmoid(nn.Module):
 
         Args:
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.fast = fast
@@ -293,7 +293,7 @@ class LogSigmoid(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         if self.fast:
             return F.logsigmoid(x)
-        return dF.logsigmoid(x)
+        return dF.log_sigmoid(x)
 
 
 class LogSoftmax(nn.Module):
@@ -305,7 +305,7 @@ class LogSoftmax(nn.Module):
         Args:
             dim (int): Dimension along which log-softmax will be computed.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.dim = dim
@@ -329,7 +329,7 @@ class Mish(nn.Module):
         Args:
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.inplace = inplace
@@ -357,7 +357,7 @@ class PReLU(nn.Module):
             num_parameters (int, default: 1): Number of learnable slope parameters.
             init (float, default: 0.25): Initial value of the learnable slopes.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.num_parameters = num_parameters
@@ -387,7 +387,7 @@ class ReLU(nn.Module):
         Args:
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.inplace = inplace
@@ -408,7 +408,7 @@ class ReLU6(nn.Module):
         Args:
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.inplace = inplace
@@ -438,7 +438,7 @@ class RReLU(nn.Module):
             upper (float, default: 1/3): Upper bound for the randomized slope.
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.lower = lower
@@ -476,7 +476,7 @@ class SELU(nn.Module):
         Args:
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.inplace = inplace
@@ -496,7 +496,7 @@ class Sigmoid(nn.Module):
 
         Args:
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.fast = fast
@@ -516,7 +516,7 @@ class SiLU(nn.Module):
         Args:
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.inplace = inplace
@@ -537,7 +537,7 @@ class Softmax(nn.Module):
         Args:
             dim (int): Dimension along which softmax will be computed.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.dim = dim
@@ -561,7 +561,7 @@ class Softmin(nn.Module):
         Args:
             dim (int): Dimension along which softmin will be computed.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.dim = dim
@@ -593,7 +593,7 @@ class Softplus(nn.Module):
             threshold (float, default: 20.0): Values above this revert to a linear
                 function for numerical stability.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.beta = beta
@@ -618,7 +618,7 @@ class SoftShrink(nn.Module):
         Args:
             lambd (float, default: 0.5): Lambda value for the shrinkage threshold.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.lambd = lambd
@@ -641,7 +641,7 @@ class SoftSign(nn.Module):
 
         Args:
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.fast = fast
@@ -660,7 +660,7 @@ class Tanh(nn.Module):
 
         Args:
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.fast = fast
@@ -679,7 +679,7 @@ class TanhShrink(nn.Module):
 
         Args:
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.fast = fast
@@ -708,7 +708,7 @@ class Threshold(nn.Module):
             value (float): Replacement value for thresholded elements.
             inplace (bool, default: False): Whether to perform the operation in-place.
             fast (bool, default: False): If set to True, will use the fast implementation
-                from torch.nn.functional. Default: False.
+                from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.threshold = threshold
