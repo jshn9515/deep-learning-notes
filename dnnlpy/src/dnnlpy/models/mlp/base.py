@@ -53,7 +53,7 @@ class Module(ABC):
         return self.forward(*args, **kwargs)
 
     def extra_repr(self) -> str:
-        """Return extra lines displayed inside ``repr(module)``."""
+        """Return extra lines displayed inside `repr(module)`."""
         return ''
 
     def __repr__(self) -> str:
@@ -115,8 +115,8 @@ class Optimizer(ABC):
         """Clear stored parameter gradients.
 
         Args:
-            set_to_none (bool, default: True): If ``True``, replace existing
-                gradients with ``None``. Otherwise, zero gradients in place.
+            set_to_none (bool, default: True): If `True`, replace existing
+                gradients with `None`. Otherwise, zero gradients in place.
         """
         for p in self.params:
             if p.grad is None:

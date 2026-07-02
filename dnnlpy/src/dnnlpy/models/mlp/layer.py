@@ -71,7 +71,7 @@ class Linear(Module):
 
     @override
     def forward(self, x: np.ndarray) -> np.ndarray:
-        """Return ``x @ W + b`` and cache ``x`` for backpropagation."""
+        """Return `x @ W + b` and cache `x` for backpropagation."""
         self.ctx = x
         return x @ self.W + self.b
 
@@ -85,5 +85,5 @@ class Linear(Module):
 
     @override
     def extra_repr(self) -> str:
-        """Return feature sizes for ``repr(layer)``."""
+        """Return feature sizes for `repr(layer)`."""
         return f'in_features={self.in_features}, out_features={self.out_features}'

@@ -17,8 +17,8 @@ def cross_entropy(
 
     Args:
         probs (np.ndarray): Batch of class probabilities with shape
-            ``(batch_size, num_classes)``.
-        targets (np.ndarray): Integer class indices with shape ``(batch_size,)``.
+            `(batch_size, num_classes)`.
+        targets (np.ndarray): Integer class indices with shape `(batch_size,)`.
         eps (float, default: 1e-12): Small value added before the logarithm.
     """
     batch_size = probs.shape[0]
