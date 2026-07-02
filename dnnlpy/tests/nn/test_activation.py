@@ -24,7 +24,7 @@ type ActFn = Callable[[Tensor], Tensor]
         (dF.hardswish, F.hardswish),
         (dF.hardtanh, F.hardtanh),
         (dF.leaky_relu, F.leaky_relu),
-        (dF.logsigmoid, F.logsigmoid),
+        (dF.log_sigmoid, F.logsigmoid),
         (dF.mish, F.mish),
         (dF.relu, F.relu),
         (dF.relu6, F.relu6),
@@ -65,6 +65,19 @@ def test_threshold_function_matches_torch():
     expected = F.threshold(x, threshold=0.5, value=-2.0)
 
     assert_close(actual, expected)
+
+
+def test_softplus_function_is_stable_for_extreme_inputs():
+    x = torch.tensor([-1000.0, -100.0, 0.0, 100.0, 1000.0], requires_grad=True)
+    actual = dF.softplus(x)
+    expected = F.softplus(x)
+
+    assert torch.isfinite(actual).all()
+    assert_close(actual, expected)
+
+    actual.sum().backward()
+    assert x.grad is not None
+    assert torch.isfinite(x.grad).all()
 
 
 def test_gelu_function_matches_torch_tanh_approximation():
