@@ -23,19 +23,19 @@ def _conv_nd(
     """Apply a ND convolution over an input image.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, C_in, *)``.
-        weight (Tensor): Convolution kernel with shape ``(C_out, C_in // groups, *)``.
-        bias (Tensor | None): Optional additive bias with shape ``(C_out,)``.
+        x (Tensor): Input tensor with shape `(N, C_in, *)`.
+        weight (Tensor): Convolution kernel with shape `(C_out, C_in // groups, *)`.
+        bias (Tensor | None): Optional additive bias with shape `(C_out,)`.
         stride (tuple[int, ...]): Stride of the sliding window.
-        padding (tuple[int, ...]): Explicit padding in ``F.pad`` order.
-        padding_mode (str): Padding mode. Supported values are ``'zeros'``, ``'reflect'``,
-            ``'replicate'``, and ``'circular'``.
+        padding (tuple[int, ...]): Explicit padding in `F.pad` order.
+        padding_mode (str): Padding mode. Supported values are `'zeros'`, `'reflect'`,
+            `'replicate'`, and `'circular'`.
         dilation (tuple[int, ...]): Spacing between kernel elements.
         groups (int): Number of blocked connections from input channels to output channels.
         ndim (int): Number of spatial dimensions.
 
     Returns:
-        Tensor: Output tensor with shape ``(N, C_out, *)``.
+        Tensor: Output tensor with shape `(N, C_out, *)`.
     """
     kernel_size = tuple(weight.shape[2:])
 
@@ -47,8 +47,8 @@ def _conv_nd(
 
     # Calculate output dimensions
     output_dim = []
-    for r, k, s, d in zip(x.shape[2:], kernel_size, stride, dilation, strict=True):
-        output_dim.append((r - d * (k - 1) - 1) // s + 1)
+    for l, k, s, d in zip(x.shape[2:], kernel_size, stride, dilation, strict=True):
+        output_dim.append((l - d * (k - 1) - 1) // s + 1)
     output_dim = tuple(output_dim)
 
     if any(dim <= 0 for dim in output_dim):
@@ -61,11 +61,12 @@ def _conv_nd(
     eff_kernel_size = tuple(eff_kernel_size)
 
     windows = x
-    for i, k, s in zip(range(2, ndim + 2), eff_kernel_size, stride, strict=True):
+    unfold_dims = tuple(range(2, ndim + 2))
+    for dim, k, s in zip(unfold_dims, eff_kernel_size, stride, strict=True):
         # Assume x.shape = (N, C, H, W)
         # 1) Step 1: (N, C, H, W) -> (N, C, H_out, W, kH)
         # 2) Step 2: (N, C, H_out, W, kH) -> (N, C, H_out, W_out, kH, kW)
-        windows = windows.unfold(i, k, s)
+        windows = windows.unfold(dim, k, s)
 
     # Suppose dilation = (2, 2), then index = [:, :, :, :, ::2, ::2]
     index = [slice(None)] * (2 + ndim)
@@ -123,20 +124,20 @@ def conv1d(
     """Apply a 1D convolution over an input signal.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, C_in, L_in)``.
-        weight (Tensor): Convolution kernel with shape ``(C_out, C_in // groups, K)``.
-        bias (Tensor | None, default: None): Optional additive bias with shape ``(C_out,)``.
+        x (Tensor): Input tensor with shape `(N, C_in, L_in)`.
+        weight (Tensor): Convolution kernel with shape `(C_out, C_in // groups, K)`.
+        bias (Tensor | None, default: None): Optional additive bias with shape `(C_out,)`.
         stride (tuple[int], default: (1,)): Stride of the sliding window.
-        padding (tuple[int, int], default: (0, 0)): Explicit padding in ``F.pad`` order,
-            as ``(left, right)``.
-        padding_mode (str, default: 'zeros'): Padding mode. Supported values are ``'zeros'``,
-            ``'reflect'``, ``'replicate'``, and ``'circular'``.
+        padding (tuple[int, int], default: (0, 0)): Explicit padding in `F.pad` order,
+            as `(left, right)`.
+        padding_mode (str, default: 'zeros'): Padding mode. Supported values are `'zeros'`,
+            `'reflect'`, `'replicate'`, and `'circular'`.
         dilation (tuple[int], default: (1,)): Spacing between kernel elements.
         groups (int, default: 1): Number of blocked connections from input channels to
             output channels.
 
     Returns:
-        Tensor: Output tensor with shape ``(N, C_out, L_out)``.
+        Tensor: Output tensor with shape `(N, C_out, L_out)`.
     """
     return _conv_nd(
         x,
@@ -164,20 +165,20 @@ def conv2d(
     """Apply a 2D convolution over an input image.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, C_in, H_in, W_in)``.
-        weight (Tensor): Convolution kernel with shape ``(C_out, C_in // groups, K_h, K_w)``.
-        bias (Tensor | None, default: None): Optional additive bias with shape ``(C_out,)``.
+        x (Tensor): Input tensor with shape `(N, C_in, H_in, W_in)`.
+        weight (Tensor): Convolution kernel with shape `(C_out, C_in // groups, K_h, K_w)`.
+        bias (Tensor | None, default: None): Optional additive bias with shape `(C_out,)`.
         stride (tuple[int, int], default: (1, 1)): Stride of the sliding window.
         padding (tuple[int, int, int, int], default: (0, 0, 0, 0)): Explicit padding in
-            ``F.pad`` order, as ``(left, right, top, bottom)``.
-        padding_mode (str, default: 'zeros'): Padding mode. Supported values are ``'zeros'``,
-            ``'reflect'``, ``'replicate'``, and ``'circular'``.
+            `F.pad` order, as `(left, right, top, bottom)`.
+        padding_mode (str, default: 'zeros'): Padding mode. Supported values are `'zeros'`,
+            `'reflect'`, `'replicate'`, and `'circular'`.
         dilation (tuple[int, int], default: (1, 1)): Spacing between kernel elements.
         groups (int, default: 1): Number of blocked connections from input channels to
             output channels.
 
     Returns:
-        Tensor: Output tensor with shape ``(N, C_out, H_out, W_out)``.
+        Tensor: Output tensor with shape `(N, C_out, H_out, W_out)`.
     """
     return _conv_nd(
         x,
@@ -205,20 +206,20 @@ def conv3d(
     """Apply a 3D convolution over an input volume.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, C_in, D_in, H_in, W_in)``.
-        weight (Tensor): Convolution kernel with shape ``(C_out, C_in // groups, K_d, K_h, K_w)``.
-        bias (Tensor | None, default: None): Optional additive bias with shape ``(C_out,)``.
+        x (Tensor): Input tensor with shape `(N, C_in, D_in, H_in, W_in)`.
+        weight (Tensor): Convolution kernel with shape `(C_out, C_in // groups, K_d, K_h, K_w)`.
+        bias (Tensor | None, default: None): Optional additive bias with shape `(C_out,)`.
         stride (tuple[int, int, int], default: (1, 1, 1)): Stride of the sliding window.
         padding (tuple[int, int, int, int, int, int], default: (0, 0, 0, 0, 0, 0)): Explicit
-            padding in ``F.pad`` order, as ``(left, right, top, bottom, front, back)``.
-        padding_mode (str, default: 'zeros'): Padding mode. Supported values are ``'zeros'``,
-            ``'reflect'``, ``'replicate'``, and ``'circular'``.
+            padding in `F.pad` order, as `(left, right, top, bottom, front, back)`.
+        padding_mode (str, default: 'zeros'): Padding mode. Supported values are `'zeros'`,
+            `'reflect'`, `'replicate'`, and `'circular'`.
         dilation (tuple[int, int, int], default: (1, 1, 1)): Spacing between kernel elements.
         groups (int, default: 1): Number of blocked connections from input channels to output
             channels.
 
     Returns:
-        Tensor: Output tensor with shape ``(N, C_out, D_out, H_out, W_out)``.
+        Tensor: Output tensor with shape `(N, C_out, D_out, H_out, W_out)`.
     """
     return _conv_nd(
         x,

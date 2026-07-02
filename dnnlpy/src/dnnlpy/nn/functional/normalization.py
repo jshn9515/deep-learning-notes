@@ -25,20 +25,20 @@ def batch_norm(
     """Apply batch normalization to an input tensor.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, C, ...)``.
-        running_mean (Tensor | None): Running mean with shape ``(C,)``. May be ``None``
-            when ``use_batch_stats=True``.
-        running_var (Tensor | None): Running variance with shape ``(C,)``. May be ``None``
-            when ``use_batch_stats=True``.
-        weight (Tensor | None, default: None): Optional scale parameter with shape ``(C,)``.
-        bias (Tensor | None, default: None): Optional shift parameter with shape ``(C,)``.
-        use_batch_stats (bool, default: False): If ``True``, use batch statistics and update
+        x (Tensor): Input tensor with shape `(N, C, ...)`.
+        running_mean (Tensor | None): Running mean with shape `(C,)`. May be `None`
+            when `use_batch_stats=True`.
+        running_var (Tensor | None): Running variance with shape `(C,)`. May be `None`
+            when `use_batch_stats=True`.
+        weight (Tensor | None, default: None): Optional scale parameter with shape `(C,)`.
+        bias (Tensor | None, default: None): Optional shift parameter with shape `(C,)`.
+        use_batch_stats (bool, default: False): If `True`, use batch statistics and update
             running statistics when they are provided.
         momentum (float, default: 0.1): Momentum used to update running statistics.
         eps (float, default: 1e-5): Value added to the variance for numerical stability.
 
     Returns:
-        Tensor: Normalized tensor with the same shape as ``x``.
+        Tensor: Normalized tensor with the same shape as `x`.
     """
     if (running_mean is None) != (running_var is None):
         raise AssertionError(
@@ -100,15 +100,15 @@ def group_norm(
     """Apply group normalization to an input tensor.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, C, ...)``.
-        num_groups (int): Number of groups used to divide the channels. ``C``must be
-            divisible by ``num_groups``.
-        weight (Tensor | None, default: None): Optional scale parameter with shape ``(C,)``.
-        bias (Tensor | None, default: None): Optional shift parameter with shape ``(C,)``.
+        x (Tensor): Input tensor with shape `(N, C, ...)`.
+        num_groups (int): Number of groups used to divide the channels. `C`must be
+            divisible by `num_groups`.
+        weight (Tensor | None, default: None): Optional scale parameter with shape `(C,)`.
+        bias (Tensor | None, default: None): Optional shift parameter with shape `(C,)`.
         eps (float, default: 1e-5): Value added to the variance for numerical stability.
 
     Returns:
-        Tensor: Normalized tensor with the same shape as ``x``.
+        Tensor: Normalized tensor with the same shape as `x`.
     """
     if x.ndim < 2:
         raise AssertionError(
@@ -167,21 +167,21 @@ def instance_norm(
     """Apply instance normalization to an input tensor.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, C, ...)``.
-        running_mean (Tensor | None): Running mean with shape ``(C,)``. May be ``None``
-            when ``use_instance_stats=True``.
-        running_var (Tensor | None): Running variance with shape ``(C,)``. May be ``None``
-            when ``use_instance_stats=True``.
-        weight (Tensor | None, default: None): Optional scale parameter with shape ``(C,)``.
-        bias (Tensor | None, default: None): Optional shift parameter with shape ``(C,)``.
-        use_instance_stats (bool, default: False): If ``True``, use statistics computed
+        x (Tensor): Input tensor with shape `(N, C, ...)`.
+        running_mean (Tensor | None): Running mean with shape `(C,)`. May be `None`
+            when `use_instance_stats=True`.
+        running_var (Tensor | None): Running variance with shape `(C,)`. May be `None`
+            when `use_instance_stats=True`.
+        weight (Tensor | None, default: None): Optional scale parameter with shape `(C,)`.
+        bias (Tensor | None, default: None): Optional shift parameter with shape `(C,)`.
+        use_instance_stats (bool, default: False): If `True`, use statistics computed
             independently for each instance and update running statistics when they are
             provided.
         momentum (float, default: 0.1): Momentum used to update running statistics.
         eps (float, default: 1e-5): Value added to the variance for numerical stability.
 
     Returns:
-        Tensor: Normalized tensor with the same shape as ``x``.
+        Tensor: Normalized tensor with the same shape as `x`.
     """
     if (running_mean is None) != (running_var is None):
         raise AssertionError(
@@ -254,18 +254,18 @@ def layer_norm(
     """Applies layer normalization to an input tensor.
 
     Args:
-        x (Tensor): Input tensor with shape ``(N, *)``, where ``*`` means any number of
+        x (Tensor): Input tensor with shape `(N, *)`, where `*` means any number of
             additional dimensions.
         normalized_shape (tuple[int, ...]): Input shape from an expected input of size
-            ``(*)``. If a single integer is used, it is treated as a singleton tuple.
+            `(*)`. If a single integer is used, it is treated as a singleton tuple.
         weight (Tensor | None, default: None): Optional learnable scale parameter of shape
-            ``normalized_shape``.
+            `normalized_shape`.
         bias (Tensor | None, default: None): Optional learnable shift parameter of shape
-            ``normalized_shape``.
+            `normalized_shape`.
         eps (float, default: 1e-5): A value added to the denominator for numerical stability.
 
     Returns:
-        Tensor: Normalized tensor with the same shape as ``x``.
+        Tensor: Normalized tensor with the same shape as `x`.
     """
     if isinstance(normalized_shape, int):
         normalized_shape = (normalized_shape,)
@@ -301,14 +301,14 @@ def local_response_norm(
     """Apply local response normalization to an input tensor.
 
     Args:
-        x (Tensor): Input tensor wOth shape ``(N, C, ...)``.
+        x (Tensor): Input tensor wOth shape `(N, C, ...)`.
         size (int): Number of neighboring channels used for normalization.
         alpha (float, default: 1e-4): Scaling factor applied to the local squared response.
         beta (float, default: 0.75): Exponent applied to the normalization term.
         k (float, default: 1.0): Additive constant in the normalization term.
 
     Returns:
-        Tensor: Normalized tensor with the same shape as ``x``.
+        Tensor: Normalized tensor with the same shape as `x`.
     """
     if x.ndim < 3:
         raise AssertionError(
@@ -330,9 +330,7 @@ def local_response_norm(
 
     padded_squared = F.pad(flat_squared, (left_padding, right_padding))
     local_mean_square = F.avg_pool1d(padded_squared, kernel_size=size, stride=1)
-
-    local_mean_square = local_mean_square.reshape(squared.shape)
-    local_mean_square = local_mean_square.movedim(-1, 1)
+    local_mean_square = local_mean_square.reshape_as(squared).movedim(-1, 1)
 
     scale = k + alpha * local_mean_square
     return x * scale.pow(-beta)
@@ -347,16 +345,16 @@ def rms_norm(
     """Apply root mean square normalization to an input tensor.
 
     Args:
-        x (Tensor): Input tensor whose trailing dimensions match ``normalized_shape``.
+        x (Tensor): Input tensor whose trailing dimensions match `normalized_shape`.
         normalized_shape (int | tuple[int, ...]): Shape of the trailing dimensions
             to normalize.
         weight (Tensor | None, default: None): Optional scale parameter with shape
-            ``normalized_shape``.
+            `normalized_shape`.
         eps (float | None, default: None): Value added to the mean square for numerical
-            stability. If ``None``, use the machine epsilon of ``x.dtype``.
+            stability. If `None`, use the machine epsilon of `x.dtype`.
 
     Returns:
-        Tensor: Normalized tensor with the same shape as ``x``.
+        Tensor: Normalized tensor with the same shape as `x`.
     """
     if isinstance(normalized_shape, int):
         normalized_shape = (normalized_shape,)

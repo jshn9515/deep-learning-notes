@@ -27,8 +27,8 @@ def naive_attention(
 
     Args:
         query (Tensor): Query tensor.
-        key (Tensor): Key tensor with the same final dimension as ``query``.
-        value (Tensor): Value tensor with the same sequence length as ``key``.
+        key (Tensor): Key tensor with the same final dimension as `query`.
+        value (Tensor): Value tensor with the same sequence length as `key`.
         need_weights (bool, default: True): Whether to return attention weights.
 
     Returns:
@@ -57,21 +57,21 @@ def scaled_dot_product_attention(
 ) -> AttentionOutput:
     """Compute scaled dot-product attention.
 
-    Boolean masks use the same convention as ``torch.nn.Transformer``:
-    ``True`` always means the element is masked out and ``False`` means the
+    Boolean masks use the same convention as `torch.nn.Transformer`:
+    `True` always means the element is masked out and `False` means the
     element participates in attention. Float masks are additive attention biases.
 
     Args:
-        query (Tensor): Query tensor of shape ``(batch, target_len, embed_dim)``.
-        key (Tensor): Key tensor of shape ``(batch, source_len, key_dim)``.
-        value (Tensor): Value tensor of shape ``(batch, source_len, value_dim)``.
+        query (Tensor): Query tensor of shape `(batch, target_len, embed_dim)`.
+        key (Tensor): Key tensor of shape `(batch, source_len, key_dim)`.
+        value (Tensor): Value tensor of shape `(batch, source_len, value_dim)`.
         attn_mask (Tensor | None, default: None): Optional attention mask.
         is_causal (bool, default: False): Whether to apply a causal mask.
         dropout (float, default: 0.0): Dropout probability for attention weights.
         training (bool, default: True): Whether dropout is active.
         need_weights (bool, default: True): Whether to return attention weights.
         scale (float | None, default: None): Optional scaling factor for attention scores.
-            If ``None``, defaults to ``1 / sqrt(embed_dim)``.
+            If `None`, defaults to `1 / sqrt(embed_dim)`.
 
     Returns:
         AttentionOutput: Tuple of output tensor and optional attention weights.
@@ -142,13 +142,13 @@ def multi_head_attention(
     """Compute batch-first multi-head attention from explicit projection weights.
 
     Projection weights are right-multiplied, so their shapes are
-    ``(input_dim, embed_dim)``. Boolean masks use ``True`` to mask out
+    `(input_dim, embed_dim)`. Boolean masks use `True` to mask out
     positions.
 
     Args:
-        query (Tensor): Query tensor of shape ``(batch, target_len, embed_dim)``.
-        key (Tensor): Key tensor of shape ``(batch, source_len, key_dim)``.
-        value (Tensor): Value tensor of shape ``(batch, source_len, value_dim)``.
+        query (Tensor): Query tensor of shape `(batch, target_len, embed_dim)`.
+        key (Tensor): Key tensor of shape `(batch, source_len, key_dim)`.
+        value (Tensor): Value tensor of shape `(batch, source_len, value_dim)`.
         num_heads (int): Number of attention heads.
         q_proj_weight (Tensor): Query projection weight.
         k_proj_weight (Tensor): Key projection weight.
