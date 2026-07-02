@@ -26,7 +26,7 @@ class Tokenizer(ABC):
                 input tokens.
 
         Raises:
-            ValueError: If ``unk_token`` is not present in ``vocab``.
+            ValueError: If `unk_token` is not present in `vocab`.
         """
         self.token_to_id = dict(vocab)
         self.id_to_token = {idx: token for token, idx in self.token_to_id.items()}
@@ -54,7 +54,7 @@ class Tokenizer(ABC):
         return len(self.token_to_id)
 
     def extra_repr(self) -> str:
-        """Return tokenizer metadata displayed inside ``repr``."""
+        """Return tokenizer metadata displayed inside `repr`."""
         return (
             f'vocab_size={self.vocab_size}, '
             f'unk_token={self.unk_token!r}, '
@@ -69,7 +69,7 @@ class Tokenizer(ABC):
         return f'{self.__class__.__name__}()'
 
     def token2id(self, token: str) -> int:
-        """Return the ID for ``token``, or the unknown-token ID if missing.
+        """Return the ID for `token`, or the unknown-token ID if missing.
 
         Args:
             token (str): Token to look up.
@@ -77,13 +77,13 @@ class Tokenizer(ABC):
         return self.token_to_id.get(token, self.unk_id)
 
     def id2token(self, index: int) -> str:
-        """Return the token for ``index``.
+        """Return the token for `index`.
 
         Args:
             index (int): Token ID to look up.
 
         Raises:
-            KeyError: If ``index`` is not in the vocabulary.
+            KeyError: If `index` is not in the vocabulary.
         """
         if index not in self.id_to_token:
             raise KeyError(f'Unknown token ID: {index}.')
