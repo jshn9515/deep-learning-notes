@@ -13,7 +13,7 @@ __all__ = [
     'hardtanh',
     'leaky_relu',
     'log_softmax',
-    'logsigmoid',
+    'log_sigmoid',
     'mish',
     'prelu',
     'relu',
@@ -108,7 +108,7 @@ def log_softmax(x: Tensor, dim: int) -> Tensor:
     return x - max_x - log_sum_exp
 
 
-def logsigmoid(x: Tensor) -> Tensor:
+def log_sigmoid(x: Tensor) -> Tensor:
     """Apply the log-sigmoid function element-wise."""
     return -softplus(-x)
 
@@ -205,8 +205,9 @@ def softmin(x: Tensor, dim: int) -> Tensor:
 
 def softplus(x: Tensor, beta: float = 1.0, threshold: float = 20.0) -> Tensor:
     """Apply the softplus function element-wise."""
-    beta_x = beta * x
-    return torch.where(beta_x > threshold, x, beta_x.exp().log1p() / beta)
+    y = beta * x
+    softplus = y.clamp(min=0) + (-y.abs()).exp().log1p()
+    return torch.where(y > threshold, x, softplus / beta)
 
 
 def softshrink(x: Tensor, lambd: float = 0.5) -> Tensor:

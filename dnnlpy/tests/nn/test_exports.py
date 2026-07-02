@@ -84,7 +84,7 @@ def test_functional_exports_new_functions():
         'linear',
         'local_response_norm',
         'log_softmax',
-        'logsigmoid',
+        'log_sigmoid',
         'mish',
         'multi_head_attention',
         'naive_attention',
