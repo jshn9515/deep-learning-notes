@@ -16,14 +16,14 @@ class Optimizer(ABC):
         Args:
             params (Iterable[Tensor]): Parameters whose gradients drive the
                 optimizer updates.
-            **defaults (Any): Hyperparameters to expose through ``defaults``
+            **defaults (Any): Hyperparameters to expose through `defaults`
                 and compact optimizer representations.
         """
         self.params = list(params)
         self.defaults = defaults
 
     def extra_repr(self) -> str:
-        """Return optimizer hyperparameters displayed inside ``repr``."""
+        """Return optimizer hyperparameters displayed inside `repr`."""
         return ', '.join(f'{name}={value!r}' for name, value in self.defaults.items())
 
     def __repr__(self) -> str:
@@ -42,8 +42,8 @@ class Optimizer(ABC):
         """Clear stored parameter gradients.
 
         Args:
-            set_to_none (bool, default: False): If ``True``, replace existing
-                gradients with ``None``. Otherwise, zero gradients in place.
+            set_to_none (bool, default: False): If `True`, replace existing
+                gradients with `None`. Otherwise, zero gradients in place.
         """
         for p in self.params:
             if p.grad is None:

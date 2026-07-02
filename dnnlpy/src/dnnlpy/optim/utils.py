@@ -33,7 +33,7 @@ def run_optimizer(
 
     Returns:
         Parameter snapshots before the first step and after each update. The
-        returned tensor has shape ``(steps + 1, *param.shape)``.
+        returned tensor has shape `(steps + 1, *param.shape)`.
     """
     if isinstance(optimizer, optim.Optimizer):
         theta = optimizer.param_groups[0]['params'][0]
@@ -66,11 +66,11 @@ def collect_lr_schedule(
 
     Args:
         optimizer (optim.Optimizer): PyTorch optimizer controlled by
-            ``scheduler``.
+            `scheduler`.
         scheduler (lr_scheduler.LRScheduler): Learning-rate scheduler to step.
         num_steps (int, default: 100): Number of scheduler steps to collect.
         metric_values (list[float] | None, default: None): Metric values passed
-            to ``ReduceLROnPlateau`` schedulers.
+            to `ReduceLROnPlateau` schedulers.
 
     Returns:
         Learning-rate values observed before each scheduler step.
@@ -106,11 +106,11 @@ def plot_lr_schedule(
 
     Args:
         optimizer (optim.Optimizer): PyTorch optimizer controlled by
-            ``scheduler``.
+            `scheduler`.
         scheduler (lr_scheduler.LRScheduler): Learning-rate scheduler to plot.
         num_steps (int, default: 100): Number of scheduler steps to collect.
         metric_values (list[float] | None, default: None): Metric values passed
-            to ``ReduceLROnPlateau`` schedulers.
+            to `ReduceLROnPlateau` schedulers.
         xlabel (str, default: 'Epoch'): Label for the horizontal axis.
     """
     name = scheduler.__class__.__name__

@@ -23,10 +23,10 @@ def newton_schulz_5(
         ns_steps (int, default: 5): Number of Newton-Schulz iterations.
         ns_coefficients (tuple[float, float, float], default: (3.4445, -4.7750, 2.0315)):
             Coefficients for the quintic Newton-Schulz iteration.
-        eps (float, default: 1e-7): Small value used when normalizing ``X``.
+        eps (float, default: 1e-7): Small value used when normalizing `X`.
 
     Returns:
-        Orthogonalized update matrix with the same shape as ``X``.
+        Orthogonalized update matrix with the same shape as `X`.
     """
     if X.ndim != 2:
         raise AssertionError('Muon only supports 2D parameters.')
