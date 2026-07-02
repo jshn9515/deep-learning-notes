@@ -31,7 +31,7 @@ def set_seed(
             operations should warn instead of raising an error.
 
     Returns:
-        Generator: The PyTorch generator returned by ``torch.manual_seed``.
+        Generator: The PyTorch generator returned by `torch.manual_seed`.
     """
     random.seed(seed)
     np.random.seed(seed)
@@ -59,8 +59,8 @@ def get_default_device() -> torch.device:
 def get_data_root() -> str:
     """Return the dataset root directory, creating it when necessary.
 
-    The ``DNNL_DATA_ROOT`` environment variable overrides the default
-    ``~/datasets`` location.
+    The `DNNL_DATA_ROOT` environment variable overrides the default
+    `~/datasets` location.
     """
     root = os.getenv('DNNL_DATA_ROOT', os.path.expanduser('~/datasets'))
     if not os.path.exists(root):

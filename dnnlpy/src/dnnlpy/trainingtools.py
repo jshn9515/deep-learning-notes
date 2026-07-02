@@ -45,25 +45,25 @@ class Trainer:
         Args:
             device (Device, default: None):
                 Device used for model, batches, and metrics.
-                ``None`` and ``'auto'`` select ``get_default_device()``.
+                `None` and `'auto'` select `get_default_device()`.
             amp (bool, default: False):
                 Whether to enable automatic mixed precision.
             precision ({'fp32', 'fp16', 'bf16'}, default: 'fp32'):
-                Floating-point precision used by autocast when ``amp=True``.
+                Floating-point precision used by autocast when `amp=True`.
             seed (int | None, default: None):
-                Random seed passed to ``set_seed``.
+                Random seed passed to `set_seed`.
             deterministic (bool, default: False):
                 Whether to request deterministic PyTorch algorithms.
             benchmark (bool, default: False):
                 Whether to enable cuDNN benchmarking.
             gradient_clip_val (float | None, default: None):
-                Gradient clipping value. ``None`` disables clipping.
+                Gradient clipping value. `None` disables clipping.
             gradient_clip_algorithm ({'norm', 'value'}, default: 'norm'):
-                Clipping algorithm used when ``gradient_clip_val`` is set.
+                Clipping algorithm used when `gradient_clip_val` is set.
             max_epochs (int, default: 1):
                 Number of training epochs to run.
             checkpoint_path (str | PathLike[str] | None, default: None):
-                Checkpoint file or directory path. ``None`` disables automatic checkpointing.
+                Checkpoint file or directory path. `None` disables automatic checkpointing.
             checkpoint_every_n_epochs (int, default: 1):
                 Frequency for automatic checkpoint saves.
             verbose (bool, default: True):
@@ -151,7 +151,7 @@ class Trainer:
             lr_scheduler_interval ({'epoch', 'step'}, default: 'epoch'):
                 Whether to step the scheduler after each epoch or optimizer step.
             lr_scheduler_monitor (str, default: 'val_loss'):
-                Log key used when stepping ``ReduceLROnPlateau``.
+                Log key used when stepping `ReduceLROnPlateau`.
             train_metrics (MetricCollection, default: None):
                 Optional TorchMetrics metric, mapping, or sequence for training logs.
             val_metrics (MetricCollection, default: None):
@@ -271,7 +271,7 @@ class Trainer:
             lr_scheduler (lr.LRScheduler | None, default: None):
                 Optional scheduler whose state will be saved.
             epoch (int | None, default: None):
-                Epoch number to store. ``None`` stores ``len(history)``.
+                Epoch number to store. `None` stores `len(history)`.
         """
         checkpoint_path = Path(path)
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
@@ -310,7 +310,7 @@ class Trainer:
             lr_scheduler (lr.LRScheduler | None, default: None):
                 Optional scheduler whose state will be loaded when present in the checkpoint.
             map_location (Device, default: None):
-                Device mapping passed to ``torch.load``. ``None`` uses the trainer device.
+                Device mapping passed to `torch.load`. `None` uses the trainer device.
 
         Returns:
             dict[str, Any]: Loaded checkpoint dictionary.
