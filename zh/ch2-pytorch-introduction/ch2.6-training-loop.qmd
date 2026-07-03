@@ -35,6 +35,7 @@ import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
 from torch import Tensor
+from torch.types import Device
 from torchmetrics import Metric
 from torchmetrics.classification import MulticlassAccuracy
 
@@ -232,12 +233,12 @@ TorchMetrics 的另一个重要特点是：**metric 是有状态的。**
 
 所以，使用 metric 时一定要记得在合适的时候 `reset()`。否则，这个 epoch 的统计结果可能会混进上一个 epoch 的状态。
 
-## 2.6.6 单轮训练：train
+## 2.6.6 单轮训练：train_one_epoch
 
 现在我们把训练一个 epoch 的逻辑写成函数。
 
 ```{python}
-def train(
+def train_one_epoch(
     model: nn.Module,
     dataloader: utils.DataLoader[tuple[Tensor, Tensor]],
     loss_fn: nn.Module,
@@ -245,6 +246,7 @@ def train(
     metric: Metric,
     device: torch.device,
 ) -> tuple[float, float]:
+    """Train a model for one epoch and return average loss and metric values."""
     model.train()
     metric.reset()
 
@@ -257,13 +259,11 @@ def train(
         logits = model(X)
         loss = loss_fn(logits, y)
 
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
 
         total_loss += loss.item()
-        # We use `detach()` here to avoid keeping the computation graph
-        # for the metric update.
         metric.update(logits.detach(), y)
 
     avg_loss = total_loss / len(dataloader)
@@ -324,6 +324,7 @@ def evaluate(
     metric: Metric,
     device: torch.device,
 ) -> tuple[float, float]:
+    """Evaluate a model for one epoch and return average loss and metric values."""
     model.eval()
     metric.reset()
 
@@ -358,25 +359,29 @@ def train_and_evaluate(
     val_dl: utils.DataLoader[tuple[Tensor, Tensor]],
     loss_fn: nn.Module,
     optimizer: optim.Optimizer,
-    metric: Metric,
+    train_metric: Metric,
     val_metric: Metric,
+    metric_name: str,
     num_epochs: int,
-    device: torch.device | None = None,
+    device: Device = None,
 ) -> None:
+    """Train and validate a model for multiple epochs."""
     if device is None:
-        device = get_default_device()
+        device = dnnlpy.get_default_device()
+    else:
+        device = torch.device(device)
 
     model.to(device)
-    metric.to(device)
+    train_metric.to(device)
     val_metric.to(device)
 
     for epoch in range(1, num_epochs + 1):
-        loss, score = train(
+        loss, score = train_one_epoch(
             model=model,
             dataloader=train_dl,
             loss_fn=loss_fn,
             optimizer=optimizer,
-            metric=metric,
+            metric=train_metric,
             device=device,
         )
         val_loss, val_score = evaluate(
@@ -391,16 +396,16 @@ def train_and_evaluate(
         print(
             f'Epoch [{epoch:{w}d}/{num_epochs:{w}d}] '
             f'| loss: {loss:.4f} '
-            f'| metric: {score:.4f} '
+            f'| {metric_name}: {score:.4f} '
             f'| val_loss: {val_loss:.4f} '
-            f'| val_metric: {val_score:.4f}'
+            f'| val_{metric_name}: {val_score:.4f}'
         )
 ```
 
 这里我给训练和验证分别传入了两个 metric：
 
 ```python
-metric: Metric
+train_metric: Metric
 val_metric: Metric
 ```
 
@@ -430,8 +435,9 @@ train_and_evaluate(
     val_dl=val_dl,
     loss_fn=loss_fn,
     optimizer=optimizer,
-    metric=metric,
+    train_metric=metric,
     val_metric=val_metric,
+    metric_name='acc',
     num_epochs=5,
     device=device,
 )

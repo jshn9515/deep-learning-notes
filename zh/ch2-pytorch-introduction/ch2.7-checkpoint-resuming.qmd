@@ -32,10 +32,8 @@ Checkpoint 的作用不是单纯保存一个已经训练好的模型，而是保
 ```{python}
 import os
 import signal
-from pathlib import Path
 
 import dnnlpy
-import dnnlpy.trainingtools as dt
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -43,6 +41,7 @@ import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
 from torch import Tensor
+from torch.types import Device
 from torchmetrics.classification import MulticlassAccuracy
 
 print('PyTorch version:', torch.__version__)
@@ -163,12 +162,13 @@ def create_training_objects(
 
 ```{python}
 def save_checkpoint(
-    path: str | Path,
+    path: str | os.PathLike[str],
     epoch: int,
     model: nn.Module,
     optimizer: optim.Optimizer,
     history: list[dict[str, float]],
 ) -> None:
+    """Save a checkpoint containing the model and optimizer states."""
     checkpoint = {
         'epoch': epoch,
         'model': model.state_dict(),
@@ -193,11 +193,17 @@ def save_checkpoint(
 
 ```{python}
 def load_checkpoint(
-    path: str | Path,
+    path: str | os.PathLike[str],
     model: nn.Module,
     optimizer: optim.Optimizer,
-    device: torch.device | None = None,
+    device: Device = None,
 ) -> tuple[int, list[dict[str, float]]]:
+    """Load a checkpoint and restore the model and optimizer states."""
+    if device is None:
+        device = dnnlpy.get_default_device()
+    else:
+        device = torch.device(device)
+
     checkpoint = torch.load(
         path,
         map_location=device,
@@ -250,11 +256,13 @@ history = []
 假设我们本来打算训练 5 个 epoch，但训练到第 3 个 epoch 之后，程序突然崩溃了。我们可以在训练循环里用 `signal.SIGINT` 模拟这个崩溃：
 
 ```{python}
+from utils import train_one_epoch, evaluate
+
 num_epochs = 5
 crash_after_epoch = 3
 
 for epoch in range(1, num_epochs + 1):
-    loss, acc = dt.train(
+    loss, acc = train_one_epoch(
         model=model,
         dataloader=train_dl,
         loss_fn=loss_fn,
@@ -262,7 +270,7 @@ for epoch in range(1, num_epochs + 1):
         metric=metric,
         device=device,
     )
-    val_loss, val_acc = dt.evaluate(
+    val_loss, val_acc = evaluate(
         model=model,
         dataloader=val_dl,
         loss_fn=loss_fn,
@@ -342,7 +350,7 @@ print('Number of history records:', len(history))
 
 ```{python}
 for epoch in range(last_epoch + 1, num_epochs + 1):
-    train_loss, train_acc = dt.train(
+    train_loss, train_acc = train_one_epoch(
         model=model,
         dataloader=train_dl,
         loss_fn=loss_fn,
@@ -350,7 +358,7 @@ for epoch in range(last_epoch + 1, num_epochs + 1):
         metric=metric,
         device=device,
     )
-    val_loss, val_acc = dt.evaluate(
+    val_loss, val_acc = evaluate(
         model=model,
         dataloader=val_dl,
         loss_fn=loss_fn,
@@ -391,14 +399,14 @@ for epoch in range(last_epoch + 1, num_epochs + 1):
 
 ```{python}
 test_metric = MulticlassAccuracy(num_classes=10).to(device)
-test_loss, test_acc = dt.evaluate(
+test_loss, test_acc = evaluate(
     model=model,
     dataloader=test_dl,
     loss_fn=loss_fn,
     metric=test_metric,
     device=device,
 )
-model_name = type(model).__name__
+model_name = model.__class__.__name__
 print(f'[{model_name}] | test_loss: {test_loss:.4f} | test_acc: {test_acc:.4f}')
 ```
 
