@@ -30,6 +30,8 @@ class VAE(nn.Module):
             latent_dim (int, default: 32): Size of the Gaussian latent distribution.
         """
         super().__init__()
+        self.latent_dim = latent_dim
+
         input_dim = math.prod(input_shape)
         self.encoder = nn.Sequential(
             dnn.Flatten(),
