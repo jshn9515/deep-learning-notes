@@ -13,10 +13,10 @@ order: 5
 
 In the previous few sections, we have discussed:
 
-- How AutoEncoder learns latent representation through compression and reconstruction
-- How VAE puts latent representation into a probabilistic modeling framework
-- Why ELBO becomes the training objective of VAE
-- What typical phenomena appear during VAE training, such as latent space interpolation and mode collapse
+- How AutoEncoder learns latent representation through compression and reconstruction;
+- How VAE puts latent representation into a probabilistic modeling framework;
+- Why ELBO becomes the training objective of VAE;
+- What typical phenomena appear during VAE training, such as latent space interpolation and mode collapse.
 
 At this point, we should already be able to answer what VAE is and why VAE is designed this way. But why did VAE not become the mainstream method for image generation today? What are its advantages and limitations?
 

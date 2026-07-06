@@ -37,9 +37,9 @@ In this section, we do not only talk about conclusions. Instead, we directly obs
 from collections import defaultdict
 
 import dnnlpy
+import dnnlpy.optim as dopt
 import matplotlib.pyplot as plt
 import torch
-import torch.optim as optim
 import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
@@ -48,7 +48,6 @@ from sklearn.manifold import TSNE
 from torchmetrics.aggregation import MeanMetric
 from torchvision.utils import make_grid
 
-plt.rc('figure', dpi=100)
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -76,7 +75,7 @@ We directly use the VAE model and ELBO loss function defined in the previous sec
 ```{python}
 input_shape = (1, 28, 28)
 model = VAE(input_shape).to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = dopt.Adam(model.parameters(), lr=1e-3)
 ```
 
 Here we separately record the total loss:
@@ -300,7 +299,7 @@ models = {}
 for beta in betas:
     print(f'Training beta={beta}...')
     model = VAE(input_shape).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = dopt.Adam(model.parameters(), lr=1e-3)
 
     for epoch in range(5):
         model.train()
@@ -376,7 +375,7 @@ Now let us summarize the important intuitions behind VAE training phenomena:
 
 VAE is the foundation of a series of later generative models. Understanding its training phenomena and latent-space intuition is very important for our later study of diffusion, latent diffusion, and other models. It is not only a generative model, but also a tool for learning latent-space structure. This is also why it has an important position in the field of generative models.
 
-## 13.4.9 Exercises
+## 13.4.9 Chapter Exercises
 
 You can continue modifying the code above yourself and observe more phenomena:
 

@@ -19,18 +19,23 @@ But a normal AutoEncoder has a fundamental problem:
 
 That is, although every training sample can be encoded into a point $z$, and the decoder can reconstruct the original image from this point, these points may be scattered and fragmented in the latent space. The model only needs to make sure these points can be decoded correctly. It does not care whether the whole latent space is continuous and smooth, nor whether the regions between different samples have a good structure. This leads to a direct consequence: if we randomly sample a point from the latent space and feed it into the decoder, the result often does not look like real data. In other words, a normal AutoEncoder is more like doing compression and reconstruction, rather than doing generation modeling in the real sense.
 
-The idea of VAE [@kingma2022VAE] is to introduce a latent variable $z$. This $z$ is no longer a point, but a probability distribution. It is used to represent the latent factors that are invisible, but truly determine how the data is generated. For example, a face image $x$ looks on the surface like it is just made of a large number of pixels. But behind these pixels, the factors that really affect it may be pose, lighting, expression, hairstyle, or even the characteristics of the person’s identity. These factors are usually not explicitly labeled, but they are indeed controlling how this image is formed.
+The idea of VAE is to introduce a latent variable $z$. This $z$ is no longer a point, but a probability distribution. It is used to represent the latent factors that are invisible, but truly determine how the data is generated. For example, a face image $x$ looks on the surface like it is just made of a large number of pixels. But behind these pixels, the factors that really affect it may be pose, lighting, expression, hairstyle, or even the characteristics of the person’s identity. These factors are usually not explicitly labeled, but they are indeed controlling how this image is formed.
 
 Therefore, we hope to use a latent variable $z$ to capture these latent factors. In this way, the data $x$ is no longer treated as something that appears out of nowhere. Instead, it is first determined by some latent state $z$, and then $z$ generates the final observed data $x$.
 
-This is the core idea of **VAE (Variational Autoencoder)**. Instead of directly modeling in the high-dimensional data space, we first assume that behind the data there is a lower-dimensional and more structured latent space, and let the model learn the probability distribution of this latent space, as well as the way to generate data from this space.
+This is the core idea of **Variational Autoencoder (VAE)** [@kingma2022VAE]. Instead of directly modeling in the high-dimensional data space, we first assume that behind the data there is a lower-dimensional and more structured latent space, and let the model learn the probability distribution of this latent space, as well as the way to generate data from this space.
 
 ```{python}
 import math
+from typing import Literal
 
+import dnnlpy.nn as dnn
+import dnnlpy.nn.functional as dF
 import torch
 import torch.nn as nn
 from torch import Tensor
+
+type LossFn = Literal['mse', 'bce']
 
 print('PyTorch version:', torch.__version__)
 ```
@@ -302,52 +307,84 @@ Below is a minimal schematic code for the encoding part of VAE. The key point is
 
 ```{python}
 class VAE(nn.Module):
+    """A fully connected variational autoencoder for small image tensors."""
+
     def __init__(
         self,
         input_shape: tuple[int, int, int],
         hidden_dim: int = 256,
         latent_dim: int = 32,
     ):
+        """Initialize encoder, latent heads, and decoder."""
         super().__init__()
-        self.input_shape = tuple(input_shape)
-        self.latent_dim = latent_dim
         input_dim = math.prod(input_shape)
         self.encoder = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
+            dnn.Flatten(),
+            dnn.Linear(input_dim, hidden_dim),
+            dnn.ReLU(),
         )
-        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
-        self.fc_logvar = nn.Linear(hidden_dim, latent_dim)
+        self.fc_mu = dnn.Linear(hidden_dim, latent_dim)
+        self.fc_logvar = dnn.Linear(hidden_dim, latent_dim)
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, input_dim),
-            nn.Sigmoid(),
-            nn.Unflatten(1, input_shape),
+            dnn.Linear(latent_dim, hidden_dim),
+            dnn.ReLU(),
+            dnn.Linear(hidden_dim, input_dim),
+            dnn.Sigmoid(),
+            dnn.Unflatten(1, input_shape),
         )
 
     def encode(self, x: Tensor) -> tuple[Tensor, Tensor]:
+        """Encode inputs into latent mean and log-variance tensors."""
         h = self.encoder(x)
         mu = self.fc_mu(h)
         logvar = self.fc_logvar(h)
         return mu, logvar
 
     def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
-        std = torch.exp(0.5 * logvar)
+        """Sample latent vectors with the reparameterization trick."""
+        std = (0.5 * logvar).exp()
         eps = torch.randn_like(std)
         latent = torch.addcmul(mu, std, eps)
         return latent
 
     def decode(self, z: Tensor) -> Tensor:
+        """Decode latent vectors back to input-shaped tensors."""
         x_hat = self.decoder(z)
         return x_hat
 
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+        """Reconstruct inputs and return reconstruction, mean, and log-variance."""
         mu, logvar = self.encode(x)
         latent = self.reparameterize(mu, logvar)
         x_hat = self.decode(latent)
         return x_hat, mu, logvar
+
+    @staticmethod
+    def loss(
+        x_hat: Tensor,
+        x: Tensor,
+        mu: Tensor,
+        logvar: Tensor,
+        loss_fn: LossFn = 'bce',
+        beta: float = 1.0,
+        normalize: bool = True,
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        """Compute VAE total, reconstruction, and KL losses per batch item."""
+        if loss_fn == 'mse':
+            recon_loss = dF.mse_loss(x_hat, x, reduction='sum')
+        elif loss_fn == 'bce':
+            recon_loss = dF.bce_loss(x_hat, x, reduction='sum')
+        else:
+            raise NotImplementedError(f'Unsupported loss function: {loss_fn}.')
+
+        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        loss = recon_loss + beta * kl_loss
+
+        if normalize:
+            B = x.size(0)
+            return loss / B, recon_loss / B, kl_loss / B
+
+        return loss, recon_loss, kl_loss
 ```
 
 Let's test it:
@@ -369,7 +406,7 @@ There are several key points here:
 - The encoder does not output only one latent vector at the end. Instead, it outputs `mu` and `logvar`;
 - The `reparameterize()` function implements $z = \mu + \sigma \odot \epsilon$.
 
-For the line `std = torch.exp(0.5 * logvar)`, we have:
+For the line `std = (0.5 * logvar).exp()`, we have:
 
 $$
 \log \sigma^2 = \text{logvar} \quad \Rightarrow \quad \sigma =

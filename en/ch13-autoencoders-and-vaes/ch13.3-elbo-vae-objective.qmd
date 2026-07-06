@@ -127,7 +127,7 @@ $$
 \mathcal{L}(\theta,\phi; x) \le \log p_\theta(x)
 $$
 
-This is where the name “Evidence Lower Bound” comes from:
+This is where the name Evidence Lower Bound comes from:
 
 - Evidence refers to the marginal probability of the observed data $p_\theta(x)$;
 - Lower bound means it is a lower bound of that quantity.
@@ -207,7 +207,7 @@ $$
 
 This not only shows that ELBO is a lower bound, but also shows that:
 
-> Maximizing ELBO is, on the one hand, increasing the log-likelihood, and on the other hand, making the approximate posterior $q_\phi(z\mid x)$ closer to the true posterior $p_\theta(z\mid x)$.
+> **Maximizing ELBO is, on the one hand, increasing the log-likelihood, and on the other hand, making the approximate posterior $q_\phi(z\mid x)$ closer to the true posterior $p_\theta(z\mid x)$.**
 
 This is very beautiful. In other words, in one training process, VAE simultaneously learns a generative model and learns posterior inference.
 

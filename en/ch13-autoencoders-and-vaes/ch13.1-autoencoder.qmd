@@ -25,6 +25,7 @@ This process looks simple, but it is important. Because it tells us that neural 
 import math
 
 import dnnlpy
+import dnnlpy.nn as dnn
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -160,45 +161,51 @@ So compared with PCA, AutoEncoder is more suitable for complex data such as imag
 
 Next, let us look at the simplest AutoEncoder implementation. Here we use fully connected networks for encoding and decoding, which is suitable for understanding the basic process.
 
-Here we define a basic `AutoEncoder` class, containing an encoder and a decoder. The encoder is a two-layer fully connected network. The input dimension is 784 (a flattened 28x28 image), and the output dimension is 32 (the size of the latent space). The decoder is also a two-layer fully connected network, restoring the latent vector from 32 dimensions back to 784 dimensions.
+Here we define a basic `AutoEncoder` class, containing an encoder and a decoder. The encoder is a two-layer fully connected network. The input dimension is 784 (a flattened $28\times 28$ image), and the output dimension is 32 (the size of the latent space). The decoder is also a two-layer fully connected network, restoring the latent vector from 32 dimensions back to 784 dimensions.
 
 At the same time, because we use the transformation `v2.ToDtype(torch.float32, scale=True)`, the input pixel values will be normalized to the range $[0,1]$. So we add an `nn.Sigmoid()` activation function at the end of the decoder to make sure the output is also in the range $[0,1]$.
 
 ```{python}
 class AutoEncoder(nn.Module):
+    """A fully connected autoencoder for small image tensors."""
+
     def __init__(
         self,
         input_shape: tuple[int, int, int],
         hidden_dim: int = 256,
         latent_dim: int = 32,
     ):
+        """Initialize encoder and decoder networks."""
         super().__init__()
-        self.input_shape = input_shape
-        input_dim = math.prod(input_shape)
         self.latent_dim = latent_dim
+
+        input_dim = math.prod(input_shape)
         self.encoder = nn.Sequential(
-            nn.Flatten(),  # 28x28 -> 784
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, latent_dim),
+            dnn.Flatten(),  # 28x28 -> 784
+            dnn.Linear(input_dim, hidden_dim),
+            dnn.ReLU(),
+            dnn.Linear(hidden_dim, latent_dim),
         )
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, input_dim),
-            nn.Sigmoid(),
-            nn.Unflatten(1, input_shape),  # 784 -> 28x28
+            dnn.Linear(latent_dim, hidden_dim),
+            dnn.ReLU(),
+            dnn.Linear(hidden_dim, input_dim),
+            dnn.Sigmoid(),
+            dnn.Unflatten(1, input_shape),  # 784 -> 28x28
         )
 
     def encode(self, x: Tensor) -> Tensor:
+        """Encode inputs into latent vectors."""
         z = self.encoder(x)
         return z
 
     def decode(self, z: Tensor) -> Tensor:
+        """Decode latent vectors back to input-shaped tensors."""
         x_hat = self.decoder(z)
         return x_hat
 
     def forward(self, x: Tensor) -> Tensor:
+        """Reconstruct inputs through the encoder and decoder."""
         z = self.encode(x)
         x_hat = self.decode(z)
         return x_hat
@@ -249,7 +256,7 @@ for epoch in range(1, num_epochs + 1):
     print(f'Epoch [{epoch:2d}/{num_epochs:2d}] | loss: {loss_metric.compute():.4f}')
 ```
 
-We randomly sample 6 images from the test set and look at their reconstruction results. You can see that although the reconstructed images may be a bit blurry, the overall contours and digit shapes can still be recovered. This shows that the AutoEncoder has indeed learned some effective representation of the input data, rather than simply memorizing every pixel value.
+We randomly sample 6 images from the test set and look at their reconstruction results.
 
 ```{python}
 num_samples = 6
@@ -273,6 +280,8 @@ ax.set_title('Original (top) vs Reconstructed (bottom)')
 dnnlpy.set_matplotlib_format('highdpi')
 plt.show()
 ```
+
+You can see that although the reconstructed images may be a bit blurry, the overall contours and digit shapes can still be recovered. This shows that the AutoEncoder has indeed learned some effective representation of the input data, rather than simply memorizing every pixel value.
 
 ## 13.1.5 Limitations of AutoEncoder
 
@@ -355,4 +364,4 @@ It tells us that neural networks can learn a meaningful latent representation. B
 
 So a natural question appears: can we make the model not only compress and reconstruct, but also make the latent space have a good probabilistic structure, so that we can directly sample from it to generate new samples?
 
-This brings us to the next section: **VAE (Variational Autoencoder)**.
+This brings us to the next section: **Variational Autoencoder (VAE)** [@kingma2022VAE].
