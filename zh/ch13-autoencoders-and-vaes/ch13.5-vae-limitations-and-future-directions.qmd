@@ -13,10 +13,10 @@ order: 5
 
 前面几节里，我们已经分别讨论了：
 
-- AutoEncoder 如何通过压缩与重建学习 latent representation
-- VAE 如何把 latent representation 放进概率建模框架
-- ELBO 为什么会成为 VAE 的训练目标
-- VAE 在训练中会出现哪些典型现象，比如潜空间插值以及模式坍塌
+- AutoEncoder 如何通过压缩与重建学习 latent representation；
+- VAE 如何把 latent representation 放进概率建模框架；
+- ELBO 为什么会成为 VAE 的训练目标；
+- VAE 在训练中会出现哪些典型现象，比如潜空间插值以及模式坍塌。
 
 到这里，我们应该已经能够回答 VAE 是什么以及 VAE 为什么这样设计。但是，为什么 VAE 没有成为今天图像生成的主流方法呢？它的优点和局限又是什么呢？
 

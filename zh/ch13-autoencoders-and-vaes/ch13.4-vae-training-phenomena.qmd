@@ -37,9 +37,9 @@ $$
 from collections import defaultdict
 
 import dnnlpy
+import dnnlpy.optim as dopt
 import matplotlib.pyplot as plt
 import torch
-import torch.optim as optim
 import torch.utils.data as utils
 import torchvision.datasets as datasets
 import torchvision.transforms.v2 as v2
@@ -48,7 +48,6 @@ from sklearn.manifold import TSNE
 from torchmetrics.aggregation import MeanMetric
 from torchvision.utils import make_grid
 
-plt.rc('figure', dpi=100)
 print('PyTorch version:', torch.__version__)
 ```
 
@@ -76,7 +75,7 @@ train_dl = utils.DataLoader(train_ds, batch_size=256, shuffle=True, drop_last=Tr
 ```{python}
 input_shape = (1, 28, 28)
 model = VAE(input_shape).to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = dopt.Adam(model.parameters(), lr=1e-3)
 ```
 
 这里我们把总损失拆开记录：
@@ -300,7 +299,7 @@ models = {}
 for beta in betas:
     print(f'Training beta={beta}...')
     model = VAE(input_shape).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = dopt.Adam(model.parameters(), lr=1e-3)
 
     for epoch in range(5):
         model.train()
@@ -376,7 +375,7 @@ plt.show()
 
 VAE 是后续一系列生成模型的基础。理解它的训练现象和潜空间直觉，对我们后续学习 diffusion、latent diffusion 等模型非常重要。它不仅是一个生成模型，更是一个学习潜空间结构的工具，这也是它在生成模型领域具有重要地位的原因。
 
-## 13.4.9 练习
+## 13.4.9 本章练习
 
 你可以自己继续修改上面的代码，观察更多现象：
 

@@ -130,7 +130,7 @@ $$
 \mathcal{L}(\theta,\phi; x) \le \log p_\theta(x)
 $$
 
-这就是“证据下界”这个名字的来源：
+这就是 Evidence Lower bound 这个名字的来源：
 
 - Evidence 指的是观测数据的边缘概率 $p_\theta(x)$；
 - Lower bound 指的是它的下界。
@@ -213,7 +213,7 @@ $$
 
 这不仅说明 ELBO 是下界，还说明了：
 
-> 最大化 ELBO，一方面是在提高对数似然，另一方面也是在让近似后验 $q_\phi(z\mid x)$ 更接近真实后验 $p_\theta(z\mid x)$。
+> **最大化 ELBO，一方面是在提高对数似然，另一方面也是在让近似后验 $q_\phi(z\mid x)$ 更接近真实后验 $p_\theta(z\mid x)$。**
 
 这就非常漂亮了。也就是说，VAE 一次训练，同时做了学生成模型和学后验推断两件事。
 
