@@ -10,8 +10,8 @@ ATTACHMENT_PREFIX = 'attachment:figures/'
 FIGURE_PREFIX = 'figures/'
 
 
-def iter_notebooks(paths: list[Path]) -> list[Path]:
-    notebooks: set[Path] = set()
+def find_notebooks(paths: list[Path]) -> list[Path]:
+    notebooks = set()
 
     for path in paths:
         if path.is_file() and path.suffix == '.ipynb':
@@ -79,9 +79,8 @@ def default_paths() -> list[Path]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description='Remove ipynb attachments and rewrite attachment figure URLs.',
-    )
+    description = 'Remove ipynb attachments and rewrite attachment figure URLs.'
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         'paths',
         nargs='*',
@@ -97,7 +96,7 @@ def main() -> None:
     if not paths:
         paths = default_paths()
 
-    notebooks = iter_notebooks(paths)
+    notebooks = find_notebooks(paths)
     changed_files = 0
     removed_attachments = 0
     replaced_references = 0
