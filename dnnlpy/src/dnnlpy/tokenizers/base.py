@@ -537,35 +537,52 @@ class Tokenizer:
         texts: Sequence[str],
         is_pretokenized: bool = False,
         add_special_tokens: bool = True,
+        batch_size: int = 1024,
     ) -> list[Encoding]:
         """Encode a batch of text strings.
 
         Args:
-            texts (list[str]): A list of input text strings to encode.
-            is_pretokenized (bool, default: False): Whether the input is pretokenized.
+            texts (Sequence[str]): Input text strings to encode.
+            is_pretokenized (bool, default: False): Whether each input is already
+                pre-tokenized.
             add_special_tokens (bool, default: True): Whether to add special tokens.
+            batch_size (int, default: 1024): Number of texts processed by each worker task.
 
         Returns:
-            list[Encoding]: A list of Encoding objects for each input string.
-
-        Example:
-            >>> tokenizer = Tokenizer(model=BPE())
-            >>> encodings = tokenizer.encode_batch(['Hello, world!', 'Goodbye!'])
-            >>> for encoding in encodings:
-                    print(encoding.ids)
-                    print(encoding.tokens)
+            Encodings corresponding to the input texts, in input order.
         """
-        return list(
-            parallel_map(
-                lambda text: self.encode(
-                    text,
-                    is_pretokenized=is_pretokenized,
-                    add_special_tokens=add_special_tokens,
-                ),
-                texts,
-                num_workers=self.num_workers,
+        tasks = (
+            (
+                batch,
+                is_pretokenized,
+                add_special_tokens,
             )
+            for batch in it.batched(texts, batch_size)
         )
+
+        encodings = []
+
+        for batch_encodings in parallel_map(
+            self._encode_batch,
+            tasks,
+            num_workers=self.num_workers,
+        ):
+            encodings.extend(batch_encodings)
+
+        return encodings
+
+    def _encode_batch(self, task: tuple[tuple[str, ...], bool, bool]) -> list[Encoding]:
+        """Encode one batch without additional parallel processing."""
+        texts, is_pretokenized, add_special_tokens = task
+
+        return [
+            self.encode(
+                text,
+                is_pretokenized=is_pretokenized,
+                add_special_tokens=add_special_tokens,
+            )
+            for text in texts
+        ]
 
     def decode(self, ids: Sequence[int], skip_special_tokens: bool = True) -> str:
         """Decode token IDs back into text.
