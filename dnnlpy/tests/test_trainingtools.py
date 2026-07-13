@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pytest
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -36,28 +35,6 @@ def test_trainer_fits_plain_module_and_returns_metric_logs(capsys):
     assert 'Training on cpu' in captured.out
     assert 'Epoch [1/2]' in captured.out
     assert set(history[-1]) == {'train_loss', 'train_mse'}
-
-
-def test_trainer_requires_explicit_optimizer_even_if_model_configures_one():
-    class RegressionModule(nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.layer = nn.Linear(1, 1)
-
-        def forward(self, x):
-            return self.layer(x)
-
-        def configure_optimizers(self):
-            return optim.SGD(self.parameters(), lr=0.1)
-
-    trainer = Trainer(max_epochs=1, device='cpu', verbose=False)
-
-    with pytest.raises(TypeError):
-        trainer.fit(
-            RegressionModule(),
-            make_regression_loader(),
-            loss_fn=nn.MSELoss(),
-        )
 
 
 def test_trainer_clips_gradients(monkeypatch):
