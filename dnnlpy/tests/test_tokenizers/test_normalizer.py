@@ -1,19 +1,11 @@
-from tokenizers.normalizers import (
-    ByteLevel as HFByteLevel,
-    Lowercase as HFLowercase,
-    Strip as HFStrip,
-)
+from tokenizers.normalizers import ByteLevel, Lowercase, Strip
 
-from dnnlpy.tokenizers.normalizer import (
-    ByteLevelNormalizer,
-    LowercaseNormalizer,
-    StripNormalizer,
-)
+import dnnlpy.tokenizers as dltk
 
 
 def test_byte_level_normalizer_matches_hf_tokenizers():
-    normalizer = ByteLevelNormalizer()
-    hf_normalizer = HFByteLevel()
+    normalizer = dltk.ByteLevelNormalizer()
+    hf_normalizer = ByteLevel()
 
     text = 'Café 😁'
 
@@ -23,8 +15,8 @@ def test_byte_level_normalizer_matches_hf_tokenizers():
 
 
 def test_lowercase_normalizer_matches_hf_tokenizers():
-    normalizer = LowercaseNormalizer()
-    hf_normalizer = HFLowercase()
+    normalizer = dltk.LowercaseNormalizer()
+    hf_normalizer = Lowercase()
 
     text = 'Hello WORLD'
 
@@ -34,8 +26,8 @@ def test_lowercase_normalizer_matches_hf_tokenizers():
 
 
 def test_strip_normalizer_matches_hf_tokenizers():
-    normalizer = StripNormalizer()
-    hf_normalizer = HFStrip()
+    normalizer = dltk.StripNormalizer()
+    hf_normalizer = Strip()
 
     text = '  Hello  '
 
@@ -45,8 +37,8 @@ def test_strip_normalizer_matches_hf_tokenizers():
 
 
 def test_strip_normalizer_can_strip_left_only():
-    normalizer = StripNormalizer(left=True, right=False)
-    hf_normalizer = HFStrip(left=True, right=False)
+    normalizer = dltk.StripNormalizer(left=True, right=False)
+    hf_normalizer = Strip(left=True, right=False)
 
     text = '  Hello  '
 
@@ -56,8 +48,8 @@ def test_strip_normalizer_can_strip_left_only():
 
 
 def test_strip_normalizer_can_strip_right_only():
-    normalizer = StripNormalizer(left=False, right=True)
-    hf_normalizer = HFStrip(left=False, right=True)
+    normalizer = dltk.StripNormalizer(left=False, right=True)
+    hf_normalizer = Strip(left=False, right=True)
 
     text = '  Hello  '
 
@@ -67,8 +59,8 @@ def test_strip_normalizer_can_strip_right_only():
 
 
 def test_strip_normalizer_can_disable_stripping():
-    normalizer = StripNormalizer(left=False, right=False)
-    hf_normalizer = HFStrip(left=False, right=False)
+    normalizer = dltk.StripNormalizer(left=False, right=False)
+    hf_normalizer = Strip(left=False, right=False)
 
     text = '  Hello  '
 

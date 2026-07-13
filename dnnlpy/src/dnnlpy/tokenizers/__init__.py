@@ -6,6 +6,7 @@ from .base import (
     PostProcessor as PostProcessor,
     PreTokenizer as PreTokenizer,
     Tokenizer as Tokenizer,
+    TraditionalTokenizer as TraditionalTokenizer,
     Trainer as Trainer,
 )
 from .decoder import ByteLevelDecoder as ByteLevelDecoder
@@ -19,6 +20,10 @@ from .post_processor import ByteLevelPostProcessor as ByteLevelPostProcessor
 from .pre_tokenizer import (
     ByteLevelPreTokenizer as ByteLevelPreTokenizer,
     WhitespacePreTokenizer as WhitespacePreTokenizer,
+)
+from .traditional import (
+    CharacterTokenizer as CharacterTokenizer,
+    WordTokenizer as WordTokenizer,
 )
 from .trainer import BPETrainer as BPETrainer
 from .utils import (

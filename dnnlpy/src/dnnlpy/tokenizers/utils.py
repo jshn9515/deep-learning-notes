@@ -34,7 +34,6 @@ def get_num_workers(num_workers: int | None = None) -> int:
     Returns:
         num_workers (int): The number of worker threads to use for parallel processing.
     """
-
     if num_workers is None:
         if sys.version_info >= (3, 13):
             num_workers = os.process_cpu_count() or 1
@@ -87,7 +86,7 @@ def parallel_map[T, R](
     num_workers: int | None = None,
     buffersize: int | None = None,
 ) -> Iterator[R]:
-    """Map a function over an iterable in parallel using threads.
+    """Map a function over an iterable using threads or processes.
 
     Args:
         func (Callable): A callable that takes a single argument and returns a value.
@@ -111,12 +110,14 @@ def parallel_map[T, R](
         else:
             executor = ThreadPoolExecutor(max_workers=num_workers)
 
-        if sys.version_info >= (3, 14):
-            yield from executor.map(func, values, buffersize=buffersize)
-        else:
-            yield from _buffered_map(executor, func, values, buffersize)
+        with executor:
+            if sys.version_info >= (3, 14):
+                yield from executor.map(func, values, buffersize=buffersize)
+            else:
+                yield from _buffered_map(executor, func, values, buffersize)
 
 
+# TODO: Remove this function when Python 3.14 is the minimum supported version.
 def _buffered_map[T, R](
     executor: Executor,
     func: Callable[[T], R],

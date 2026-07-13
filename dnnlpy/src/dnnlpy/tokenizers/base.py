@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import itertools as it
 from abc import ABC, abstractmethod
+from collections import Counter
 from collections.abc import Iterable
-from typing import Sequence
+from typing import Self, Sequence
 
 from .utils import get_num_workers, parallel_map
 
@@ -16,6 +18,7 @@ __all__ = [
     'PostProcessor',
     'PreTokenizer',
     'Tokenizer',
+    'TraditionalTokenizer',
     'Trainer',
 ]
 
@@ -34,6 +37,19 @@ class PreTokenizer(ABC):
     @abstractmethod
     def pre_tokenize(self, text: str) -> list[tuple[str, Offset]]:
         """Pre-tokenize a string into a list of (token, (start, end)) tuples."""
+
+    def pre_tokenize_tokens(self, text: str) -> list[str]:
+        """Pre-tokenize a string without retaining offsets."""
+        if not text:
+            return []  # Return an empty list for empty input
+        return [token for token, _ in self.pre_tokenize(text)]
+
+    def count_tokens(self, texts: Iterable[str]) -> Counter[str]:
+        """Count pre-tokenized strings across an iterable of texts."""
+        counts = Counter()
+        for text in texts:
+            counts.update(self.pre_tokenize_tokens(text))
+        return counts
 
 
 class Model(ABC):
@@ -128,6 +144,200 @@ class Encoding:
 
     def __len__(self) -> int:
         return len(self.ids)
+
+
+class TraditionalTokenizer(ABC):
+    """Base class for traditional tokenizers that split text into words or characters.
+
+    A tokenizer owns a vocabulary mapping string tokens to integer IDs and
+    defines the common encode/decode interface. Subclasses decide how text is
+    split into tokens, while this base class provides vocabulary lookup,
+    special-token bookkeeping, and batch helpers.
+    """
+
+    def __init__(
+        self,
+        vocab: dict[str, int],
+        unk_token: str = '<unk>',
+    ):
+        """Create a tokenizer from an existing vocabulary.
+
+        Args:
+            vocab (dict[str, int]): Mapping from token strings to integer IDs.
+            unk_token (str, default: '<unk>'): Token used when encoding unknown
+                input tokens.
+
+        Raises:
+            ValueError: If ``unk_token`` is not present in ``vocab``.
+        """
+        self._token_to_id = dict(vocab)
+        self._id_to_token = {idx: token for token, idx in self._token_to_id.items()}
+
+        if unk_token not in self._token_to_id:
+            raise KeyError(f'Unknown token {unk_token!r} is not in vocab.')
+
+        self.unk_token = unk_token
+        self.unk_id = self._token_to_id[unk_token]
+
+        self.special_tokens = [unk_token]
+        self.special_token_ids = {self.unk_id}
+
+    @property
+    def vocab(self) -> dict[str, int]:
+        """Vocabulary mapping tokens to integer IDs."""
+        return self._token_to_id
+
+    @property
+    def vocab_size(self) -> int:
+        """Number of tokens in the vocabulary."""
+        return len(self._token_to_id)
+
+    def __len__(self) -> int:
+        return len(self._token_to_id)
+
+    def extra_repr(self) -> str:
+        """Return tokenizer metadata displayed inside ``repr``."""
+        return (
+            f'vocab_size={self.vocab_size}, '
+            f'unk_token={self.unk_token!r}, '
+            f'special_tokens={self.special_tokens!r}'
+        )
+
+    def __repr__(self) -> str:
+        """Return a compact tokenizer representation."""
+        extra = self.extra_repr()
+        if extra:
+            return f'{self.__class__.__name__}({extra})'
+        return f'{self.__class__.__name__}()'
+
+    def token_to_id(self, token: str) -> int:
+        """Return the ID for ``token``, or the unknown-token ID if missing.
+
+        Args:
+            token (str): Token to look up.
+        """
+        return self._token_to_id.get(token, self.unk_id)
+
+    def id_to_token(self, index: int) -> str:
+        """Return the token for ``index``.
+
+        Args:
+            index (int): Token ID to look up.
+
+        Raises:
+            KeyError: If ``index`` is not in the vocabulary.
+        """
+        if index not in self._id_to_token:
+            raise KeyError(f'Unknown token ID: {index}.')
+        return self._id_to_token[index]
+
+    def lookup_indices(self, tokens: list[str]) -> list[int]:
+        """Map a list of tokens to token IDs.
+
+        Args:
+            tokens (list[str]): Tokens to look up.
+        """
+        return [self.token_to_id(token) for token in tokens]
+
+    def lookup_tokens(self, indices: list[int]) -> list[str]:
+        """Map a list of token IDs to tokens.
+
+        Args:
+            indices (list[int]): Token IDs to look up.
+        """
+        return [self.id_to_token(index) for index in indices]
+
+    def add_special_tokens(self, tokens: list[str]) -> int:
+        """Add tokens to the vocabulary and mark them as special.
+
+        Existing vocabulary entries are not duplicated, but they are still
+        marked as special. Special tokens are skipped by default during decode.
+
+        Args:
+            tokens (list[str]): Tokens to add or mark as special.
+
+        Returns:
+            The number of new vocabulary entries added.
+        """
+        added_count = 0
+
+        for token in tokens:
+            if token not in self._token_to_id:
+                new_id = self._next_token_id()
+
+                self._token_to_id[token] = new_id
+                self._id_to_token[new_id] = token
+
+                added_count += 1
+
+            if token not in self.special_tokens:
+                self.special_tokens.append(token)
+
+            self.special_token_ids.add(self._token_to_id[token])
+
+        return added_count
+
+    def _next_token_id(self) -> int:
+        if not self._id_to_token:
+            return 0
+        return max(self._id_to_token) + 1
+
+    @classmethod
+    @abstractmethod
+    def from_text(cls, text: str | list[str], *args, **kwargs) -> Self:
+        """Build a tokenizer from one text string or a list of text strings.
+
+        Args:
+            text (str | list[str]): Training corpus.
+            *args: Additional tokenizer-specific positional arguments.
+            **kwargs: Additional tokenizer-specific keyword arguments.
+        """
+        pass
+
+    @abstractmethod
+    def encode(self, text: str) -> list[int]:
+        """Encode text into a list of token IDs.
+
+        Args:
+            text (str): Text to encode.
+        """
+        pass
+
+    def encode_batch(self, texts: list[str]) -> list[list[int]]:
+        """Encode a batch of text strings.
+
+        Args:
+            texts (list[str]): Text strings to encode.
+        """
+        return [self.encode(text) for text in texts]
+
+    @abstractmethod
+    def decode(self, ids: list[int], skip_special_tokens: bool = True) -> str:
+        """Decode token IDs back into text.
+
+        Args:
+            ids (list[int]): Token IDs to decode.
+            skip_special_tokens (bool, default: True): Whether to omit special
+                tokens from output.
+        """
+        pass
+
+    def decode_batch(
+        self,
+        batch_ids: list[list[int]],
+        skip_special_tokens: bool = True,
+    ) -> list[str]:
+        """Decode a batch of token ID sequences.
+
+        Args:
+            batch_ids (list[list[int]]): Batch of token ID sequences to decode.
+            skip_special_tokens (bool, default: True): Whether to omit special
+                tokens from output.
+        """
+        return [
+            self.decode(ids, skip_special_tokens=skip_special_tokens)
+            for ids in batch_ids
+        ]
 
 
 class Tokenizer:
@@ -462,6 +672,12 @@ class Tokenizer:
             return [(text, (0, len(text)))]
         return self.pre_tokenizer.pre_tokenize(text)
 
+    def _pre_tokenize_tokens(self, text: str) -> list[str]:
+        """Pre-tokenize a string without retaining offsets."""
+        if self.pre_tokenizer is None:
+            return [text]
+        return self.pre_tokenizer.pre_tokenize_tokens(text)
+
     def _post_process(self, encoding: Encoding) -> Encoding:
         """Post-process an encoding with the registered post-processor."""
         if self.post_processor is None:
@@ -473,3 +689,27 @@ class Tokenizer:
         if self.decoder is None:
             return ''.join(tokens)
         return self.decoder.decode(tokens)
+
+    def _count_pre_tokens(
+        self,
+        texts: Iterable[str],
+        batch_size: int = 1024,
+    ) -> Counter[str]:
+        """Count pre-tokens in an iterable of texts using parallel processing."""
+        batches = it.batched(texts, batch_size)
+
+        counts = Counter()
+        for batch_counts in parallel_map(
+            self._count_pre_tokens_batch,
+            batches,
+            num_workers=self.num_workers,
+        ):
+            counts.update(batch_counts)
+
+        return counts
+
+    def _count_pre_tokens_batch(self, texts: tuple[str, ...]) -> Counter[str]:
+        """Count pre-tokens in one pickle-safe batch."""
+        if self.pre_tokenizer is None:
+            return Counter(texts)
+        return self.pre_tokenizer.count_tokens(texts)

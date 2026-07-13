@@ -1,3 +1,5 @@
+from collections import Counter
+from collections.abc import Iterable
 from typing import override
 
 import regex as re
@@ -56,6 +58,9 @@ class ByteLevelPreTokenizer(PreTokenizer):
     @override
     def pre_tokenize(self, text: str) -> list[tuple[str, tuple[int, int]]]:
         """Pre-tokenize text before converting each piece to UTF-8 bytes."""
+        if not text:
+            return []  # Return an empty list for empty input
+
         original_text = text
         original_length = len(original_text)
         add_prefix_space = self.add_prefix_space and not text[0].isspace()
@@ -86,6 +91,41 @@ class ByteLevelPreTokenizer(PreTokenizer):
 
         return output
 
+    @override
+    def pre_tokenize_tokens(self, text: str) -> list[str]:
+        """Pre-tokenize text without computing offsets."""
+        if not text:
+            return []  # Return an empty list for empty input
+
+        if self.add_prefix_space and not text[0].isspace():
+            text = f' {text}'
+
+        if not self.use_regex:
+            return [bytes_to_unicode(text)]
+
+        return list(map(bytes_to_unicode, GPT2PATTERN.findall(text)))
+
+    @override
+    def count_tokens(self, texts: Iterable[str]) -> Counter[str]:
+        """Count byte-level tokens while converting each unique piece only once."""
+        raw_counts = Counter()
+
+        for text in texts:
+            if text and self.add_prefix_space and not text[0].isspace():
+                text = f' {text}'
+
+            if self.use_regex:
+                raw_counts.update(GPT2PATTERN.findall(text))
+            else:
+                raw_counts[text] += 1
+
+        return Counter(
+            {
+                bytes_to_unicode(token): frequency
+                for token, frequency in raw_counts.items()
+            }
+        )
+
 
 class WhitespacePreTokenizer(PreTokenizer):
     """Split text into non-whitespace spans."""
@@ -93,4 +133,25 @@ class WhitespacePreTokenizer(PreTokenizer):
     @override
     def pre_tokenize(self, text: str) -> list[tuple[str, Offset]]:
         """Pre-tokenize text on whitespace."""
+        if not text:
+            return []  # Return an empty list for empty input
+
         return [(match.group(), match.span()) for match in WHITESPACE.finditer(text)]
+
+    @override
+    def pre_tokenize_tokens(self, text: str) -> list[str]:
+        """Pre-tokenize text on whitespace without computing offsets."""
+        if not text:
+            return []  # Return an empty list for empty input
+
+        return WHITESPACE.findall(text)
+
+    @override
+    def count_tokens(self, texts: Iterable[str]) -> Counter[str]:
+        """Count whitespace tokens while converting each unique piece only once."""
+        raw_counts = Counter()
+
+        for text in texts:
+            raw_counts.update(WHITESPACE.findall(text))
+
+        return raw_counts

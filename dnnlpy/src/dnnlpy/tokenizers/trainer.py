@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import heapq
 import itertools as it
-from collections import Counter
+import sys
+from collections import Counter, defaultdict
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, override
 
@@ -13,6 +15,8 @@ if TYPE_CHECKING:
 type Pair = tuple[str, str]
 type WordSymbols = tuple[str, ...]
 type WordCountMapping = dict[WordSymbols, int]
+type PairWordIndices = dict[Pair, set[int]]
+type PairFrequencyBuckets = dict[int, set[Pair]]
 
 __all__ = ['BPETrainer']
 
@@ -119,9 +123,9 @@ class BPETrainer(Trainer):
         1. Flatten the input texts into a single iterator of strings.
         2. Collect word counts from the input texts, normalizing and pre-tokenizing them.
         3. Initialize the vocabulary with special tokens and the byte-level alphabet.
-        4. Iteratively count adjacent symbol pairs, select the most frequent pair, and merge
-        it into a new token until the desired vocabulary size is reached or no more eligible
-        pairs are found.
+        4. Count adjacent symbol pairs, then incrementally update the counts while merging
+        the most frequent pair until the desired vocabulary size is reached or no more
+        eligible pairs are found.
         5. Save the trained vocabulary and merges to the model and tokenizer.
 
         Args:
@@ -133,14 +137,27 @@ class BPETrainer(Trainer):
         """
         texts = self._iter_texts(inputs)
         word_counts = self._collect_word_counts(texts)
-        word_symbols = {tuple(word): freq for word, freq in sorted(word_counts.items())}
+        sorted_word_counts = sorted(word_counts.items())
+        word_symbols = [tuple(word) for word, _ in sorted_word_counts]
+        word_frequencies = [frequency for _, frequency in sorted_word_counts]
+
         vocab_tokens, known_tokens = self._initialize_vocab(word_counts)
+        pair_counts, pair_word_indices = self._initialize_pair_counts(
+            word_symbols,
+            word_frequencies,
+        )
+        pair_frequency_buckets, frequency_heap = self._initialize_pair_frequency_index(
+            pair_counts
+        )
 
         merges = []
 
         while len(vocab_tokens) < self.vocab_size:
-            pair_counts = self._count_pairs(word_symbols)
-            best_pair = self._select_best_pair(pair_counts)
+            best_pair = self._select_best_pair(
+                pair_counts,
+                pair_frequency_buckets,
+                frequency_heap,
+            )
 
             if best_pair is None:
                 break
@@ -153,10 +170,18 @@ class BPETrainer(Trainer):
 
             merges.append(best_pair)
 
-            word_symbols = {
-                self._merge_pair(symbols, best_pair): freq
-                for symbols, freq in word_symbols.items()
-            }
+            affected_word_indices = tuple(pair_word_indices.pop(best_pair))
+            for word_index in affected_word_indices:
+                self._merge_word_and_update_pair_counts(
+                    word_index,
+                    best_pair,
+                    word_symbols,
+                    word_frequencies,
+                    pair_counts,
+                    pair_word_indices,
+                    pair_frequency_buckets,
+                    frequency_heap,
+                )
 
         self._save_result(vocab_tokens, merges)
 
@@ -168,21 +193,12 @@ class BPETrainer(Trainer):
             else:
                 yield from item
 
-    def _split_words(self, text: str) -> list[str]:
-        """Normalize and pre-tokenize a single text into a list of words."""
-        text = self.tokenizer._normalize(text)
-        words = []
-        for piece, _ in self.tokenizer._pre_tokenize(text):
-            words.append(piece)
-        return words
-
     def _collect_word_counts(self, texts: Iterable[str]) -> Counter[str]:
         """Collect word counts from the input texts. Normalize and pre-tokenize the input
         texts, then count how often eachcpre-tokenized word appears in the corpus.
 
-        Each text is processed in parallel when multiple workers are available. The offset
-        information returned by the pre-tokenizer is ignored because only the token strings
-        are needed for frequency counting.
+        The registered pre-tokenizer may count tokens directly so training does not need to
+        materialize offsets or a complete encoded-token list for every text.
 
         Args:
             tokenizer (Tokenizer): The tokenizer instance.
@@ -197,13 +213,8 @@ class BPETrainer(Trainer):
             >>> _collect_word_counts(texts)
             Counter({'Hello': 2, 'world!': 1, 'again.': 1})
         """
-        counts = Counter()
-
-        word_batches = map(self._split_words, texts)
-        for words in word_batches:
-            counts.update(words)
-
-        return counts
+        normalized_texts = map(self.tokenizer._normalize, texts)
+        return self.tokenizer._count_pre_tokens(normalized_texts)
 
     def _initialize_vocab(
         self,
@@ -224,41 +235,131 @@ class BPETrainer(Trainer):
 
         return vocab_tokens, known_tokens
 
-    def _count_pairs(self, word_symbols: WordCountMapping) -> Counter[Pair]:
-        """Count frequencies of adjacent token pairs.
+    def _initialize_pair_counts(
+        self,
+        word_symbols: list[WordSymbols],
+        word_frequencies: list[int],
+    ) -> tuple[Counter[Pair], PairWordIndices]:
+        """Count pairs once and index the words containing each pair."""
+        pair_counts = Counter()
+        pair_word_indices = defaultdict(set)
 
-        Args:
-            word_symbols (WordCountMapping): A mapping from tuples of symbols to word
-                frequencies.
-            num_workers (int, default: 1): The number of parallel workers to use for counting
-                pairs. If 1, counting is done in a single thread.
-
-        Returns:
-            Counter[Pair]: A counter mapping each adjacent token pair to its frequency.
-
-        Examples:
-            >>> tokenizer = Tokenizer(BPE())
-            >>> word_symbols = {
-            ...     ('l', 'o', 'w'): 5,
-            ...     ('l', 'o', 'w', 'e', 'r'): 2,
-            ... }
-            >>> _count_pairs(word_symbols)
-            Counter({
-                ('l', 'o'): 7,
-                ('o', 'w'): 7,
-                ('w', 'e'): 2,
-                ('e', 'r'): 2,
-            })
-        """
-        counts = Counter()
-
-        for symbols, frequency in word_symbols.items():
+        for word_index, (symbols, frequency) in enumerate(
+            zip(word_symbols, word_frequencies, strict=True)
+        ):
+            word_pairs = set()
             for pair in it.pairwise(symbols):
-                counts[pair] += frequency
+                pair_counts[pair] += frequency
+                word_pairs.add(pair)
 
-        return counts
+            for pair in word_pairs:
+                pair_word_indices[pair].add(word_index)
 
-    def _select_best_pair(self, pair_counts: Counter[Pair]) -> Pair | None:
+        return pair_counts, dict(pair_word_indices)
+
+    def _initialize_pair_frequency_index(
+        self,
+        pair_counts: Counter[Pair],
+    ) -> tuple[PairFrequencyBuckets, list[int]]:
+        """Group pairs by frequency and build a max-frequency heap."""
+        pair_frequency_buckets = defaultdict(set)
+
+        for pair, count in pair_counts.items():
+            pair_frequency_buckets[count].add(pair)
+
+        if sys.version_info >= (3, 14):
+            frequency_heap = [count for count in pair_frequency_buckets]
+            heapq.heapify_max(frequency_heap)
+        else:
+            frequency_heap = [-count for count in pair_frequency_buckets]
+            heapq.heapify(frequency_heap)
+
+        return dict(pair_frequency_buckets), frequency_heap
+
+    def _merge_word_and_update_pair_counts(
+        self,
+        word_index: int,
+        pair: Pair,
+        word_symbols: list[WordSymbols],
+        word_frequencies: list[int],
+        pair_counts: Counter[Pair],
+        pair_word_indices: PairWordIndices,
+        pair_frequency_buckets: PairFrequencyBuckets,
+        frequency_heap: list[int],
+    ) -> None:
+        """Merge a pair in one word and update only the pair counts that changed."""
+        old_symbols = word_symbols[word_index]
+        new_symbols = self._merge_pair(old_symbols, pair)
+        frequency = word_frequencies[word_index]
+        old_pair_occurrences = Counter(it.pairwise(old_symbols))
+        new_pair_occurrences = Counter(it.pairwise(new_symbols))
+
+        for changed_pair in old_pair_occurrences.keys() | new_pair_occurrences.keys():
+            old_occurrences = old_pair_occurrences[changed_pair]
+            new_occurrences = new_pair_occurrences[changed_pair]
+            occurrence_delta = new_occurrences - old_occurrences
+
+            if occurrence_delta:
+                self._update_pair_count(
+                    changed_pair,
+                    occurrence_delta * frequency,
+                    pair_counts,
+                    pair_frequency_buckets,
+                    frequency_heap,
+                )
+
+            if new_occurrences:
+                pair_word_indices.setdefault(changed_pair, set()).add(word_index)
+            else:
+                indices = pair_word_indices.get(changed_pair)
+                if indices is not None:
+                    indices.discard(word_index)
+                    if not indices:
+                        del pair_word_indices[changed_pair]
+
+        word_symbols[word_index] = new_symbols
+
+    def _update_pair_count(
+        self,
+        pair: Pair,
+        count_delta: int,
+        pair_counts: Counter[Pair],
+        pair_frequency_buckets: PairFrequencyBuckets,
+        frequency_heap: list[int],
+    ) -> None:
+        """Update a pair count and its frequency-bucket membership."""
+        old_count = pair_counts[pair]
+        if old_count:
+            old_bucket = pair_frequency_buckets[old_count]
+            old_bucket.remove(pair)
+            if not old_bucket:
+                del pair_frequency_buckets[old_count]
+
+        new_count = old_count + count_delta
+        if not new_count:
+            pair_counts.pop(pair, None)
+            return
+
+        pair_counts[pair] = new_count
+        new_bucket = pair_frequency_buckets.get(new_count)
+
+        if new_bucket is None:
+            new_bucket = set()
+            pair_frequency_buckets[new_count] = new_bucket
+
+            if sys.version_info >= (3, 14):
+                heapq.heappush_max(frequency_heap, new_count)
+            else:
+                heapq.heappush(frequency_heap, -new_count)
+
+        new_bucket.add(pair)
+
+    def _select_best_pair(
+        self,
+        pair_counts: Counter[Pair],
+        pair_frequency_buckets: PairFrequencyBuckets | None = None,
+        frequency_heap: list[int] | None = None,
+    ) -> Pair | None:
         """Select the most frequent adjacent symbol pair that meets the minimum frequency
         requirement.
 
@@ -269,16 +370,34 @@ class BPETrainer(Trainer):
         Returns:
             Pair | None: The most frequent adjacent symbol pair that meets the minimum frequency requirement, or None if no such pair exists.
         """
-        eligible_pairs = [
-            (pair, count)
-            for pair, count in pair_counts.items()
-            if count >= self.min_frequency
-        ]
-        if not eligible_pairs:
-            return None
+        if pair_frequency_buckets is None or frequency_heap is None:
+            eligible_pairs = (
+                (count, pair)
+                for pair, count in pair_counts.items()
+                if count >= self.min_frequency
+            )
+            return max(eligible_pairs, default=(0, None))[1]
 
-        pair, _ = max(eligible_pairs, key=lambda item: (item[1], item[0]))
-        return pair
+        while frequency_heap:
+            if sys.version_info >= (3, 14):
+                best_count = frequency_heap[0]
+                pairs = pair_frequency_buckets.get(best_count)
+                if pairs is None:
+                    heapq.heappop_max(frequency_heap)
+                    continue
+            else:
+                best_count = -frequency_heap[0]
+                pairs = pair_frequency_buckets.get(best_count)
+                if pairs is None:
+                    heapq.heappop(frequency_heap)
+                    continue
+
+            if best_count < self.min_frequency:
+                return None
+
+            return max(pairs)
+
+        return None
 
     def _merge_pair(self, symbols: WordSymbols, pair: Pair) -> WordSymbols:
         """Merge the first occurrence of a symbol pair in a tuple of symbols.

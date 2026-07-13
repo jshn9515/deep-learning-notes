@@ -1,14 +1,13 @@
 import json
 
-from tokenizers import Encoding as HFEncoding
-from tokenizers.processors import ByteLevel as HFByteLevel
+from tokenizers import Encoding
+from tokenizers.processors import ByteLevel
 
-from dnnlpy.tokenizers.base import Encoding
-from dnnlpy.tokenizers.post_processor import ByteLevelPostProcessor
+import dnnlpy.tokenizers as dltk
 
 
-def _hf_encoding(encoding: Encoding) -> HFEncoding:
-    hf_encoding = HFEncoding()
+def _hf_encoding(encoding: dltk.Encoding) -> Encoding:
+    hf_encoding = Encoding()
     hf_encoding.__setstate__(
         json.dumps(
             {
@@ -28,8 +27,8 @@ def _hf_encoding(encoding: Encoding) -> HFEncoding:
 
 
 def test_byte_level_post_processor_accepts_byte_level_options():
-    post_processor = ByteLevelPostProcessor()
-    hf_post_processor = HFByteLevel()
+    post_processor = dltk.ByteLevelPostProcessor()
+    hf_post_processor = ByteLevel()
 
     assert post_processor.add_prefix_space is None
     assert post_processor.trim_offsets == hf_post_processor.trim_offsets
@@ -37,9 +36,9 @@ def test_byte_level_post_processor_accepts_byte_level_options():
 
 
 def test_byte_level_post_processor_can_disable_offset_trimming():
-    encoding = Encoding(ids=[1], tokens=[' token '], offsets=[(0, 7)])
-    post_processor = ByteLevelPostProcessor(trim_offsets=False)
-    hf_post_processor = HFByteLevel(trim_offsets=False)
+    encoding = dltk.Encoding(ids=[1], tokens=[' token '], offsets=[(0, 7)])
+    post_processor = dltk.ByteLevelPostProcessor(trim_offsets=False)
+    hf_post_processor = ByteLevel(trim_offsets=False)
 
     actual = post_processor.process(encoding)
     expected = hf_post_processor.process(_hf_encoding(encoding))
@@ -49,9 +48,9 @@ def test_byte_level_post_processor_can_disable_offset_trimming():
 
 
 def test_byte_level_post_processor_trims_offsets_by_default():
-    encoding = Encoding(ids=[1], tokens=[' token '], offsets=[(0, 7)])
-    post_processor = ByteLevelPostProcessor()
-    hf_post_processor = HFByteLevel()
+    encoding = dltk.Encoding(ids=[1], tokens=[' token '], offsets=[(0, 7)])
+    post_processor = dltk.ByteLevelPostProcessor()
+    hf_post_processor = ByteLevel()
 
     actual = post_processor.process(encoding)
     expected = hf_post_processor.process(_hf_encoding(encoding))

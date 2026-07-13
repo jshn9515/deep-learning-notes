@@ -1,11 +1,11 @@
-from tokenizers.decoders import ByteLevel as HFByteLevel
+from tokenizers.decoders import ByteLevel
 
-from dnnlpy.tokenizers.decoder import ByteLevelDecoder
+import dnnlpy.tokenizers as dltk
 
 
 def test_byte_level_decoder_matches_hf_tokenizers():
-    decoder = ByteLevelDecoder()
-    hf_decoder = HFByteLevel()
+    decoder = dltk.ByteLevelDecoder()
+    hf_decoder = ByteLevel()
 
     tokens = ['Once', 'Ġupon', 'Ġa', 'Ġtime', '!']
 
@@ -15,8 +15,8 @@ def test_byte_level_decoder_matches_hf_tokenizers():
 
 
 def test_byte_level_decoder_restores_unicode_text():
-    decoder = ByteLevelDecoder()
-    hf_decoder = HFByteLevel()
+    decoder = dltk.ByteLevelDecoder()
+    hf_decoder = ByteLevel()
 
     tokens = ['CafÃ©', 'ĠðŁĺģ']
 
@@ -26,8 +26,8 @@ def test_byte_level_decoder_restores_unicode_text():
 
 
 def test_byte_level_decoder_restores_leading_space():
-    decoder = ByteLevelDecoder()
-    hf_decoder = HFByteLevel()
+    decoder = dltk.ByteLevelDecoder()
+    hf_decoder = ByteLevel()
 
     tokens = ['ĠHello']
 
@@ -37,8 +37,8 @@ def test_byte_level_decoder_restores_leading_space():
 
 
 def test_byte_level_decoder_concatenates_tokens_without_separator():
-    decoder = ByteLevelDecoder()
-    hf_decoder = HFByteLevel()
+    decoder = dltk.ByteLevelDecoder()
+    hf_decoder = ByteLevel()
 
     tokens = ['hello', 'world']
 
