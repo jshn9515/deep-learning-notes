@@ -54,7 +54,7 @@ from pprint import pprint
 from typing import Self, override
 
 import dnnlpy.models.gpt as gpt
-import dnnlpy.tokenizers as tk
+import dnnlpy.tokenizers as dltk
 import torch
 from torch import Tensor
 
@@ -112,7 +112,7 @@ MiniGPT -> generated token ids -> tokenizer.decode -> text
 只要给每个字符分配一个 id，就可以把字符串变成整数序列。
 
 ```{python}
-class CharacterTokenizer(tk.Tokenizer):
+class CharacterTokenizer(dltk.TraditionalTokenizer):
     def __init__(self, vocab: dict[str, int], unk_token: str = '<unk>'):
         super().__init__(vocab, unk_token=unk_token)
 
@@ -129,7 +129,7 @@ class CharacterTokenizer(tk.Tokenizer):
 
     @override
     def encode(self, text: str) -> list[int]:
-        return [self.token_to_id.get(ch, self.unk_id) for ch in text]
+        return [self.token_to_id(ch) for ch in text]
 
     @override
     def decode(self, ids: list[int], skip_special_tokens: bool = True) -> str:
@@ -140,7 +140,7 @@ class CharacterTokenizer(tk.Tokenizer):
 
         tokens = []
         for i in ids:
-            token = self.id_to_token[int(i)]
+            token = self.id_to_token(i)
             if token not in special_tokens:
                 tokens.append(token)
 
@@ -156,7 +156,7 @@ tokenizer = CharacterTokenizer.from_text(text)
 ids = tokenizer.encode('hello')
 recovered = tokenizer.decode(ids)
 
-print('Vocab:', tokenizer.token_to_id)
+print('Vocab:', tokenizer.vocab)
 print('Ids:', ids)
 print('Decoded:', recovered)
 print('Vocab size:', tokenizer.vocab_size)
@@ -197,7 +197,7 @@ learners
 第二，会遇到 out-of-vocabulary，也就是训练时没见过的词。比如 tokenizer 训练时没有见过 `MiniGPT`，那么它就不知道应该把这个词映射成哪个 id。
 
 ```{python}
-class WordTokenizer(tk.Tokenizer):
+class WordTokenizer(dltk.TraditionalTokenizer):
     def __init__(self, vocab: dict[str, int], unk_token: str = '<unk>'):
         super().__init__(vocab, unk_token=unk_token)
 
@@ -214,7 +214,7 @@ class WordTokenizer(tk.Tokenizer):
 
     @override
     def encode(self, text: str) -> list[int]:
-        return [self.token_to_id.get(word, self.unk_id) for word in text.split()]
+        return [self.token_to_id(word) for word in text.split()]
 
     @override
     def decode(self, ids: list[int], skip_special_tokens: bool = True) -> str:
@@ -225,7 +225,7 @@ class WordTokenizer(tk.Tokenizer):
 
         tokens = []
         for i in ids:
-            token = self.id_to_token[int(i)]
+            token = self.id_to_token(i)
             if token not in special_tokens:
                 tokens.append(token)
 
@@ -236,7 +236,7 @@ class WordTokenizer(tk.Tokenizer):
 text = 'deep learning is fun deep learning is useful'
 tokenizer = WordTokenizer.from_text(text)
 
-print('Vocab:', tokenizer.token_to_id)
+print('Vocab:', tokenizer.vocab)
 print('Encode known words:', tokenizer.encode('deep learning is fun'))
 print('Encode unknown word:', tokenizer.encode('MiniGPT is fun'))
 ```
@@ -520,7 +520,7 @@ print('Vocab size:', len(vocab))
 - 不处理真实 GPT tokenizer 里的 byte-level 细节。
 
 ```{python}
-class BPETokenizer(tk.Tokenizer):
+class BPETokenizer(dltk.TraditionalTokenizer):
     def __init__(
         self,
         vocab: dict[str, int],
@@ -572,8 +572,8 @@ class BPETokenizer(tk.Tokenizer):
 
         tokens = []
         for i in ids:
-            if self.id_to_token[int(i)] not in special_tokens:
-                tokens.append(self.id_to_token[int(i)])
+            if self.id_to_token(i) not in special_tokens:
+                tokens.append(self.id_to_token(i))
 
         return ''.join(tokens).replace('</w>', ' ').strip()
 ```
@@ -718,9 +718,9 @@ $$
 然后从里面切出长度为 `block_size + 1` 的片段，再错开一位得到 `input_ids` 和 `labels`：
 
 ```{python}
-def ids_to_tokens(tokenizer: tk.Tokenizer, batch_ids: Tensor) -> list[list[str]]:
+def ids_to_tokens(tokenizer: dltk.TraditionalTokenizer, batch_ids: Tensor) -> list[list[str]]:
     return [
-        [tokenizer.id_to_token[token_id] for token_id in row]
+        [tokenizer.id_to_token(token_id) for token_id in row]
         for row in batch_ids.tolist()
     ]
 
