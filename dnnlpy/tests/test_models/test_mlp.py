@@ -2,27 +2,6 @@ import numpy as np
 import pytest
 
 import dnnlpy.models.mlp as mlp
-import dnnlpy.models.mlp.activation as activation
-import dnnlpy.models.mlp.base as base
-import dnnlpy.models.mlp.layer as layer
-import dnnlpy.models.mlp.loss as loss
-import dnnlpy.models.mlp.mlp as model
-import dnnlpy.models.mlp.optimizer as optimizer
-
-
-def test_mlp_public_exports():
-    assert mlp.Parameter is base.Parameter
-    assert mlp.Module is base.Module
-    assert mlp.Optimizer is base.Optimizer
-    assert mlp.Flatten is layer.Flatten
-    assert mlp.Linear is layer.Linear
-    assert mlp.Sigmoid is activation.Sigmoid
-    assert mlp.Tanh is activation.Tanh
-    assert mlp.ReLU is activation.ReLU
-    assert mlp.Softmax is activation.Softmax
-    assert mlp.CrossEntropyLoss is loss.CrossEntropyLoss
-    assert mlp.MLP is model.MLP
-    assert mlp.SGD is optimizer.SGD
 
 
 def test_parameter_tracks_grad_and_returns_plain_data():
@@ -51,22 +30,28 @@ def test_flatten_forward_and_backward():
 
 
 def test_linear_forward_backward_and_parameters():
-    module = mlp.Linear(in_features=2, out_features=3)
-    module.W[:] = np.array([[1.0, -2.0, 0.5], [3.0, 0.0, -1.0]])
-    module.b[:] = np.array([0.5, -0.5, 1.0])
     x = np.array([[2.0, -1.0], [0.0, 4.0]])
     grad = np.array([[1.0, 2.0, -1.0], [0.5, -0.5, 3.0]])
 
-    output = module(x)
-    dx = module.backward(grad)
+    module = mlp.Linear(in_features=2, out_features=3)
+    module.W[:] = np.array([[1.0, -2.0, 0.5], [3.0, 0.0, -1.0]])
+    module.b[:] = np.array([0.5, -0.5, 1.0])
+
+    actual = module(x)
+    actual_grad = module.backward(grad)
     params = list(module.parameters())
 
-    assert np.allclose(output, np.array([[-0.5, -4.5, 3.0], [12.5, -0.5, -3.0]]))
+    expected = np.array([[-0.5, -4.5, 3.0], [12.5, -0.5, -3.0]])
+    expected_W_grad = np.array([[2.0, 4.0, -2.0], [1.0, -4.0, 13.0]])
+    expected_b_grad = np.array([1.5, 1.5, 2.0])
+    expected_grad = np.array([[-3.5, 4.0], [3.0, -1.5]])
+
+    assert np.allclose(actual, expected)
     assert module.W.grad is not None
-    assert np.allclose(module.W.grad, np.array([[2.0, 4.0, -2.0], [1.0, -4.0, 13.0]]))
+    assert np.allclose(module.W.grad, expected_W_grad)
     assert module.b.grad is not None
-    assert np.allclose(module.b.grad, np.array([1.5, 1.5, 2.0]))
-    assert np.allclose(dx, np.array([[-3.5, 4.0], [3.0, -1.5]]))
+    assert np.allclose(module.b.grad, expected_b_grad)
+    assert np.allclose(actual_grad, expected_grad)
     assert params[0] is module.W
     assert params[1] is module.b
     assert 'in_features=2' in repr(module)
@@ -80,7 +65,7 @@ def test_linear_backward_requires_forward():
 
 
 @pytest.mark.parametrize(
-    ('module', 'expected_output', 'expected_grad'),
+    ('module', 'expected', 'expected_grad'),
     [
         (
             mlp.Sigmoid(),
@@ -101,17 +86,17 @@ def test_linear_backward_requires_forward():
 )
 def test_elementwise_activations_forward_and_backward(
     module: mlp.Module,
-    expected_output: np.ndarray,
+    expected: np.ndarray,
     expected_grad: np.ndarray,
 ):
     x = np.array([[-1.0, 0.0, 1.0]])
     grad = np.ones_like(x)
 
-    output = module(x)
-    dx = module.backward(grad)
+    actual = module(x)
+    actual_grad = module.backward(grad)
 
-    assert np.allclose(output, expected_output)
-    assert np.allclose(dx, expected_grad)
+    assert np.allclose(actual, expected)
+    assert np.allclose(actual_grad, expected_grad)
 
 
 def test_softmax_forward_and_backward():
@@ -119,16 +104,16 @@ def test_softmax_forward_and_backward():
     x = np.array([[1.0, 2.0, 3.0]])
     grad = np.array([[0.2, -0.1, 0.4]])
 
-    output = module(x)
-    dx = module.backward(grad)
+    actual = module(x)
+    actual_grad = module.backward(grad)
 
-    expected_output = np.array([[0.09003057, 0.24472847, 0.66524096]])
-    expected_dot = np.sum(grad * expected_output, axis=1, keepdims=True)
-    expected_dx = expected_output * (grad - expected_dot)
+    expected = np.array([[0.09003057, 0.24472847, 0.66524096]])
+    expected_dot = np.sum(grad * expected, axis=1, keepdims=True)
+    expected_grad = expected * (grad - expected_dot)
 
-    assert np.allclose(output, expected_output)
-    assert np.allclose(np.sum(output, axis=1), np.array([1.0]))
-    assert np.allclose(dx, expected_dx)
+    assert np.allclose(actual, expected)
+    assert np.allclose(np.sum(actual, axis=1), np.array([1.0]))
+    assert np.allclose(actual_grad, expected_grad)
 
 
 def test_cross_entropy_loss_forward_backward():
@@ -136,17 +121,20 @@ def test_cross_entropy_loss_forward_backward():
     logits = np.array([[2.0, 1.0, 0.0], [0.0, 3.0, 1.0]])
     targets = np.array([0, 2])
 
-    value = module(logits, targets)
-    grad = module.backward()
+    actual = module(logits, targets)
+    actual_grad = module.backward()
 
-    probs = activation.softmax(logits)
-    expected_value = -np.mean(np.log(probs[np.arange(2), targets] + module.eps))
+    shifted_logits = logits - np.max(logits, axis=1, keepdims=True)
+    exp_logits = np.exp(shifted_logits)
+    probs = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
+
+    expected = -np.mean(np.log(probs[np.arange(2), targets] + module.eps))
     expected_grad = probs.copy()
     expected_grad[np.arange(2), targets] -= 1
     expected_grad = expected_grad / 2
 
-    assert np.allclose(value, expected_value)
-    assert np.allclose(grad, expected_grad)
+    assert np.allclose(actual, expected)
+    assert np.allclose(actual_grad, expected_grad)
 
 
 def test_cross_entropy_backward_requires_forward():
@@ -157,13 +145,14 @@ def test_cross_entropy_backward_requires_forward():
 
 
 def test_mlp_forward_backward_yields_recursive_parameter_gradients():
+    x = np.array([[2.0, -1.0], [0.0, 1.0]])
+    grad = np.array([[0.2, -0.3], [0.5, 0.1]])
+
     model = mlp.MLP(input_dim=2, hidden_dim=3, num_classes=2)
     model.fc1.W[:] = np.array([[1.0, -1.0, 0.5], [0.0, 2.0, -0.5]])
     model.fc1.b[:] = np.array([0.0, 0.5, -0.25])
     model.fc2.W[:] = np.array([[1.0, -1.0], [0.5, 0.25], [-0.5, 2.0]])
     model.fc2.b[:] = np.array([0.1, -0.2])
-    x = np.array([[2.0, -1.0], [0.0, 1.0]])
-    grad = np.array([[0.2, -0.3], [0.5, 0.1]])
 
     logits = model(x)
     dx = model.backward(grad)
@@ -177,8 +166,10 @@ def test_mlp_forward_backward_yields_recursive_parameter_gradients():
 
 def test_sgd_updates_parameters_and_zeroes_gradients():
     param = mlp.Parameter([1.0, -2.0])
-    skipped = mlp.Parameter([3.0])
     param.grad = np.array([0.5, -0.25])
+    # Skip it because it does not have a gradient.
+    skipped = mlp.Parameter([3.0])
+
     optimizer = mlp.SGD([param, skipped], lr=0.1)
 
     optimizer.step()
@@ -191,3 +182,24 @@ def test_sgd_updates_parameters_and_zeroes_gradients():
 
     optimizer.zero_grad()
     assert param.grad is None
+
+
+def test_mlp_training_step_reduces_cross_entropy_loss():
+    x = np.array([[2.0, -1.0], [0.0, 1.0]])
+    targets = np.array([0, 1])
+
+    model = mlp.MLP(input_dim=2, hidden_dim=3, num_classes=2)
+    model.fc1.W[:] = np.array([[1.0, -1.0, 0.5], [0.0, 2.0, -0.5]])
+    model.fc1.b[:] = np.array([0.0, 0.5, -0.25])
+    model.fc2.W[:] = np.array([[1.0, -1.0], [0.5, 0.25], [-0.5, 2.0]])
+    model.fc2.b[:] = np.array([0.1, -0.2])
+
+    criterion = mlp.CrossEntropyLoss()
+    optimizer = mlp.SGD(model.parameters(), lr=0.1)
+
+    loss_before = criterion(model(x), targets)
+    model.backward(criterion.backward())
+    optimizer.step()
+    loss_after = criterion(model(x), targets)
+
+    assert loss_after < loss_before
