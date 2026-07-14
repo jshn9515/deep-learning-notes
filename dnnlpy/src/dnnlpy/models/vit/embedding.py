@@ -39,7 +39,7 @@ class ViTLinearPatchEmbedding(nn.Module):
         self.patch_size = patch_size
         self.num_patches = (image_size // patch_size) ** 2
 
-        self.unfold = nn.Unfold(patch_size, stride=patch_size)
+        self.unfold = dnn.Unfold(patch_size, stride=patch_size)
         self.proj = dnn.Linear(in_channels * patch_size * patch_size, embed_dim)
 
     def forward(self, x: Tensor) -> Tensor:
