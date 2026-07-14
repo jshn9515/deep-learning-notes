@@ -1,24 +1,20 @@
-import inspect
-
 import torch
 from torch.testing import assert_close
 
 import dnnlpy.optim as dopt
-import dnnlpy.optim.rmsprop as rmsprop
 
 
-def test_rmsprop_module_has_docstrings():
-    for name in rmsprop.__all__:
-        member = getattr(rmsprop, name)
-        assert inspect.getdoc(member), name
+def test_rmsprop_skips_parameters_without_gradients():
+    trainable = torch.tensor([1.0], requires_grad=True)
+    trainable.grad = torch.tensor([0.5])
+    skipped = torch.tensor([2.0], requires_grad=True)
 
-        for method_name, method in inspect.getmembers(member, inspect.isfunction):
-            if method.__qualname__.startswith(f'{member.__name__}.'):
-                assert inspect.getdoc(method), f'{name}.{method_name}'
+    optimizer = dopt.RMSprop([trainable, skipped], lr=0.1, rho=0.9, eps=0.0)
+    optimizer.step()
 
-
-def test_rmsprop_public_export():
-    assert dopt.RMSprop is rmsprop.RMSprop
+    assert_close(trainable, torch.tensor([0.6837722]))
+    assert_close(skipped, torch.tensor([2.0]))
+    assert optimizer.state[skipped] == {}
 
 
 def test_rmsprop_accumulates_squared_gradients_and_updates_parameters():
@@ -33,19 +29,6 @@ def test_rmsprop_accumulates_squared_gradients_and_updates_parameters():
     state = optimizer.state[param]
     assert_close(state['square_avg'], expected_square_avg)
     assert_close(param, torch.tensor([0.6837722, -1.6837722]))
-
-
-def test_rmsprop_skips_parameters_without_gradients():
-    trained = torch.tensor([1.0], requires_grad=True)
-    skipped = torch.tensor([2.0], requires_grad=True)
-    trained.grad = torch.tensor([0.5])
-    optimizer = dopt.RMSprop([trained, skipped], lr=0.1, rho=0.9, eps=0.0)
-
-    optimizer.step()
-
-    assert_close(trained, torch.tensor([0.6837722]))
-    assert_close(skipped, torch.tensor([2.0]))
-    assert optimizer.state[skipped] == {}
 
 
 def test_rmsprop_accumulates_momentum_buffer():

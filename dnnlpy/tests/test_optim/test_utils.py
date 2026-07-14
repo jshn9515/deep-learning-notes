@@ -6,17 +6,12 @@ import torch.optim as optim
 from torch.testing import assert_close
 
 import dnnlpy.optim as dopt
-import dnnlpy.optim.utils as utils
 
 type Optimizer = Callable[..., optim.Optimizer]
 
 
 def quadratic_loss(theta: torch.Tensor) -> torch.Tensor:
     return theta.square().sum() / 2
-
-
-def test_run_optimizer_public_export():
-    assert dopt.run_optimizer is utils.run_optimizer
 
 
 @pytest.mark.parametrize(

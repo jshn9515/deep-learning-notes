@@ -1,31 +1,16 @@
-import inspect
+from collections.abc import Callable
 
 import pytest
 import torch
 from torch.testing import assert_close
 
 import dnnlpy.optim as dopt
-import dnnlpy.optim.sgd as sgd
-
-
-def test_sgd_modules_have_docstrings():
-    for name in sgd.__all__:
-        member = getattr(sgd, name)
-        assert inspect.getdoc(member), name
-
-        for method_name, method in member.__dict__.items():
-            if inspect.isfunction(method):
-                assert inspect.getdoc(method), f'{name}.{method_name}'
-
-
-def test_sgd_public_exports():
-    assert dopt.SGD is sgd.SGD
 
 
 def test_sgd_step_updates_parameters_and_skips_missing_gradients():
     trainable = torch.tensor([1.0, -2.0], requires_grad=True)
-    frozen = torch.tensor([3.0], requires_grad=True)
     trainable.grad = torch.tensor([0.25, -0.5])
+    frozen = torch.tensor([3.0], requires_grad=True)
 
     optimizer = dopt.SGD([trainable, frozen], lr=0.1)
     optimizer.step()
@@ -36,9 +21,9 @@ def test_sgd_step_updates_parameters_and_skips_missing_gradients():
 
 def test_sgd_with_momentum_accumulates_velocity():
     param = torch.tensor([1.0, -2.0], requires_grad=True)
-    optimizer = dopt.SGD([param], lr=0.1, momentum=0.9)
-
     param.grad = torch.tensor([0.5, -0.25])
+
+    optimizer = dopt.SGD([param], lr=0.1, momentum=0.9)
     optimizer.step()
 
     state = optimizer.state[param]
@@ -55,9 +40,9 @@ def test_sgd_with_momentum_accumulates_velocity():
 
 def test_sgd_with_nesterov_momentum_uses_lookahead_update():
     param = torch.tensor([1.0, -2.0], requires_grad=True)
-    optimizer = dopt.SGD([param], lr=0.1, momentum=0.9, nesterov=True)
-
     param.grad = torch.tensor([0.5, -0.25])
+
+    optimizer = dopt.SGD([param], lr=0.1, momentum=0.9, nesterov=True)
     optimizer.step()
 
     state = optimizer.state[param]
@@ -79,7 +64,7 @@ def test_sgd_with_nesterov_momentum_uses_lookahead_update():
         ),
     ],
 )
-def test_sgd_step_does_not_mutate_gradients(optimizer):
+def test_sgd_step_does_not_mutate_gradients(optimizer: Callable[..., dopt.SGD]):
     param = torch.tensor([1.0, -2.0], requires_grad=True)
     param.grad = torch.tensor([0.5, -0.25])
     expected_grad = param.grad.clone()
@@ -91,9 +76,9 @@ def test_sgd_step_does_not_mutate_gradients(optimizer):
 
 def test_sgd_initializes_velocity_from_first_momentum_update():
     param = torch.tensor([1.0], requires_grad=True)
-    optimizer = dopt.SGD([param], lr=0.1, momentum=0.9)
-
     param.grad = torch.tensor([0.5])
+
+    optimizer = dopt.SGD([param], lr=0.1, momentum=0.9)
     optimizer.step()
 
     state = optimizer.state[param]

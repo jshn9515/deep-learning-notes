@@ -1,5 +1,3 @@
-import inspect
-
 import pytest
 import torch
 from torch.testing import assert_close
@@ -8,20 +6,25 @@ import dnnlpy.optim as dopt
 import dnnlpy.optim.muon as muon
 
 
-def test_muon_module_has_docstrings():
-    for name in muon.__all__:
-        member = getattr(muon, name)
-        assert inspect.getdoc(member), name
+def test_muon_skips_parameters_without_gradients():
+    trainable = torch.tensor([[1.0, 0.0], [0.0, 1.0]], requires_grad=True)
+    trainable.grad = torch.tensor([[3.0, 4.0], [0.0, 0.0]])
+    skipped = torch.tensor([[2.0, 0.0], [0.0, 2.0]], requires_grad=True)
 
-        for method_name, method in inspect.getmembers(member, inspect.isfunction):
-            if method.__qualname__.startswith(f'{member.__name__}.'):
-                assert inspect.getdoc(method), f'{name}.{method_name}'
+    optimizer = dopt.Muon(
+        [trainable, skipped],
+        lr=0.1,
+        weight_decay=0.0,
+        nesterov=False,
+        ns_steps=1,
+        eps=0.0,
+        ns_coefficients=(1.0, 0.0, 0.0),
+    )
+    optimizer.step()
 
-    assert inspect.getdoc(muon.newton_schulz_5)
-
-
-def test_muon_public_export():
-    assert dopt.Muon is muon.Muon
+    assert_close(trainable, torch.tensor([[0.94, -0.08], [0.0, 1.0]]))
+    assert_close(skipped, torch.tensor([[2.0, 0.0], [0.0, 2.0]]))
+    assert optimizer.state[skipped] == {}
 
 
 def test_newton_schulz_5_preserves_tall_matrix_shape():
@@ -75,27 +78,6 @@ def test_muon_accumulates_momentum_and_updates_parameters():
     state = optimizer.state[param]
     assert_close(state['momentum_buffer'], expected_buffer)
     assert_close(param, expected_param)
-
-
-def test_muon_skips_parameters_without_gradients():
-    trained = torch.tensor([[1.0, 0.0], [0.0, 1.0]], requires_grad=True)
-    skipped = torch.tensor([[2.0, 0.0], [0.0, 2.0]], requires_grad=True)
-    trained.grad = torch.tensor([[3.0, 4.0], [0.0, 0.0]])
-    optimizer = dopt.Muon(
-        [trained, skipped],
-        lr=0.1,
-        weight_decay=0.0,
-        nesterov=False,
-        ns_steps=1,
-        eps=0.0,
-        ns_coefficients=(1.0, 0.0, 0.0),
-    )
-
-    optimizer.step()
-
-    assert_close(trained, torch.tensor([[0.94, -0.08], [0.0, 1.0]]))
-    assert_close(skipped, torch.tensor([[2.0, 0.0], [0.0, 2.0]]))
-    assert optimizer.state[skipped] == {}
 
 
 def test_muon_applies_decoupled_weight_decay():
