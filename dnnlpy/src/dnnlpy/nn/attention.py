@@ -122,3 +122,13 @@ class MultiheadAttention(nn.Module):
             return attn_output, attn_weights
 
         return attn_output, None
+
+    def extra_repr(self) -> str:
+        return (
+            f'embed_dim={self.embed_dim}, '
+            f'num_heads={self.num_heads}, '
+            f'dropout={self.dropout}, '
+            f'bias={self.bias}, '
+            f'kdim={self.kdim}, '
+            f'vdim={self.vdim}'
+        )
