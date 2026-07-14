@@ -55,13 +55,15 @@ class BCELoss(nn.Module):
                 weight=self.weight,
                 reduction=self.reduction,
             )
-
         return dF.bce_loss(
             x,
             target,
             weight=self.weight,
             reduction=self.reduction,
         )
+
+    def extra_repr(self) -> str:
+        return f'reduction={self.reduction!r}, weight={self.weight is not None}'
 
 
 class BCEWithLogitsLoss(nn.Module):
@@ -102,13 +104,19 @@ class BCEWithLogitsLoss(nn.Module):
                 reduction=self.reduction,
                 pos_weight=self.pos_weight,
             )
-
         return dF.bce_with_logits_loss(
             x,
             target,
             weight=self.weight,
             reduction=self.reduction,
             pos_weight=self.pos_weight,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f'reduction={self.reduction!r}, '
+            f'weight={self.weight is not None}, '
+            f'pos_weight={self.pos_weight is not None}'
         )
 
 
@@ -150,13 +158,19 @@ class NLLLoss(nn.Module):
                 ignore_index=self.ignore_index,
                 reduction=self.reduction,
             )
-
         return dF.nll_loss(
             x,
             target,
             weight=self.weight,
             ignore_index=self.ignore_index,
             reduction=self.reduction,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f'reduction={self.reduction!r}, '
+            f'weight={self.weight is not None}, '
+            f'ignore_index={self.ignore_index}'
         )
 
 
@@ -202,7 +216,6 @@ class CrossEntropyLoss(nn.Module):
                 reduction=self.reduction,
                 label_smoothing=self.label_smoothing,
             )
-
         return dF.cross_entropy_loss(
             x,
             target,
@@ -210,6 +223,14 @@ class CrossEntropyLoss(nn.Module):
             ignore_index=self.ignore_index,
             reduction=self.reduction,
             label_smoothing=self.label_smoothing,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f'reduction={self.reduction!r}, '
+            f'weight={self.weight is not None}, '
+            f'ignore_index={self.ignore_index}, '
+            f'label_smoothing={self.label_smoothing}'
         )
 
 
@@ -241,13 +262,15 @@ class MSELoss(nn.Module):
     def forward(self, x: Tensor, target: Tensor) -> Tensor:
         if self.fast and self.weight is None:
             return F.mse_loss(x, target, reduction=self.reduction)
-
         return dF.mse_loss(
             x,
             target,
             reduction=self.reduction,
             weight=self.weight,
         )
+
+    def extra_repr(self) -> str:
+        return f'reduction={self.reduction!r}, weight={self.weight is not None}'
 
 
 class L1Loss(nn.Module):
@@ -278,13 +301,15 @@ class L1Loss(nn.Module):
     def forward(self, x: Tensor, target: Tensor) -> Tensor:
         if self.fast and self.weight is None:
             return F.l1_loss(x, target, reduction=self.reduction)
-
         return dF.l1_loss(
             x,
             target,
             reduction=self.reduction,
             weight=self.weight,
         )
+
+    def extra_repr(self) -> str:
+        return f'reduction={self.reduction!r}, weight={self.weight is not None}'
 
 
 class SmoothL1Loss(nn.Module):
@@ -319,13 +344,15 @@ class SmoothL1Loss(nn.Module):
                 reduction=self.reduction,
                 beta=self.beta,
             )
-
         return dF.smooth_l1_loss(
             x,
             target,
             reduction=self.reduction,
             beta=self.beta,
         )
+
+    def extra_repr(self) -> str:
+        return f'reduction={self.reduction!r}, beta={self.beta}'
 
 
 class HuberLoss(nn.Module):
@@ -361,13 +388,15 @@ class HuberLoss(nn.Module):
                 reduction=self.reduction,
                 delta=self.delta,
             )
-
         return dF.huber_loss(
             x,
             target,
             reduction=self.reduction,
             delta=self.delta,
         )
+
+    def extra_repr(self) -> str:
+        return f'reduction={self.reduction!r}, delta={self.delta}'
 
 
 class KLDivLoss(nn.Module):
@@ -403,10 +432,12 @@ class KLDivLoss(nn.Module):
                 reduction=self.reduction,
                 log_target=self.log_target,
             )
-
         return dF.kl_div_loss(
             x,
             target,
             reduction=self.reduction,
             log_target=self.log_target,
         )
+
+    def extra_repr(self) -> str:
+        return f'reduction={self.reduction!r}, log_target={self.log_target}'
