@@ -91,22 +91,22 @@ class _ConvNd(nn.Module):
         Args:
             in_channels (int): Number of channels in the input.
             out_channels (int): Number of channels produced by the convolution.
-            kernel_size (int | tuple[int], default: required): Size of the convolving
-                kernel. If a single integer is provided, then the kernel will be square
-                (i.e., the same size in all dimensions).
-            stride (int | tuple[int], default: 1): Stride of the convolution.
-            padding (int | tuple[int] | str, default: 0): Padding added to both sides
-                of the input. String values `'valid'` and `'same'` are supported.
+            kernel_size (TupleND): Size of the convolving kernel. If a single integer
+                is provided, then the kernel will be square (i.e., the same size in
+                all dimensions).
+            stride (TupleND, default: 1): Stride of the convolution.
+            padding (TupleND, default: 0): Padding added to both sides of the input.
+                String values `'valid'` and `'same'` are supported.
             padding_mode (str, default: 'zeros'): Padding mode. Supported values are
                 `'zeros'`, `'reflect'`, `'replicate'`, and `'circular'`.
-            dilation (int | tuple[int], default: 1): Spacing between kernel elements.
+            dilation (TupleND, default: 1): Spacing between kernel elements.
             groups (int, default: 1): Number of blocked connections from input channels
                 to output channels.
             bias (bool, default: True): If `True`, learn an additive bias.
             transposed (bool, default: False): If `True`, will use a transposed convolution
                 (also known as a deconvolution).
-            output_padding (int | tuple[int], default: 0): Additional size added to one side
-                of each dimension in the output shape. Only used for transposed convolutions.
+            output_padding (TupleND, default: 0): Additional size added to one side of each
+                dimension in the output shape. Only used for transposed convolutions.
             fast (bool, default: False): If set to True, will use the fast implementation
                 from :func:`torch.nn.functional`. Default: False.
         """
@@ -207,15 +207,15 @@ class Conv1d(_ConvNd):
         Args:
             in_channels (int): Number of channels in the input.
             out_channels (int): Number of channels produced by the convolution.
-            kernel_size (int | tuple[int], default: required): Size of the convolving
-                kernel. If a single integer is provided, then the kernel will be square
-                (i.e., the same size in all dimensions).
-            stride (int | tuple[int], default: 1): Stride of the convolution.
-            padding (int | tuple[int] | str, default: 0): Padding added to both sides
-                of the input. String values `'valid'` and `'same'` are supported.
-            padding_mode (str, default: 'zeros'): Padding mode. Supported values are
-                `'zeros'`, `'reflect'`, `'replicate'`, and `'circular'`.
-            dilation (int | tuple[int], default: 1): Spacing between kernel elements.
+            kernel_size (Size1D, default: required): Size of the convolving kernel.
+                If a single integer is provided, then the kernel will be square (i.e.,
+                the same size in all dimensions).
+            stride (Size1D, default: 1): Stride of the convolution.
+            padding (Padding1D, default: 0): Padding added to both sides of the input.
+                String values `'valid'` and `'same'` are supported.
+            padding_mode (PaddingMode, default: 'zeros'): Padding mode. Supported values
+                are `'zeros'`, `'reflect'`, `'replicate'`, and `'circular'`.
+            dilation (Size1D, default: 1): Spacing between kernel elements.
             groups (int, default: 1): Number of blocked connections from input channels
                 to output channels.
             bias (bool, default: True): If `True`, learn an additive bias.
@@ -291,17 +291,18 @@ class Conv2d(_ConvNd):
         """Initialize a 2D convolution module.
 
         Args:
+        Args:
             in_channels (int): Number of channels in the input.
             out_channels (int): Number of channels produced by the convolution.
-            kernel_size (int | tuple[int, int], default: required): Size of the convolving
-                kernel. If a single integer is provided, then the kernel will be square
-                (i.e., the same size in all dimensions).
-            stride (int | tuple[int, int], default: 1): Stride of the convolution.
-            padding (int | tuple[int, int] | str, default: 0): Padding added to both sides
-                of the input. String values `'valid'` and `'same'` are supported.
-            padding_mode (str, default: 'zeros'): Padding mode. Supported values are
-                `'zeros'`, `'reflect'`, `'replicate'`, and `'circular'`.
-            dilation (int | tuple[int, int], default: 1): Spacing between kernel elements.
+            kernel_size (Size2D, default: required): Size of the convolving kernel.
+                If a single integer is provided, then the kernel will be square (i.e.,
+                the same size in all dimensions).
+            stride (Size2D, default: 1): Stride of the convolution.
+            padding (Padding2D, default: 0): Padding added to both sides of the input.
+                String values `'valid'` and `'same'` are supported.
+            padding_mode (PaddingMode, default: 'zeros'): Padding mode. Supported values
+                are `'zeros'`, `'reflect'`, `'replicate'`, and `'circular'`.
+            dilation (Size2D, default: 1): Spacing between kernel elements.
             groups (int, default: 1): Number of blocked connections from input channels
                 to output channels.
             bias (bool, default: True): If `True`, learn an additive bias.
@@ -379,15 +380,15 @@ class Conv3d(_ConvNd):
         Args:
             in_channels (int): Number of channels in the input.
             out_channels (int): Number of channels produced by the convolution.
-            kernel_size (int | tuple[int, int, int], default: required): Size of the
-                convolving kernel. If a single integer is provided, then the kernel will
-                be square (i.e., the same size in all dimensions).
-            stride (int | tuple[int, int, int], default: 1): Stride of the convolution.
-            padding (int | tuple[int, int, int] | str, default: 0): Padding added to both
-                sides of the input. String values `'valid'` and `'same'` are supported.
-            padding_mode (str, default: 'zeros'): Padding mode. Supported values are
-                `'zeros'`, `'reflect'`, `'replicate'`, and `'circular'`.
-            dilation (int | tuple[int, int, int], default: 1): Spacing between kernel elements.
+            kernel_size (Size3D, default: required): Size of the convolving kernel.
+                If a single integer is provided, then the kernel will be square (i.e.,
+                the same size in all dimensions).
+            stride (Size3D, default: 1): Stride of the convolution.
+            padding (Padding3D, default: 0): Padding added to both sides of the input.
+                String values `'valid'` and `'same'` are supported.
+            padding_mode (PaddingMode, default: 'zeros'): Padding mode. Supported values
+                are `'zeros'`, `'reflect'`, `'replicate'`, and `'circular'`.
+            dilation (Size3D, default: 1): Spacing between kernel elements.
             groups (int, default: 1): Number of blocked connections from input channels
                 to output channels.
             bias (bool, default: True): If `True`, learn an additive bias.
