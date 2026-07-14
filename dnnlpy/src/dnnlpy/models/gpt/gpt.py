@@ -146,8 +146,8 @@ class MiniGPT(nn.Module):
         self.block_size = block_size
         self.weight_tying = weight_tying
 
-        self.token_embed = nn.Embedding(vocab_size, embed_dim)
-        self.pos_embed = nn.Embedding(block_size, embed_dim)
+        self.token_embed = dnn.Embedding(vocab_size, embed_dim)
+        self.pos_embed = dnn.Embedding(block_size, embed_dim)
         self.embed_dropout = dnn.Dropout(dropout)
 
         self.blocks = nn.Sequential(
@@ -175,9 +175,8 @@ class MiniGPT(nn.Module):
     def reset_parameters(self) -> None:
         """Initialize the model parameters."""
         for module in self.modules():
-            if isinstance(module, nn.Embedding):
+            if isinstance(module, dnn.Embedding):
                 nn.init.normal_(module.weight, mean=0.0, std=0.02)
-
             elif isinstance(module, dnn.Linear):
                 nn.init.normal_(module.weight, mean=0.0, std=0.02)
                 if module.bias is not None:
