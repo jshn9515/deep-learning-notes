@@ -6,7 +6,11 @@ from torch import Tensor
 
 from ..common_types import TupleND
 
-__all__ = ['conv1d', 'conv2d', 'conv3d']
+__all__ = [
+    'conv1d',
+    'conv2d',
+    'conv3d',
+]
 
 
 def _conv_nd(
