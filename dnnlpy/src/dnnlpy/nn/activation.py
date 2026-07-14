@@ -68,7 +68,8 @@ class CELU(nn.Module):
         return dF.celu(x, alpha=self.alpha, inplace=self.inplace)
 
     def extra_repr(self) -> str:
-        return f'alpha={self.alpha}'
+        inplace = ', inplace=True' if self.inplace else ''
+        return f'alpha={self.alpha}{inplace}'
 
 
 class ELU(nn.Module):
@@ -100,7 +101,8 @@ class ELU(nn.Module):
         return dF.elu(x, alpha=self.alpha, inplace=self.inplace)
 
     def extra_repr(self) -> str:
-        return f'alpha={self.alpha}'
+        inplace = ', inplace=True' if self.inplace else ''
+        return f'alpha={self.alpha}{inplace}'
 
 
 class GELU(nn.Module):
@@ -124,6 +126,9 @@ class GELU(nn.Module):
         if self.fast:
             return F.gelu(x, approximate=self.approximate)
         return dF.gelu(x, approximate=self.approximate)
+
+    def extra_repr(self) -> str:
+        return f'approximate={self.approximate!r}'
 
 
 class HardShrink(nn.Module):
@@ -170,6 +175,9 @@ class HardSigmoid(nn.Module):
             return F.hardsigmoid(x, inplace=self.inplace)
         return dF.hardsigmoid(x, inplace=self.inplace)
 
+    def extra_repr(self) -> str:
+        return 'inplace=True' if self.inplace else ''
+
 
 class HardSwish(nn.Module):
     """Apply the hard swish function element-wise."""
@@ -190,6 +198,9 @@ class HardSwish(nn.Module):
         if self.fast:
             return F.hardswish(x, inplace=self.inplace)
         return dF.hardswish(x, inplace=self.inplace)
+
+    def extra_repr(self) -> str:
+        return 'inplace=True' if self.inplace else ''
 
 
 class HardTanh(nn.Module):
@@ -234,7 +245,8 @@ class HardTanh(nn.Module):
         )
 
     def extra_repr(self) -> str:
-        return f'min_val={self.min_val}, max_val={self.max_val}'
+        inplace = ', inplace=True' if self.inplace else ''
+        return f'min_val={self.min_val}, max_val={self.max_val}{inplace}'
 
 
 class LeakyReLU(nn.Module):
@@ -274,7 +286,8 @@ class LeakyReLU(nn.Module):
         )
 
     def extra_repr(self) -> str:
-        return f'negative_slope={self.negative_slope}'
+        inplace = ', inplace=True' if self.inplace else ''
+        return f'negative_slope={self.negative_slope}{inplace}'
 
 
 class LogSigmoid(nn.Module):
@@ -340,6 +353,9 @@ class Mish(nn.Module):
             return F.mish(x, inplace=self.inplace)
         return dF.mish(x, inplace=self.inplace)
 
+    def extra_repr(self) -> str:
+        return 'inplace=True' if self.inplace else ''
+
 
 class PReLU(nn.Module):
     """Apply the parametric rectified linear unit function element-wise."""
@@ -398,6 +414,9 @@ class ReLU(nn.Module):
             return F.relu(x, inplace=self.inplace)
         return dF.relu(x, inplace=self.inplace)
 
+    def extra_repr(self) -> str:
+        return 'inplace=True' if self.inplace else ''
+
 
 class ReLU6(nn.Module):
     """Apply the rectified linear unit 6 function element-wise."""
@@ -418,6 +437,9 @@ class ReLU6(nn.Module):
         if self.fast:
             return F.relu6(x, inplace=self.inplace)
         return dF.relu6(x, inplace=self.inplace)
+
+    def extra_repr(self) -> str:
+        return 'inplace=True' if self.inplace else ''
 
 
 class RReLU(nn.Module):
@@ -464,7 +486,8 @@ class RReLU(nn.Module):
         )
 
     def extra_repr(self) -> str:
-        return f'lower={self.lower}, upper={self.upper}'
+        inplace = ', inplace=True' if self.inplace else ''
+        return f'lower={self.lower}, upper={self.upper}{inplace}'
 
 
 class SELU(nn.Module):
@@ -486,6 +509,9 @@ class SELU(nn.Module):
         if self.fast:
             return F.selu(x, inplace=self.inplace)
         return dF.selu(x, inplace=self.inplace)
+
+    def extra_repr(self) -> str:
+        return 'inplace=True' if self.inplace else ''
 
 
 class Sigmoid(nn.Module):
@@ -526,6 +552,9 @@ class SiLU(nn.Module):
         if self.fast:
             return F.silu(x, inplace=self.inplace)
         return dF.silu(x, inplace=self.inplace)
+
+    def extra_repr(self) -> str:
+        return 'inplace=True' if self.inplace else ''
 
 
 class Softmax(nn.Module):
@@ -732,4 +761,5 @@ class Threshold(nn.Module):
         )
 
     def extra_repr(self) -> str:
-        return f'threshold={self.threshold}, value={self.value}'
+        inplace = ', inplace=True' if self.inplace else ''
+        return f'threshold={self.threshold}, value={self.value}{inplace}'
