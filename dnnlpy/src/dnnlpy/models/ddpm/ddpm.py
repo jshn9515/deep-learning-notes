@@ -14,15 +14,17 @@ class DDPMScheduler:
         beta_start: float = 0.0001,
         beta_end: float = 0.02,
     ):
-        """Scheduler for the Denoising Diffusion Probabilistic Models (DDPM) that defines
-        the noise schedule and provides a method to add noise to the original samples based
-        on the time steps.
+        """Scheduler for the Denoising Diffusion Probabilistic Models (DDPM) that
+        defines the noise schedule and provides a method to add noise to the original
+        samples based on the time steps.
 
         Args:
-            num_train_timesteps (int): The total number of time steps used during training,
-                which determines the length of the noise schedule.
-            beta_start (float): The starting value of the noise variance (beta) at time step 0.
-            beta_end (float): The ending value of the noise variance (beta) at the final time step.
+            num_train_timesteps (int, default: 1000): The total number of time steps
+                used during training, which determines the length of the noise schedule.
+            beta_start (float, default: 0.0001): The starting value of the noise variance
+                (beta) at time step 0.
+            beta_end (float, default: 0.02): The ending value of the noise variance (beta)
+                at the final time step.
         """
         self.num_train_timesteps = num_train_timesteps
         self.beta_start = beta_start
@@ -86,7 +88,7 @@ class DDPMScheduler:
         """
         if num_inference_steps > self.num_train_timesteps:
             raise AssertionError(
-                f'num_inference_steps must be in the range (0, {self.num_train_timesteps}].'
+                f'`num_inference_steps` must be in the range (0, {self.num_train_timesteps}].'
             )
 
         self.num_inference_steps = num_inference_steps
@@ -111,8 +113,8 @@ class DDPMScheduler:
         return prev
 
     def step(self, model_output: Tensor, timestep: int, sample: Tensor) -> Tensor:
-        """Perform a single reverse diffusion step to compute the previous sample given the
-        model's output, the current time step, and the current sample.
+        """Perform a single reverse diffusion step to compute the previous sample given
+        the model's output, the current time step, and the current sample.
 
         Args:
             model_output (Tensor): The output from the diffusion model, which is typically
