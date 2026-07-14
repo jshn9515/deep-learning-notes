@@ -42,6 +42,7 @@ from .flash_attention import (
     flash_attention_v1_backward as flash_attention_v1_backward,
     flash_attention_v1_forward as flash_attention_v1_forward,
 )
+from .folding import fold as fold, unfold as unfold
 from .loss import (
     bce_loss as bce_loss,
     bce_with_logits_loss as bce_with_logits_loss,

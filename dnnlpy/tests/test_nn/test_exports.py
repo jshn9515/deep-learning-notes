@@ -22,6 +22,7 @@ def test_nn_exports_new_modules():
         'ELU',
         'Embedding',
         'Flatten',
+        'Fold',
         'GELU',
         'GroupNorm',
         'HardShrink',
@@ -61,6 +62,7 @@ def test_nn_exports_new_modules():
         'Tanh',
         'TanhShrink',
         'Threshold',
+        'Unfold',
         'Unflatten',
     ]:
         assert hasattr(dnn, name)
@@ -83,6 +85,7 @@ def test_functional_exports_new_functions():
         'dropout3d',
         'elu',
         'embedding',
+        'fold',
         'gelu',
         'generate_causal_mask',
         'group_norm',
@@ -123,5 +126,6 @@ def test_functional_exports_new_functions():
         'tanh',
         'tanhshrink',
         'threshold',
+        'unfold',
     ]:
         assert hasattr(dF, name)

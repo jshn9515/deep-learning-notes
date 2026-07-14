@@ -39,6 +39,7 @@ from .convolution import (
     Conv2d as Conv2d,
     Conv3d as Conv3d,
 )
+from .folding import Fold as Fold, Unfold as Unfold
 from .loss import (
     BCELoss as BCELoss,
     BCEWithLogitsLoss as BCEWithLogitsLoss,
