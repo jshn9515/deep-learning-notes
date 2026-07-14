@@ -56,7 +56,7 @@ def batch_norm(
     if use_batch_stats:
         sample_count = x.numel() // x.size(1)
         if sample_count <= 1:
-            raise ValueError(
+            raise RuntimeError(
                 'Expected more than 1 value per channel when training, '
                 f'but got input shape {tuple(x.shape)}.'
             )
@@ -203,7 +203,7 @@ def instance_norm(
     if use_instance_stats:
         sample_count = x[0, 0].numel()
         if sample_count <= 1:
-            raise ValueError(
+            raise RuntimeError(
                 'Expected more than 1 spatial value when using input statistics, '
                 f'but got input shape {tuple(x.shape)}.'
             )
