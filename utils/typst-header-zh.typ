@@ -40,7 +40,7 @@
 #show figure: set align(center)
 #show figure: set block(breakable: true)
 #show figure.where(kind: table): set figure.caption(position: top)
-#show raw: set text(font: ("JetBrains Mono", "Noto Serif CJK SC"), size: 10pt, fallback: false)
+#show raw: set text(font: ("JetBrains Mono", "Noto Serif CJK SC"), size: 12pt, fallback: false)
 #show table: it => align(center, it)
 #show math.equation: set block(breakable: true)
 
