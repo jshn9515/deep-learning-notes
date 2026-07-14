@@ -63,7 +63,25 @@ class Seq2SeqTransformer(nn.Module):
         tgt_key_padding_mask: Tensor | None = None,
         memory_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
-        """Return target-token logits for a batch of source and target token ids."""
+        """Return target-token logits for a batch of source and target token ids.
+
+        Args:
+            src (Tensor): Source token ids of shape (batch_size, src_seq_len).
+            tgt (Tensor): Target token ids of shape (batch_size, tgt_seq_len).
+            src_mask (Tensor | None, optional): Source attention mask of shape
+                (src_seq_len, src_seq_len). Defaults to None.
+            tgt_mask (Tensor | None, optional): Target attention mask of shape
+                (tgt_seq_len, tgt_seq_len). Defaults to None.
+            src_key_padding_mask (Tensor | None, optional): Source key padding mask
+                of shape (batch_size, src_seq_len). Defaults to None.
+            tgt_key_padding_mask (Tensor | None, optional): Target key padding mask
+                of shape (batch_size, tgt_seq_len). Defaults to None.
+            memory_key_padding_mask (Tensor | None, optional): Memory key padding mask
+                of shape (batch_size, src_seq_len). Defaults to None.
+
+        Returns:
+            Tensor: Target token logits of shape (batch_size, tgt_seq_len, tgt_vocab_size).
+        """
         # We scale the embeddings by sqrt(d_model) to maintain the variance
         # of the input to the Transformer.
         scale = math.sqrt(self.d_model)
