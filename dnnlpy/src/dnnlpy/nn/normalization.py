@@ -92,6 +92,7 @@ class _BatchNorm(ABC, nn.Module):
 
         self.reset_parameters()
 
+    @torch.no_grad()
     def reset_running_stats(self) -> None:
         if self.track_running_stats:
             self.running_mean.zero_()
@@ -111,10 +112,6 @@ class _BatchNorm(ABC, nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_input_dim(x)
-        if x.size(1) != self.num_features:
-            raise AssertionError(
-                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
-            )
 
         if self.momentum is None:
             exponential_average_factor = 0.0
@@ -156,8 +153,12 @@ class _BatchNorm(ABC, nn.Module):
 
     def extra_repr(self) -> str:
         return (
-            f'{self.num_features}, eps={self.eps}, momentum={self.momentum}, '
-            f'affine={self.affine}, track_running_stats={self.track_running_stats}'
+            f'{self.num_features}, '
+            f'eps={self.eps}, '
+            f'momentum={self.momentum}, '
+            f'affine={self.affine}, '
+            f'bias={self.bias is not None}, '
+            f'track_running_stats={self.track_running_stats}'
         )
 
 
@@ -170,6 +171,10 @@ class BatchNorm1d(_BatchNorm):
             raise AssertionError(
                 f'Expected 2D or 3D input, but got shape {tuple(x.shape)}.'
             )
+        if x.size(1) != self.num_features:
+            raise AssertionError(
+                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
+            )
 
 
 class BatchNorm2d(_BatchNorm):
@@ -179,6 +184,10 @@ class BatchNorm2d(_BatchNorm):
     def _check_input_dim(self, x: Tensor) -> None:
         if x.ndim != 4:
             raise AssertionError(f'Expected 4D input, but got shape {tuple(x.shape)}.')
+        if x.size(1) != self.num_features:
+            raise AssertionError(
+                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
+            )
 
 
 class BatchNorm3d(_BatchNorm):
@@ -188,6 +197,10 @@ class BatchNorm3d(_BatchNorm):
     def _check_input_dim(self, x: Tensor) -> None:
         if x.ndim != 5:
             raise AssertionError(f'Expected 5D input, but got shape {tuple(x.shape)}.')
+        if x.size(1) != self.num_features:
+            raise AssertionError(
+                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
+            )
 
 
 class GroupNorm(nn.Module):
@@ -267,7 +280,9 @@ class GroupNorm(nn.Module):
 
     def extra_repr(self) -> str:
         return (
-            f'{self.num_groups}, {self.num_channels}, eps={self.eps}, '
+            f'{self.num_groups}, '
+            f'{self.num_channels}, '
+            f'eps={self.eps}, '
             f'affine={self.affine}'
         )
 
@@ -334,6 +349,7 @@ class _InstanceNorm(ABC, nn.Module):
 
         self.reset_parameters()
 
+    @torch.no_grad()
     def reset_running_stats(self) -> None:
         if self.track_running_stats:
             self.running_mean.zero_()
@@ -352,11 +368,6 @@ class _InstanceNorm(ABC, nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         self._check_input_dim(x)
-        if x.size(1) != self.num_features:
-            raise AssertionError(
-                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
-            )
-
         use_instance_stats = self.training or not self.track_running_stats
 
         if self.fast:
@@ -370,7 +381,6 @@ class _InstanceNorm(ABC, nn.Module):
                 momentum=self.momentum,
                 eps=self.eps,
             )
-
         return dF.instance_norm(
             x,
             self.running_mean,
@@ -384,8 +394,12 @@ class _InstanceNorm(ABC, nn.Module):
 
     def extra_repr(self) -> str:
         return (
-            f'{self.num_features}, eps={self.eps}, momentum={self.momentum}, '
-            f'affine={self.affine}, track_running_stats={self.track_running_stats}'
+            f'{self.num_features}, '
+            f'eps={self.eps}, '
+            f'momentum={self.momentum}, '
+            f'affine={self.affine}, '
+            f'bias={self.bias is not None}, '
+            f'track_running_stats={self.track_running_stats}'
         )
 
 
@@ -396,6 +410,10 @@ class InstanceNorm1d(_InstanceNorm):
     def _check_input_dim(self, x: Tensor) -> None:
         if x.ndim != 3:
             raise AssertionError(f'Expected 3D input, but got shape {tuple(x.shape)}.')
+        if x.size(1) != self.num_features:
+            raise AssertionError(
+                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
+            )
 
 
 class InstanceNorm2d(_InstanceNorm):
@@ -405,6 +423,10 @@ class InstanceNorm2d(_InstanceNorm):
     def _check_input_dim(self, x: Tensor) -> None:
         if x.ndim != 4:
             raise AssertionError(f'Expected 4D input, but got shape {tuple(x.shape)}.')
+        if x.size(1) != self.num_features:
+            raise AssertionError(
+                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
+            )
 
 
 class InstanceNorm3d(_InstanceNorm):
@@ -414,6 +436,10 @@ class InstanceNorm3d(_InstanceNorm):
     def _check_input_dim(self, x: Tensor) -> None:
         if x.ndim != 5:
             raise AssertionError(f'Expected 5D input, but got shape {tuple(x.shape)}.')
+        if x.size(1) != self.num_features:
+            raise AssertionError(
+                f'Expected {self.num_features} channels, but got {x.size(1)} channels.'
+            )
 
 
 class LayerNorm(nn.Module):
@@ -480,7 +506,6 @@ class LayerNorm(nn.Module):
                 bias=self.bias,
                 eps=self.eps,
             )
-
         return dF.layer_norm(
             x,
             self.normalized_shape,
@@ -491,8 +516,10 @@ class LayerNorm(nn.Module):
 
     def extra_repr(self) -> str:
         return (
-            f'normalized_shape={self.normalized_shape}, eps={self.eps}, '
-            f'elementwise_affine={self.elementwise_affine}, bias={self.bias is not None}'
+            f'normalized_shape={self.normalized_shape}, '
+            f'eps={self.eps}, '
+            f'elementwise_affine={self.elementwise_affine}, '
+            f'bias={self.bias is not None}'
         )
 
 
@@ -535,7 +562,6 @@ class LocalResponseNorm(nn.Module):
                 beta=self.beta,
                 k=self.k,
             )
-
         return dF.local_response_norm(
             x,
             self.size,
@@ -601,7 +627,6 @@ class RMSNorm(nn.Module):
                 weight=self.weight,
                 eps=self.eps,
             )
-
         return dF.rms_norm(
             x,
             self.normalized_shape,
@@ -611,6 +636,7 @@ class RMSNorm(nn.Module):
 
     def extra_repr(self) -> str:
         return (
-            f'normalized_shape={self.normalized_shape}, eps={self.eps}, '
+            f'normalized_shape={self.normalized_shape}, '
+            f'eps={self.eps}, '
             f'elementwise_affine={self.elementwise_affine}'
         )
