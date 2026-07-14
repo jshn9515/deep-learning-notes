@@ -7,7 +7,12 @@ from torch.testing import assert_close
 
 import dnnlpy.nn as dnn
 import dnnlpy.nn.functional as dF
-import dnnlpy.nn.functional.loss as loss_functional
+import dnnlpy.nn.functional.loss as dF_loss
+
+
+def _copy(x: Tensor, mode: bool = True) -> Tensor:
+    """Returns a copy of the input tensor with `requires_grad` set to True."""
+    return x.detach().clone().requires_grad_(mode)
 
 
 @pytest.mark.parametrize('reduction', ['mean', 'sum', 'none'])
@@ -220,11 +225,53 @@ def test_huber_loss_function_backward_matches_torch():
 
     actual = dF.huber_loss(x, target, delta=0.5)
     expected = F.huber_loss(expected_x, target, delta=0.5)
+
     actual.backward()
     expected.backward()
 
     assert_close(actual, expected)
     assert_close(x.grad, expected_x.grad)
+
+
+def test_loss_function_gradients_match_torch():
+    probability = torch.rand(2, 3, dtype=torch.float64).clamp(0.1, 0.9)
+    logits = torch.randn(2, 3, dtype=torch.float64)
+    regression_target = torch.randn(2, 3, dtype=torch.float64)
+    probability_target = torch.rand(2, 3, dtype=torch.float64)
+    class_target = torch.tensor([0, 2])
+    distribution_target = torch.rand(2, 3, dtype=torch.float64).softmax(dim=1)
+
+    cases = [
+        (dF.bce_loss, F.binary_cross_entropy, probability, probability_target, {}),
+        (
+            dF.bce_with_logits_loss,
+            F.binary_cross_entropy_with_logits,
+            logits,
+            probability_target,
+            {},
+        ),
+        (dF.kl_div_loss, F.kl_div, logits.log_softmax(dim=1), distribution_target, {}),
+        (dF.mse_loss, F.mse_loss, logits, regression_target, {}),
+        (dF.l1_loss, F.l1_loss, logits, regression_target, {}),
+        (dF.smooth_l1_loss, F.smooth_l1_loss, logits, regression_target, {'beta': 0.5}),
+        (dF.huber_loss, F.huber_loss, logits, regression_target, {'delta': 0.5}),
+        (dF.nll_loss, F.nll_loss, logits.log_softmax(dim=1), class_target, {}),
+        (dF.cross_entropy_loss, F.cross_entropy, logits, class_target, {}),
+    ]
+
+    for custom_fn, reference_fn, base, target, kwargs in cases:
+        x1 = _copy(base)
+        x2 = _copy(base)
+
+        actual = custom_fn(x1, target, reduction='sum', **kwargs)
+        expected = reference_fn(x2, target, reduction='sum', **kwargs)
+
+        assert_close(actual, expected)
+
+        actual.backward()
+        expected.backward()
+
+        assert_close(x1.grad, x2.grad)
 
 
 @pytest.mark.parametrize(
@@ -263,12 +310,12 @@ def test_huber_loss_rejects_non_positive_delta():
     x = torch.randn(2, 3)
     target = torch.randn(2, 3)
 
-    with pytest.raises(RuntimeError, match='delta'):
+    with pytest.raises(AssertionError, match='delta'):
         dF.huber_loss(x, target, delta=0.0)
 
 
 @pytest.mark.parametrize(
-    ('actual_module', 'expected_module', 'x', 'target'),
+    ('custom', 'reference', 'x', 'target'),
     [
         (
             dnn.MSELoss(reduction='sum'),
@@ -322,24 +369,24 @@ def test_huber_loss_rejects_non_positive_delta():
         ),
     ],
 )
-def test_loss_modules_match_torch_modules(
-    actual_module: nn.Module,
-    expected_module: nn.Module,
+def test_loss_modules_match_reference_clss(
+    custom: nn.Module,
+    reference: nn.Module,
     x: Tensor,
     target: Tensor,
 ):
-    if isinstance(actual_module, (dnn.BCELoss, dnn.BCEWithLogitsLoss)):
-        assert actual_module.weight is not None
-        expected_module.weight = actual_module.weight
-    if isinstance(actual_module, dnn.BCEWithLogitsLoss):
-        assert actual_module.pos_weight is not None
-        expected_module.pos_weight = actual_module.pos_weight
+    if isinstance(custom, (dnn.BCELoss, dnn.BCEWithLogitsLoss)):
+        assert custom.weight is not None
+        reference.weight = custom.weight
+    if isinstance(custom, dnn.BCEWithLogitsLoss):
+        assert custom.pos_weight is not None
+        reference.pos_weight = custom.pos_weight
 
-    assert_close(actual_module(x, target), expected_module(x, target))
+    assert_close(custom(x, target), reference(x, target))
 
 
 @pytest.mark.parametrize(
-    ('actual_module', 'expected_module', 'x', 'target'),
+    ('custom', 'reference', 'x', 'target'),
     [
         (
             dnn.MSELoss(reduction='sum', fast=True),
@@ -394,21 +441,21 @@ def test_loss_modules_match_torch_modules(
         ),
     ],
 )
-def test_fast_loss_modules_match_torch_modules(
-    actual_module: nn.Module,
-    expected_module: nn.Module,
+def test_fast_loss_modules_match_torch(
+    custom: nn.Module,
+    reference: nn.Module,
     x: Tensor,
     target: Tensor,
 ):
-    if isinstance(actual_module, (dnn.BCELoss, dnn.BCEWithLogitsLoss)):
-        assert actual_module.weight is not None
-        expected_module.weight = actual_module.weight
-    if isinstance(actual_module, dnn.BCEWithLogitsLoss):
-        assert actual_module.pos_weight is not None
-        expected_module.pos_weight = actual_module.pos_weight
+    if isinstance(custom, (dnn.BCELoss, dnn.BCEWithLogitsLoss)):
+        assert custom.weight is not None
+        reference.weight = custom.weight
+    if isinstance(custom, dnn.BCEWithLogitsLoss):
+        assert custom.pos_weight is not None
+        reference.pos_weight = custom.pos_weight
 
-    assert actual_module.fast is True
-    assert_close(actual_module(x, target), expected_module(x, target))
+    assert custom.fast is True
+    assert_close(custom(x, target), reference(x, target))
 
 
 def test_weighted_mse_loss_module_matches_functional():
@@ -416,10 +463,10 @@ def test_weighted_mse_loss_module_matches_functional():
     target = torch.randn(2, 3)
     weight = torch.rand(2, 3)
 
-    actual = dnn.MSELoss(weight=weight, reduction='sum')
-    expected = dF.mse_loss(x, target, weight=weight, reduction='sum')
+    custom = dnn.MSELoss(weight=weight, reduction='sum')
+    actual = dF.mse_loss(x, target, weight=weight, reduction='sum')
 
-    assert_close(actual(x, target), expected)
+    assert_close(custom(x, target), actual)
 
 
 def test_weighted_l1_loss_module_matches_functional():
@@ -427,10 +474,10 @@ def test_weighted_l1_loss_module_matches_functional():
     target = torch.randn(2, 3)
     weight = torch.rand(2, 3)
 
-    actual = dnn.L1Loss(weight=weight, reduction='sum')
-    expected = dF.l1_loss(x, target, weight=weight, reduction='sum')
+    custom = dnn.L1Loss(weight=weight, reduction='sum')
+    actual = dF.l1_loss(x, target, weight=weight, reduction='sum')
 
-    assert_close(actual(x, target), expected)
+    assert_close(custom(x, target), actual)
 
 
 @pytest.mark.parametrize('reduction', ['mean', 'sum', 'none'])
@@ -480,27 +527,27 @@ def test_nll_loss_function_matches_torch_for_spatial_targets():
     assert_close(actual, expected)
 
 
-def test_nll_loss_module_matches_torch_module():
+def test_nll_loss_module_matches_torch():
     x = torch.randn(5, 4).log_softmax(dim=1)
     target = torch.tensor([0, -1, 1, 2, -1])
     weight = torch.tensor([1.0, 0.5, 2.0, 1.5])
 
-    actual = dnn.NLLLoss(weight=weight, ignore_index=-1, reduction='sum')
-    expected = nn.NLLLoss(weight=weight, ignore_index=-1, reduction='sum')
+    custom = dnn.NLLLoss(weight=weight, ignore_index=-1, reduction='sum')
+    reference = nn.NLLLoss(weight=weight, ignore_index=-1, reduction='sum')
 
-    assert_close(actual(x, target), expected(x, target))
+    assert_close(custom(x, target), reference(x, target))
 
 
-def test_fast_nll_loss_module_matches_torch_module():
+def test_fast_nll_loss_module_matches_torch():
     x = torch.randn(5, 4).log_softmax(dim=1)
     target = torch.tensor([0, 3, 1, 2, 1])
     weight = torch.tensor([1.0, 0.5, 2.0, 1.5])
 
-    actual = dnn.NLLLoss(weight=weight, reduction='sum', fast=True)
-    expected = nn.NLLLoss(weight=weight, reduction='sum')
+    custom = dnn.NLLLoss(weight=weight, reduction='sum', fast=True)
+    reference = nn.NLLLoss(weight=weight, reduction='sum')
 
-    assert actual.fast is True
-    assert_close(actual(x, target), expected(x, target))
+    assert custom.fast is True
+    assert_close(custom(x, target), reference(x, target))
 
 
 def test_nll_loss_rejects_invalid_reduction():
@@ -541,9 +588,9 @@ def test_cross_entropy_loss_uses_nll_loss_for_index_targets(monkeypatch):
         called = True
         return torch.tensor(3.0)
 
-    monkeypatch.setattr(loss_functional, 'nll_loss', fake_nll_loss)
+    monkeypatch.setattr(dF_loss, 'nll_loss', fake_nll_loss)
 
-    actual = loss_functional.cross_entropy_loss(
+    actual = dF_loss.cross_entropy_loss(
         torch.randn(5, 4),
         torch.tensor([0, 3, 1, 2, 1]),
     )
@@ -556,13 +603,13 @@ def test_cross_entropy_loss_does_not_use_nll_loss_for_probability_targets(monkey
     def fail_nll_loss(*args, **kwargs):
         raise AssertionError('nll_loss should not be used for probability targets')
 
-    monkeypatch.setattr(loss_functional, 'nll_loss', fail_nll_loss)
+    monkeypatch.setattr(dF_loss, 'nll_loss', fail_nll_loss)
 
     x = torch.randn(3, 4)
     target = torch.rand(3, 4)
     target = target / target.sum(dim=1, keepdim=True)
 
-    actual = loss_functional.cross_entropy_loss(x, target)
+    actual = dF_loss.cross_entropy_loss(x, target)
     expected = F.cross_entropy(x, target)
 
     assert_close(actual, expected)
@@ -666,37 +713,37 @@ def test_cross_entropy_loss_function_matches_torch_for_probability_targets():
     assert_close(actual, expected)
 
 
-def test_cross_entropy_loss_module_matches_torch_module():
+def test_cross_entropy_loss_module_matches_torch():
     x = torch.randn(5, 4)
     target = torch.tensor([0, 3, 1, 2, 1])
     weight = torch.tensor([1.0, 0.5, 2.0, 1.5])
 
-    actual = dnn.CrossEntropyLoss(
+    custom = dnn.CrossEntropyLoss(
         weight=weight,
         ignore_index=-1,
         reduction='sum',
         label_smoothing=0.2,
     )
-    expected = nn.CrossEntropyLoss(
+    reference = nn.CrossEntropyLoss(
         weight=weight,
         ignore_index=-1,
         reduction='sum',
         label_smoothing=0.2,
     )
 
-    assert_close(actual(x, target), expected(x, target))
+    assert_close(custom(x, target), reference(x, target))
 
 
-def test_fast_cross_entropy_loss_module_matches_torch_module():
+def test_fast_cross_entropy_loss_module_matches_torch():
     x = torch.randn(5, 4)
     target = torch.tensor([0, 3, 1, 2, 1])
     weight = torch.tensor([1.0, 0.5, 2.0, 1.5])
 
-    actual = dnn.CrossEntropyLoss(weight=weight, reduction='sum', fast=True)
-    expected = nn.CrossEntropyLoss(weight=weight, reduction='sum')
+    custom = dnn.CrossEntropyLoss(weight=weight, reduction='sum', fast=True)
+    reference = nn.CrossEntropyLoss(weight=weight, reduction='sum')
 
-    assert actual.fast is True
-    assert_close(actual(x, target), expected(x, target))
+    assert custom.fast is True
+    assert_close(custom(x, target), reference(x, target))
 
 
 def test_cross_entropy_loss_rejects_invalid_reduction():

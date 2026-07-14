@@ -13,80 +13,89 @@ d_model = 8
 num_heads = 2
 
 
-@torch.inference_mode()
+@torch.no_grad()
 def _copy_mha_to_torch(
-    actual: dnn.MultiheadAttention,
-    expected: nn.MultiheadAttention,
+    custom: dnn.MultiheadAttention,
+    reference: nn.MultiheadAttention,
 ):
-    expected.in_proj_weight.copy_(
+    reference.in_proj_weight.copy_(
         torch.concat(
             [
-                actual.q_proj.weight,
-                actual.k_proj.weight,
-                actual.v_proj.weight,
+                custom.q_proj.weight,
+                custom.k_proj.weight,
+                custom.v_proj.weight,
             ],
             dim=0,
         )
     )
-    if expected.in_proj_bias is not None:
-        expected.in_proj_bias.copy_(
+    if reference.in_proj_bias is not None:
+        assert custom.q_proj.bias is not None
+        assert custom.k_proj.bias is not None
+        assert custom.v_proj.bias is not None
+
+        reference.in_proj_bias.copy_(
             torch.concat(
                 [
-                    actual.q_proj.bias,
-                    actual.k_proj.bias,
-                    actual.v_proj.bias,
+                    custom.q_proj.bias,
+                    custom.k_proj.bias,
+                    custom.v_proj.bias,
                 ]
             )
         )
-    expected.out_proj.weight.copy_(actual.out_proj.weight)
-    if expected.out_proj.bias is not None:
-        expected.out_proj.bias.copy_(actual.out_proj.bias)
+    reference.out_proj.weight.copy_(custom.out_proj.weight)
+    if reference.out_proj.bias is not None:
+        assert custom.out_proj.bias is not None
+        reference.out_proj.bias.copy_(custom.out_proj.bias)
 
 
+@torch.no_grad()
 def _copy_encoder_layer_to_torch(
-    actual: dnn.TransformerEncoderLayer,
-    expected: nn.TransformerEncoderLayer,
+    custom: dnn.TransformerEncoderLayer,
+    reference: nn.TransformerEncoderLayer,
 ):
-    _copy_mha_to_torch(actual.self_attn, expected.self_attn)
-    expected.linear1.load_state_dict(actual.linear1.state_dict())
-    expected.linear2.load_state_dict(actual.linear2.state_dict())
-    expected.norm1.load_state_dict(actual.norm1.state_dict())
-    expected.norm2.load_state_dict(actual.norm2.state_dict())
+    _copy_mha_to_torch(custom.self_attn, reference.self_attn)
+    reference.linear1.load_state_dict(custom.linear1.state_dict())
+    reference.linear2.load_state_dict(custom.linear2.state_dict())
+    reference.norm1.load_state_dict(custom.norm1.state_dict())
+    reference.norm2.load_state_dict(custom.norm2.state_dict())
 
 
+@torch.no_grad()
 def _copy_decoder_layer_to_torch(
-    actual: dnn.TransformerDecoderLayer,
-    expected: nn.TransformerDecoderLayer,
+    custom: dnn.TransformerDecoderLayer,
+    reference: nn.TransformerDecoderLayer,
 ):
-    _copy_mha_to_torch(actual.self_attn, expected.self_attn)
-    _copy_mha_to_torch(actual.mha_attn, expected.multihead_attn)
-    expected.linear1.load_state_dict(actual.linear1.state_dict())
-    expected.linear2.load_state_dict(actual.linear2.state_dict())
-    expected.norm1.load_state_dict(actual.norm1.state_dict())
-    expected.norm2.load_state_dict(actual.norm2.state_dict())
-    expected.norm3.load_state_dict(actual.norm3.state_dict())
+    _copy_mha_to_torch(custom.self_attn, reference.self_attn)
+    _copy_mha_to_torch(custom.mha_attn, reference.multihead_attn)
+    reference.linear1.load_state_dict(custom.linear1.state_dict())
+    reference.linear2.load_state_dict(custom.linear2.state_dict())
+    reference.norm1.load_state_dict(custom.norm1.state_dict())
+    reference.norm2.load_state_dict(custom.norm2.state_dict())
+    reference.norm3.load_state_dict(custom.norm3.state_dict())
 
 
+@torch.no_grad()
 def _copy_encoder_to_torch(
-    actual: dnn.TransformerEncoder,
-    expected: nn.TransformerEncoder,
+    custom: dnn.TransformerEncoder,
+    reference: nn.TransformerEncoder,
 ):
-    z = zip(actual.layers, expected.layers, strict=True)
-    for actual_layer, expected_layer in z:
-        _copy_encoder_layer_to_torch(actual_layer, expected_layer)  # type: ignore
-    if actual.norm is not None and expected.norm is not None:
-        expected.norm.load_state_dict(actual.norm.state_dict())
+    z = zip(custom.layers, reference.layers, strict=True)
+    for custom_layer, reference_layer in z:
+        _copy_encoder_layer_to_torch(custom_layer, reference_layer)  # type: ignore
+    if custom.norm is not None and reference.norm is not None:
+        reference.norm.load_state_dict(custom.norm.state_dict())
 
 
+@torch.no_grad()
 def _copy_decoder_to_torch(
-    actual: dnn.TransformerDecoder,
-    expected: nn.TransformerDecoder,
+    custom: dnn.TransformerDecoder,
+    reference: nn.TransformerDecoder,
 ):
-    z = zip(actual.layers, expected.layers, strict=True)
-    for actual_layer, expected_layer in z:
-        _copy_decoder_layer_to_torch(actual_layer, expected_layer)  # type: ignore
-    if actual.norm is not None and expected.norm is not None:
-        expected.norm.load_state_dict(actual.norm.state_dict())
+    z = zip(custom.layers, reference.layers, strict=True)
+    for custom_layer, reference_layer in z:
+        _copy_decoder_layer_to_torch(custom_layer, reference_layer)  # type: ignore
+    if custom.norm is not None and reference.norm is not None:
+        reference.norm.load_state_dict(custom.norm.state_dict())
 
 
 @pytest.mark.parametrize('norm_first', [False, True])
@@ -106,14 +115,14 @@ def test_transformer_encoder_layer_matches_torch(norm_first: bool):
             [False, True, False, True],
         ]
     )
-    actual = dnn.TransformerEncoderLayer(
+    custom = dnn.TransformerEncoderLayer(
         d_model=d_model,
         num_heads=num_heads,
         dim_feedforward=16,
         dropout=0.0,
         norm_first=norm_first,
     )
-    expected = nn.TransformerEncoderLayer(
+    reference = nn.TransformerEncoderLayer(
         d_model=d_model,
         nhead=num_heads,
         dim_feedforward=16,
@@ -121,44 +130,47 @@ def test_transformer_encoder_layer_matches_torch(norm_first: bool):
         batch_first=True,
         norm_first=norm_first,
     )
-    _copy_encoder_layer_to_torch(actual, expected)
+    _copy_encoder_layer_to_torch(custom, reference)
 
-    actual_output = actual(
+    actual = custom(
         src,
         src_mask=src_mask,
         src_key_padding_mask=src_key_padding_mask,
     )
-    expected_output = expected(
+    expected = reference(
         src,
         src_mask=src_mask,
         src_key_padding_mask=src_key_padding_mask,
     )
-    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
+
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_encoder_matches_torch_stack_with_norm():
     src = torch.randn(batch_size, src_len, d_model)
-    layer1 = dnn.TransformerEncoderLayer(
+    custom_layer = dnn.TransformerEncoderLayer(
         d_model=d_model,
         num_heads=num_heads,
         dim_feedforward=16,
         dropout=0.0,
     )
-    norm1 = nn.LayerNorm(d_model)
-    actual = dnn.TransformerEncoder(layer1, num_layers=2, norm=norm1)
+    custom_norm = dnn.LayerNorm(d_model)
+    custom = dnn.TransformerEncoder(custom_layer, num_layers=2, norm=custom_norm)
 
-    layer2 = nn.TransformerEncoderLayer(
+    reference_layer = nn.TransformerEncoderLayer(
         d_model=d_model,
         nhead=num_heads,
         dim_feedforward=16,
         dropout=0.0,
         batch_first=True,
     )
-    norm2 = nn.LayerNorm(d_model)
-    expected = nn.TransformerEncoder(layer2, num_layers=2, norm=norm2)
-    _copy_encoder_to_torch(actual, expected)
+    reference_norm = nn.LayerNorm(d_model)
+    reference = nn.TransformerEncoder(
+        reference_layer, num_layers=2, norm=reference_norm
+    )
+    _copy_encoder_to_torch(custom, reference)
 
-    assert_close(actual(src), expected(src), rtol=1e-5, atol=1e-6)
+    assert_close(custom(src), reference(src), rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize('norm_first', [False, True])
@@ -173,7 +185,7 @@ def test_transformer_decoder_layer_matches_torch(norm_first: bool):
         ]
     )
 
-    actual = dnn.TransformerDecoderLayer(
+    custom = dnn.TransformerDecoderLayer(
         d_model=d_model,
         num_heads=num_heads,
         dim_feedforward=16,
@@ -181,7 +193,7 @@ def test_transformer_decoder_layer_matches_torch(norm_first: bool):
         activation='gelu',
         norm_first=norm_first,
     )
-    expected = nn.TransformerDecoderLayer(
+    reference = nn.TransformerDecoderLayer(
         d_model=d_model,
         nhead=num_heads,
         dim_feedforward=16,
@@ -190,51 +202,54 @@ def test_transformer_decoder_layer_matches_torch(norm_first: bool):
         batch_first=True,
         norm_first=norm_first,
     )
-    _copy_decoder_layer_to_torch(actual, expected)
+    _copy_decoder_layer_to_torch(custom, reference)
 
-    actual_output = actual(
+    actual = custom(
         tgt,
         memory,
         tgt_mask=tgt_mask,
         memory_key_padding_mask=memory_key_padding_mask,
     )
-    expected_output = expected(
+    expected = reference(
         tgt,
         memory,
         tgt_mask=tgt_mask,
         memory_key_padding_mask=memory_key_padding_mask,
     )
 
-    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_decoder_matches_torch_stack_with_norm():
     tgt = torch.randn(batch_size, tgt_len, d_model)
     memory = torch.randn(batch_size, src_len, d_model)
 
-    layer1 = dnn.TransformerDecoderLayer(
+    custom_layer = dnn.TransformerDecoderLayer(
         d_model=d_model,
         num_heads=num_heads,
         dim_feedforward=16,
         dropout=0.0,
     )
-    norm1 = nn.LayerNorm(8)
-    actual = dnn.TransformerDecoder(layer1, num_layers=2, norm=norm1)
+    custom_norm = dnn.LayerNorm(8)
+    custom = dnn.TransformerDecoder(custom_layer, num_layers=2, norm=custom_norm)
 
-    layer2 = nn.TransformerDecoderLayer(
+    reference_layer = nn.TransformerDecoderLayer(
         d_model=d_model,
         nhead=num_heads,
         dim_feedforward=16,
         dropout=0.0,
         batch_first=True,
     )
-    norm2 = nn.LayerNorm(8)
-    expected = nn.TransformerDecoder(layer2, num_layers=2, norm=norm2)
-    _copy_decoder_to_torch(actual, expected)
+    reference_norm = nn.LayerNorm(8)
+    reference = nn.TransformerDecoder(
+        reference_layer, num_layers=2, norm=reference_norm
+    )
+    _copy_decoder_to_torch(custom, reference)
 
-    actual_output = actual(tgt, memory)
-    expected_output = expected(tgt, memory)
-    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
+    actual = custom(tgt, memory)
+    expected = reference(tgt, memory)
+
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_matches_torch_batch_first_transformer():
@@ -248,7 +263,7 @@ def test_transformer_matches_torch_batch_first_transformer():
     )
     tgt_mask = dF.generate_causal_mask(tgt_len)
 
-    actual = dnn.Transformer(
+    custom = dnn.Transformer(
         d_model=d_model,
         num_heads=num_heads,
         num_encoder_layers=2,
@@ -257,7 +272,7 @@ def test_transformer_matches_torch_batch_first_transformer():
         dropout=0.0,
         norm_first=False,
     )
-    expected = nn.Transformer(
+    reference = nn.Transformer(
         d_model=d_model,
         nhead=num_heads,
         num_encoder_layers=2,
@@ -267,37 +282,39 @@ def test_transformer_matches_torch_batch_first_transformer():
         batch_first=True,
         norm_first=False,
     )
-    _copy_encoder_to_torch(actual.encoder, expected.encoder)
-    _copy_decoder_to_torch(actual.decoder, expected.decoder)
+    _copy_encoder_to_torch(custom.encoder, reference.encoder)
+    _copy_decoder_to_torch(custom.decoder, reference.decoder)
 
-    actual_output = actual(
+    actual = custom(
         src,
         tgt,
         tgt_mask=tgt_mask,
         src_key_padding_mask=src_key_padding_mask,
         memory_key_padding_mask=src_key_padding_mask,
     )
-    expected_output = expected(
+    expected = reference(
         src,
         tgt,
         tgt_mask=tgt_mask,
         src_key_padding_mask=src_key_padding_mask,
         memory_key_padding_mask=src_key_padding_mask,
     )
-    assert_close(actual_output, expected_output, rtol=1e-5, atol=1e-6)
+    assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_transformer_omits_batch_first_parameter():
     with pytest.raises(TypeError):
         dnn.TransformerEncoderLayer(d_model, num_heads, batch_first=False)  # type: ignore[call-arg]
 
-    module = dnn.Transformer(
+    src = torch.randn(batch_size, src_len, d_model)
+    tgt = torch.randn(batch_size, tgt_len, d_model)
+
+    custom = dnn.Transformer(
         d_model=d_model,
         num_heads=num_heads,
         num_encoder_layers=1,
         num_decoder_layers=1,
     )
-    src = torch.randn(batch_size, src_len, d_model)
-    tgt = torch.randn(batch_size, tgt_len, d_model)
-    output = module(src, tgt)
-    assert output.shape == tgt.shape
+
+    actual = custom(src, tgt)
+    assert actual.shape == tgt.shape

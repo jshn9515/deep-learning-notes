@@ -109,18 +109,18 @@ def test_embedding_function_rejects_non_matrix_weight():
 
 def test_embedding_module_initialization_matches_torch():
     torch.manual_seed(0)
-    actual = dnn.Embedding(5, 3, padding_idx=0)
+    custom = dnn.Embedding(5, 3, padding_idx=0)
     torch.manual_seed(0)
-    expected = nn.Embedding(5, 3, padding_idx=0)
+    reference = nn.Embedding(5, 3, padding_idx=0)
 
-    assert actual.fast is False
-    assert_close(actual.weight, expected.weight)
-    assert_close(actual.weight[0], torch.zeros(3))
+    assert custom.fast is False
+    assert_close(custom.weight, reference.weight)
+    assert_close(custom.weight[0], torch.zeros(3))
 
 
 def test_embedding_module_matches_torch_forward_and_backward():
     x = torch.tensor([[0, 1, 3, 3], [2, 1, 3, 0]])
-    actual = dnn.Embedding(
+    custom = dnn.Embedding(
         num_embeddings=4,
         embedding_dim=3,
         padding_idx=-1,
@@ -128,7 +128,7 @@ def test_embedding_module_matches_torch_forward_and_backward():
         norm_type=1.0,
         scale_grad_by_freq=True,
     )
-    expected = nn.Embedding(
+    reference = nn.Embedding(
         num_embeddings=4,
         embedding_dim=3,
         padding_idx=-1,
@@ -136,26 +136,26 @@ def test_embedding_module_matches_torch_forward_and_backward():
         norm_type=1.0,
         scale_grad_by_freq=True,
     )
-    expected.load_state_dict(actual.state_dict())
+    reference.load_state_dict(custom.state_dict())
 
-    actual_output = actual(x)
-    expected_output = expected(x)
+    actual = custom(x)
+    expected = reference(x)
 
-    assert_close(actual_output, expected_output)
-    assert_close(actual.weight, expected.weight)
+    assert_close(actual, expected)
+    assert_close(custom.weight, reference.weight)
 
-    grad_output = torch.randn_like(actual_output)
-    actual_output.backward(grad_output)
-    expected_output.backward(grad_output)
+    grad_output = torch.randn_like(actual)
+    actual.backward(grad_output)
+    expected.backward(grad_output)
 
-    assert actual.weight.grad is not None
-    assert expected.weight.grad is not None
-    assert_close(actual.weight.grad, expected.weight.grad)
+    assert custom.weight.grad is not None
+    assert reference.weight.grad is not None
+    assert_close(custom.weight.grad, reference.weight.grad)
 
 
 def test_fast_embedding_module_matches_torch_forward_and_backward():
     x = torch.tensor([[0, 1, 3, 3], [2, 1, 3, 0]])
-    actual = dnn.Embedding(
+    custom = dnn.Embedding(
         num_embeddings=4,
         embedding_dim=3,
         padding_idx=-1,
@@ -164,7 +164,7 @@ def test_fast_embedding_module_matches_torch_forward_and_backward():
         scale_grad_by_freq=True,
         fast=True,
     )
-    expected = nn.Embedding(
+    reference = nn.Embedding(
         num_embeddings=4,
         embedding_dim=3,
         padding_idx=-1,
@@ -172,43 +172,43 @@ def test_fast_embedding_module_matches_torch_forward_and_backward():
         norm_type=1.0,
         scale_grad_by_freq=True,
     )
-    expected.load_state_dict(actual.state_dict())
+    reference.load_state_dict(custom.state_dict())
 
-    actual_output = actual(x)
-    expected_output = expected(x)
+    actual = custom(x)
+    expected = reference(x)
 
-    assert actual.fast is True
-    assert_close(actual_output, expected_output)
-    assert_close(actual.weight, expected.weight)
+    assert custom.fast is True
+    assert_close(actual, expected)
+    assert_close(custom.weight, reference.weight)
 
-    grad_output = torch.randn_like(actual_output)
-    actual_output.backward(grad_output)
-    expected_output.backward(grad_output)
+    grad_output = torch.randn_like(actual)
+    actual.backward(grad_output)
+    expected.backward(grad_output)
 
-    assert actual.weight.grad is not None
-    assert expected.weight.grad is not None
-    assert_close(actual.weight.grad, expected.weight.grad)
+    assert custom.weight.grad is not None
+    assert reference.weight.grad is not None
+    assert_close(custom.weight.grad, reference.weight.grad)
 
 
 def test_embedding_module_supports_pretrained_frozen_weight():
     weight = torch.tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
-    module = dnn.Embedding.from_pretrained(weight, freeze=True, padding_idx=0)
+    custom = dnn.Embedding.from_pretrained(weight, freeze=True, padding_idx=0)
 
-    assert module.num_embeddings == 3
-    assert module.embedding_dim == 2
-    assert module.padding_idx == 0
-    assert not module.weight.requires_grad
-    assert_close(module(torch.tensor([0, 2])), weight[[0, 2]])
+    assert custom.num_embeddings == 3
+    assert custom.embedding_dim == 2
+    assert custom.padding_idx == 0
+    assert not custom.weight.requires_grad
+    assert_close(custom(torch.tensor([0, 2])), weight[[0, 2]])
 
 
 def test_embedding_module_supports_custom_frozen_weight():
     weight = torch.randn(4, 3, dtype=torch.float64)
-    module = dnn.Embedding(4, 3, _weight=weight, _freeze=True)
+    custom = dnn.Embedding(4, 3, _weight=weight, _freeze=True)
 
-    assert module.weight.dtype == torch.float64
-    assert module.weight.device.type == 'cpu'
-    assert not module.weight.requires_grad
-    assert_close(module.weight, weight)
+    assert custom.weight.dtype == torch.float64
+    assert custom.weight.device.type == 'cpu'
+    assert not custom.weight.requires_grad
+    assert_close(custom.weight, weight)
 
 
 def test_embedding_module_rejects_mismatched_custom_weight():
@@ -217,7 +217,7 @@ def test_embedding_module_rejects_mismatched_custom_weight():
 
 
 def test_embedding_module_extra_repr_matches_torch():
-    actual = dnn.Embedding(
+    custom = dnn.Embedding(
         5,
         3,
         padding_idx=1,
@@ -226,7 +226,7 @@ def test_embedding_module_extra_repr_matches_torch():
         scale_grad_by_freq=True,
         fast=True,
     )
-    expected = nn.Embedding(
+    reference = nn.Embedding(
         5,
         3,
         padding_idx=1,
@@ -235,4 +235,4 @@ def test_embedding_module_extra_repr_matches_torch():
         scale_grad_by_freq=True,
     )
 
-    assert actual.extra_repr() == expected.extra_repr()
+    assert custom.extra_repr() == reference.extra_repr()

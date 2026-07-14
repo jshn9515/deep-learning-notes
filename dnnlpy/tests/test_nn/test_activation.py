@@ -13,8 +13,13 @@ import dnnlpy.nn.functional as dF
 type ActFn = Callable[[Tensor], Tensor]
 
 
+def _copy(x: Tensor, mode: bool = True) -> Tensor:
+    """Returns a copy of the input tensor with `requires_grad` set to True."""
+    return x.detach().clone().requires_grad_(mode)
+
+
 @pytest.mark.parametrize(
-    ('actual_fn', 'expected_fn'),
+    ('custom_fn', 'reference_fn'),
     [
         (dF.celu, F.celu),
         (dF.elu, F.elu),
@@ -40,52 +45,98 @@ type ActFn = Callable[[Tensor], Tensor]
     ],
 )
 def test_elementwise_activation_functions_match_torch(
-    actual_fn: ActFn, expected_fn: ActFn
+    custom_fn: ActFn, reference_fn: ActFn
 ):
-    x = torch.linspace(-3, 3, steps=13)
-    actual = actual_fn(x)
-    expected = expected_fn(x)
+    # Avoid exact branch boundaries, where valid subgradient conventions differ.
+    base = torch.linspace(-2.9, 3.1, steps=13, dtype=torch.float64)
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = custom_fn(x1)
+    expected = reference_fn(x2)
 
     assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
+    grad = torch.randn_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad, rtol=1e-5, atol=1e-6)
+
 
 def test_prelu_function_matches_torch():
-    x = torch.linspace(-3, 3, steps=24).reshape(2, 3, 4)
-    weight = torch.tensor([0.1, 0.2, 0.3])
+    base = torch.linspace(-3, 3, steps=24).reshape(2, 3, 4)
+    x1 = _copy(base)
+    x2 = _copy(base)
 
-    actual = dF.prelu(x, weight)
-    expected = F.prelu(x, weight)
+    w1 = torch.tensor([0.1, 0.2, 0.3], requires_grad=True)
+    w2 = _copy(w1)
+
+    actual = dF.prelu(x1, w1)
+    expected = F.prelu(x2, w2)
 
     assert_close(actual, expected)
+
+    grad = torch.randn_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad)
+    assert_close(w1.grad, w2.grad)
 
 
 def test_threshold_function_matches_torch():
-    x = torch.linspace(-3, 3, steps=13)
-    actual = dF.threshold(x, threshold=0.5, value=-2.0)
-    expected = F.threshold(x, threshold=0.5, value=-2.0)
+    base = torch.linspace(-3, 3, steps=13)
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = dF.threshold(x1, threshold=0.5, value=-2.0)
+    expected = F.threshold(x2, threshold=0.5, value=-2.0)
 
     assert_close(actual, expected)
 
+    grad = torch.ones_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad)
+
 
 def test_softplus_function_is_stable_for_extreme_inputs():
-    x = torch.tensor([-1000.0, -100.0, 0.0, 100.0, 1000.0], requires_grad=True)
-    actual = dF.softplus(x)
-    expected = F.softplus(x)
+    base = torch.tensor([-1000.0, -100.0, 0.25, 100.0, 1000.0])
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = dF.softplus(x1)
+    expected = F.softplus(x2)
 
     assert torch.isfinite(actual).all()
     assert_close(actual, expected)
 
-    actual.sum().backward()
-    assert x.grad is not None
-    assert torch.isfinite(x.grad).all()
+    grad = torch.ones_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert x1.grad is not None
+    assert torch.isfinite(x1.grad).all()
+    assert_close(x1.grad, x2.grad)
 
 
 def test_gelu_function_matches_torch_tanh_approximation():
-    x = torch.linspace(-3, 3, steps=13)
-    actual = dF.gelu(x, approximate='tanh')
-    expected = F.gelu(x, approximate='tanh')
+    base = torch.linspace(-3, 3, steps=13)
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = dF.gelu(x1, approximate='tanh')
+    expected = F.gelu(x2, approximate='tanh')
 
     assert_close(actual, expected, rtol=1e-5, atol=1e-6)
+
+    grad = torch.ones_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad, rtol=1e-5, atol=1e-6)
 
 
 def test_relu_function_supports_inplace():
@@ -111,7 +162,7 @@ def test_silu_function_supports_inplace():
 
 
 @pytest.mark.parametrize(
-    ('actual_fn', 'expected_fn'),
+    ('custom_fn', 'reference_fn'),
     [
         (
             lambda x: dF.celu(x, alpha=0.7, inplace=True),
@@ -155,12 +206,14 @@ def test_silu_function_supports_inplace():
         ),
     ],
 )
-def test_inplace_activation_functions_match_torch(actual_fn: ActFn, expected_fn: ActFn):
+def test_inplace_activation_functions_match_torch(
+    custom_fn: ActFn, reference_fn: ActFn
+):
     x = torch.linspace(-3, 3, steps=13)
     expected = x.clone()
 
-    actual = actual_fn(x)
-    expected = expected_fn(expected)
+    actual = custom_fn(x)
+    expected = reference_fn(expected)
 
     assert actual is x
     assert_close(actual, expected)
@@ -178,33 +231,57 @@ def test_rrelu_function_training_samples_negative_slopes_in_range():
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_softmax_function_matches_torch(dim: int):
-    x = torch.randn(3, 4, 5)
-    actual = dF.softmax(x, dim=dim)
-    expected = F.softmax(x, dim=dim)
+    x1 = torch.randn(3, 4, 5, requires_grad=True)
+    x2 = _copy(x1)
+
+    actual = dF.softmax(x1, dim=dim)
+    expected = F.softmax(x2, dim=dim)
 
     assert_close(actual, expected)
+
+    grad = torch.randn_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_softmin_function_matches_torch(dim: int):
-    x = torch.randn(3, 4, 5)
-    actual = dF.softmin(x, dim=dim)
-    expected = F.softmin(x, dim=dim)
+    x1 = torch.randn(3, 4, 5, requires_grad=True)
+    x2 = _copy(x1)
+
+    actual = dF.softmin(x1, dim=dim)
+    expected = F.softmin(x2, dim=dim)
 
     assert_close(actual, expected)
+
+    grad = torch.randn_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_log_softmax_function_matches_torch(dim: int):
-    x = torch.randn(3, 4, 5)
-    actual = dF.log_softmax(x, dim=dim)
-    expected = F.log_softmax(x, dim=dim)
+    x1 = torch.randn(3, 4, 5, requires_grad=True)
+    x2 = _copy(x1)
+
+    actual = dF.log_softmax(x1, dim=dim)
+    expected = F.log_softmax(x2, dim=dim)
 
     assert_close(actual, expected)
 
+    grad = torch.randn_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad)
+
 
 @pytest.mark.parametrize(
-    ('actual_module', 'expected_module'),
+    ('custom', 'reference'),
     [
         (dnn.CELU(0.7), nn.CELU(0.7)),
         (dnn.ELU(0.7), nn.ELU(0.7)),
@@ -231,68 +308,73 @@ def test_log_softmax_function_matches_torch(dim: int):
     ],
 )
 def test_elementwise_activation_modules_match_torch(
-    actual_module: nn.Module, expected_module: nn.Module
+    custom: nn.Module, reference: nn.Module
 ):
     x = torch.linspace(-3, 3, steps=13)
-    actual_module.eval()
-    expected_module.eval()
-    actual = actual_module(x)
-    expected = expected_module(x)
+
+    custom.eval()
+    reference.eval()
+
+    actual = custom(x)
+    expected = reference(x)
 
     assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_prelu_module_matches_torch():
-    actual_module = dnn.PReLU(num_parameters=3, init=0.2)
-    expected_module = nn.PReLU(num_parameters=3, init=0.2)
-    expected_module.load_state_dict(actual_module.state_dict())
     x = torch.linspace(-3, 3, steps=24).reshape(2, 3, 4)
 
-    actual = actual_module(x)
-    expected = expected_module(x)
+    custom = dnn.PReLU(num_parameters=3, init=0.2)
+    reference = nn.PReLU(num_parameters=3, init=0.2)
+    reference.load_state_dict(custom.state_dict())
+
+    actual = custom(x)
+    expected = reference(x)
 
     assert_close(actual, expected)
 
 
 def test_prelu_reset_parameters_restores_initial_weight():
-    module = dnn.PReLU(num_parameters=3, init=0.2)
-    module.weight.data.fill_(1.0)
+    custom = dnn.PReLU(num_parameters=3, init=0.2)
+    custom.weight.data.fill_(1.0)
 
-    module.reset_parameters()
+    custom.reset_parameters()
 
-    assert_close(module.weight, torch.full((3,), 0.2))
+    assert_close(custom.weight, torch.full((3,), 0.2))
 
 
 def test_relu_module_supports_inplace():
     x = torch.linspace(-3, 3, steps=13)
     expected = x.clone()
-    actual_module = dnn.ReLU(inplace=True)
-    expected_module = nn.ReLU(inplace=True)
 
-    actual = actual_module(x)
-    expected = expected_module(expected)
+    custom = dnn.ReLU(inplace=True)
+    reference = nn.ReLU(inplace=True)
+
+    actual = custom(x)
+    expected = reference(expected)
 
     assert actual is x
-    assert actual_module.inplace is True
+    assert custom.inplace is True
     assert_close(actual, expected)
 
 
 def test_silu_module_supports_inplace():
     x = torch.linspace(-3, 3, steps=13)
     expected = x.clone()
-    actual_module = dnn.SiLU(inplace=True)
-    expected_module = nn.SiLU(inplace=True)
 
-    actual = actual_module(x)
-    expected = expected_module(expected)
+    custom = dnn.SiLU(inplace=True)
+    reference = nn.SiLU(inplace=True)
+
+    actual = custom(x)
+    expected = reference(expected)
 
     assert actual is x
-    assert actual_module.inplace is True
+    assert custom.inplace is True
     assert_close(actual, expected)
 
 
 @pytest.mark.parametrize(
-    ('actual_module', 'expected_fn'),
+    ('custom', 'reference_fn'),
     [
         (dnn.CELU(fast=True), F.celu),
         (dnn.ELU(fast=True), F.elu),
@@ -318,18 +400,20 @@ def test_silu_module_supports_inplace():
     ],
 )
 def test_fast_elementwise_activation_modules_match_torch(
-    actual_module: nn.Module, expected_fn: nn.Module
+    custom: nn.Module, reference_fn: ActFn
 ):
     x = torch.linspace(-3, 3, steps=13)
-    actual_module.eval()
-    actual = actual_module(x)
-    expected = expected_fn(x)
+
+    custom.eval()
+    actual = custom(x)
+    expected = reference_fn(x)
 
     assert_close(actual, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_fast_gelu_module_matches_torch_tanh_approximation():
     x = torch.linspace(-3, 3, steps=13)
+
     actual = dnn.GELU(approximate='tanh', fast=True)(x)
     expected = F.gelu(x, approximate='tanh')
 
@@ -339,33 +423,35 @@ def test_fast_gelu_module_matches_torch_tanh_approximation():
 def test_fast_relu_module_supports_inplace():
     x = torch.linspace(-3, 3, steps=13)
     expected = x.clone()
-    actual_module = dnn.ReLU(inplace=True, fast=True)
 
-    actual = actual_module(x)
+    custom = dnn.ReLU(inplace=True, fast=True)
+
+    actual = custom(x)
     F.relu(expected, inplace=True)
 
     assert actual is x
-    assert actual_module.inplace is True
-    assert actual_module.fast is True
+    assert custom.inplace is True
+    assert custom.fast is True
     assert_close(actual, expected)
 
 
 def test_fast_silu_module_supports_inplace():
     x = torch.linspace(-3, 3, steps=13)
     expected = x.clone()
-    actual_module = dnn.SiLU(inplace=True, fast=True)
 
-    actual = actual_module(x)
+    custom = dnn.SiLU(inplace=True, fast=True)
+
+    actual = custom(x)
     F.silu(expected, inplace=True)
 
     assert actual is x
-    assert actual_module.inplace is True
-    assert actual_module.fast is True
+    assert custom.inplace is True
+    assert custom.fast is True
     assert_close(actual, expected)
 
 
 @pytest.mark.parametrize(
-    ('actual_module', 'expected_module'),
+    ('custom', 'reference'),
     [
         (dnn.CELU(0.7, inplace=True), nn.CELU(0.7, inplace=True)),
         (dnn.ELU(0.7, inplace=True), nn.ELU(0.7, inplace=True)),
@@ -381,15 +467,16 @@ def test_fast_silu_module_supports_inplace():
     ],
 )
 def test_inplace_activation_modules_match_torch(
-    actual_module: nn.Module, expected_module: nn.Module
+    custom: nn.Module, reference: nn.Module
 ):
     x = torch.linspace(-3, 3, steps=13)
     expected = x.clone()
-    actual_module.eval()
-    expected_module.eval()
 
-    actual = actual_module(x)
-    expected = expected_module(expected)
+    custom.eval()
+    reference.eval()
+
+    actual = custom(x)
+    expected = reference(expected)
 
     assert actual is x
     assert_close(actual, expected)
@@ -398,6 +485,7 @@ def test_inplace_activation_modules_match_torch(
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_softmax_module_matches_torch(dim: int):
     x = torch.randn(3, 4, 5)
+
     actual = dnn.Softmax(dim=dim)(x)
     expected = nn.Softmax(dim=dim)(x)
 
@@ -407,6 +495,7 @@ def test_softmax_module_matches_torch(dim: int):
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_fast_softmax_module_matches_torch(dim: int):
     x = torch.randn(3, 4, 5)
+
     actual = dnn.Softmax(dim=dim, fast=True)(x)
     expected = F.softmax(x, dim=dim)
 
@@ -416,6 +505,7 @@ def test_fast_softmax_module_matches_torch(dim: int):
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_softmin_module_matches_torch(dim: int):
     x = torch.randn(3, 4, 5)
+
     actual = dnn.Softmin(dim=dim)(x)
     expected = nn.Softmin(dim=dim)(x)
 
@@ -425,6 +515,7 @@ def test_softmin_module_matches_torch(dim: int):
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_fast_softmin_module_matches_torch(dim: int):
     x = torch.randn(3, 4, 5)
+
     actual = dnn.Softmin(dim=dim, fast=True)(x)
     expected = F.softmin(x, dim=dim)
 
@@ -434,6 +525,7 @@ def test_fast_softmin_module_matches_torch(dim: int):
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_log_softmax_module_matches_torch(dim: int):
     x = torch.randn(3, 4, 5)
+
     actual = dnn.LogSoftmax(dim=dim)(x)
     expected = nn.LogSoftmax(dim=dim)(x)
 
@@ -443,6 +535,7 @@ def test_log_softmax_module_matches_torch(dim: int):
 @pytest.mark.parametrize('dim', [0, 1, -1])
 def test_fast_log_softmax_module_matches_torch(dim: int):
     x = torch.randn(3, 4, 5)
+
     actual = dnn.LogSoftmax(dim=dim, fast=True)(x)
     expected = F.log_softmax(x, dim=dim)
 
@@ -453,6 +546,7 @@ def test_softmax_modules_include_dim_in_repr():
     softmin = dnn.Softmin(dim=0)
     softmax = dnn.Softmax(dim=-1)
     log_softmax = dnn.LogSoftmax(dim=1)
+
     assert softmin.extra_repr() == 'dim=0'
     assert softmax.extra_repr() == 'dim=-1'
     assert log_softmax.extra_repr() == 'dim=1'
