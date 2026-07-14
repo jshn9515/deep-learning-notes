@@ -7,6 +7,8 @@ The package structure is similar to PyTorch, but keeps a clear boundary between 
 - `dnnlpy.nn` contains general neural network modules, such as attention layers, positional encodings, and other reusable components.
 - `dnnlpy.nn.functional` contains stateless helper functions, such as functional attention implementations.
 - `dnnlpy.models` contains higher-level model architectures or model-specific components, such as ViT, DDPM, or other models introduced in the notes.
+- `dnnlpy.optim` contains small optimizer implementations for teaching purposes, such as SGD and Adam.
+- `dnnlpy.tokenizers` contains small tokenizer implementations for teaching purposes, such as a simple BPE tokenizer.
 
 The APIs are designed to feel close to their PyTorch counterparts where practical, while still keeping the code lightweight and easy to read for tutorial purposes.
 
