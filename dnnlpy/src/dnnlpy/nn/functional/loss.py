@@ -454,7 +454,9 @@ def huber_loss(
             as the input. If reduction is 'mean' or 'sum', the shape will be scalar.
     """
     if delta <= 0:
-        raise RuntimeError('huber_loss does not support non-positive values for delta.')
+        raise AssertionError(
+            '`F.huber_loss` does not support non-positive values for `delta`.'
+        )
 
     _validate_inputs(x, target, reduction)
 
@@ -494,11 +496,6 @@ def kl_div_loss(
             shape will be the same as the input. If reduction is 'mean' or 'sum', the shape
             will be scalar.
     """
-    if reduction not in {'batchmean', 'mean', 'sum', 'none'}:
-        raise AssertionError(
-            '`reduction` must be `batchmean`, `mean`, `sum`, or `none`.'
-        )
-
     _validate_inputs(x, target, reduction, include_batchmean=True)
 
     if log_target:
