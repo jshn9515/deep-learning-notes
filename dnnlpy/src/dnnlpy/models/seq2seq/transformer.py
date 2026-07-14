@@ -38,8 +38,8 @@ class Seq2SeqTransformer(nn.Module):
         """
         super().__init__()
         self.d_model = d_model
-        self.src_embedding = nn.Embedding(src_vocab_size, d_model)
-        self.tgt_embedding = nn.Embedding(tgt_vocab_size, d_model)
+        self.src_embedding = dnn.Embedding(src_vocab_size, d_model)
+        self.tgt_embedding = dnn.Embedding(tgt_vocab_size, d_model)
         self.pos_encoding = dnn.SinusoidalPositionalEncoding(d_model, max_len)
 
         self.transformer = dnn.Transformer(
