@@ -119,8 +119,6 @@ class Embedding(nn.Module):
             parts.append(f'norm_type={self.norm_type}')
         if self.scale_grad_by_freq:
             parts.append(f'scale_grad_by_freq={self.scale_grad_by_freq}')
-        if self.sparse:
-            parts.append('sparse=True')
         return ', '.join(parts)
 
     @classmethod
