@@ -27,6 +27,7 @@ __all__ = [
 
 
 def _as_tuple(value: SizeND, ndim: int, name: str) -> TupleND:
+    """Convert a size value to a tuple of length `ndim`."""
     if isinstance(value, int):
         return (value,) * ndim
 
@@ -41,6 +42,7 @@ def _padding_tuple(
     padding: PaddingND,
     dilation: TupleND,
 ) -> TupleND:
+    """Pad the input tensor according to the specified padding and kernel size."""
     ndim = len(kernel_size)
 
     if not isinstance(padding, str):
@@ -83,6 +85,8 @@ class _ConvNd(nn.Module):
         fast: bool = False,
     ):
         """Initialize a ND convolution module.
+
+        Do not instantiate this class directly. Use one of the subclasses instead.
 
         Args:
             in_channels (int): Number of channels in the input.
