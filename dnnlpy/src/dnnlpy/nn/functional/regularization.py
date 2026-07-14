@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 
-def _dropout_with_mask_shape(
+def _dropout_nd(
     x: Tensor,
     p: float,
     training: bool,
@@ -67,7 +67,7 @@ def dropout(
     Returns:
         Tensor: Output tensor with the same shape as input.
     """
-    return _dropout_with_mask_shape(x, p, training, inplace, x.shape)
+    return _dropout_nd(x, p, training, inplace, x.shape)
 
 
 def dropout1d(
@@ -98,7 +98,7 @@ def dropout1d(
     else:
         mask_shape = (x.size(0), 1)
 
-    return _dropout_with_mask_shape(x, p, training, inplace, mask_shape)
+    return _dropout_nd(x, p, training, inplace, mask_shape)
 
 
 def dropout2d(
@@ -129,7 +129,7 @@ def dropout2d(
     else:
         mask_shape = (x.size(0), 1, 1)
 
-    return _dropout_with_mask_shape(x, p, training, inplace, mask_shape)
+    return _dropout_nd(x, p, training, inplace, mask_shape)
 
 
 def dropout3d(
@@ -160,4 +160,4 @@ def dropout3d(
     else:
         mask_shape = (x.size(0), 1, 1, 1)
 
-    return _dropout_with_mask_shape(x, p, training, inplace, mask_shape)
+    return _dropout_nd(x, p, training, inplace, mask_shape)
