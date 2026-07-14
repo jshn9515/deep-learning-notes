@@ -30,7 +30,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     'pytest>=9.1.0,<9.2.0',
-    'tokenizers>=0.22.0,<0.23.0',
+    'tokenizers>=0.22.0,<0.23.0',  # keep sync with TF
 ]
 
 [project.urls]
