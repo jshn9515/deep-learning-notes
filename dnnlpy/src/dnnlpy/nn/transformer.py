@@ -36,6 +36,11 @@ def _get_activation_fn(act_fn: str | Activation, *, fast: bool = False) -> Activ
     raise TypeError('The activation function must be `relu`, `gelu`, or a callable.')
 
 
+def _get_activation_name(act_fn: Activation) -> str:
+    """Return a concise name for an activation callable."""
+    return getattr(act_fn, '__name__', act_fn.__class__.__name__)
+
+
 def _clone_module(module: nn.Module, num_layers: int) -> nn.ModuleList:
     """Deep-copy a module into a `ModuleList`."""
     return nn.ModuleList(deepcopy(module) for _ in range(num_layers))
@@ -66,6 +71,9 @@ class LearnablePositionalEmbedding(nn.Module):
         pos_emb = self.pe(positions)
         x = x + pos_emb.unsqueeze(0)
         return x
+
+    def extra_repr(self) -> str:
+        return f'embed_dim={self.embed_dim}, max_len={self.max_len}'
 
 
 class SinusoidalPositionalEncoding(nn.Module):
@@ -101,6 +109,9 @@ class SinusoidalPositionalEncoding(nn.Module):
         seq_len = x.size(1)
         x = x + self.pe[:, :seq_len]  # type: ignore
         return x
+
+    def extra_repr(self) -> str:
+        return f'embed_dim={self.embed_dim}, max_len={self.max_len}'
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -208,6 +219,18 @@ class TransformerEncoderLayer(nn.Module):
         x = self.dropout2(x)
         return x
 
+    def extra_repr(self) -> str:
+        return (
+            f'd_model={self.self_attn.embed_dim}, '
+            f'num_heads={self.self_attn.num_heads}, '
+            f'dim_feedforward={self.linear1.out_features}, '
+            f'dropout={self.dropout.p}, '
+            f'activation={_get_activation_name(self.activation)!r}, '
+            f'layer_norm_eps={self.norm1.eps}, '
+            f'norm_first={self.norm_first}, '
+            f'bias={self.self_attn.bias}'
+        )
+
 
 class TransformerEncoder(nn.Module):
     """Stack of Transformer encoder layers."""
@@ -251,6 +274,9 @@ class TransformerEncoder(nn.Module):
             output = self.norm(output)
 
         return output
+
+    def extra_repr(self) -> str:
+        return f'num_layers={self.num_layers}'
 
 
 class TransformerDecoderLayer(nn.Module):
@@ -399,6 +425,18 @@ class TransformerDecoderLayer(nn.Module):
         x = self.linear2(x)
         return self.dropout3(x)
 
+    def extra_repr(self) -> str:
+        return (
+            f'd_model={self.self_attn.embed_dim}, '
+            f'num_heads={self.self_attn.num_heads}, '
+            f'dim_feedforward={self.linear1.out_features}, '
+            f'dropout={self.dropout.p}, '
+            f'activation={_get_activation_name(self.activation)!r}, '
+            f'layer_norm_eps={self.norm1.eps}, '
+            f'norm_first={self.norm_first}, '
+            f'bias={self.self_attn.bias}'
+        )
+
 
 class TransformerDecoder(nn.Module):
     """Stack of Transformer decoder layers."""
@@ -450,6 +488,9 @@ class TransformerDecoder(nn.Module):
             output = self.norm(output)
 
         return output
+
+    def extra_repr(self) -> str:
+        return f'num_layers={self.num_layers}'
 
 
 class Transformer(nn.Module):
@@ -566,3 +607,11 @@ class Transformer(nn.Module):
             memory_is_causal=memory_is_causal,
         )
         return output
+
+    def extra_repr(self) -> str:
+        return (
+            f'd_model={self.d_model}, '
+            f'num_heads={self.num_heads}, '
+            f'num_encoder_layers={self.encoder.num_layers}, '
+            f'num_decoder_layers={self.decoder.num_layers}'
+        )
