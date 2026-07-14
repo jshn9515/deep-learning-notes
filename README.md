@@ -89,4 +89,4 @@ This project website is built with [Quarto](https://quarto.org/).
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/chart?repos=jshn9515/deep-learning-notes&type=date&legend=top-left)](https://www.star-history.com/?repos=jshn9515%2Fdeep-learning-notes&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/chart?repos=jshn9515/deep-learning-notes&type=date&legend=top-left&sealed_token=gjn4ZCMMOA8JtN4MhmjbjzrEuLkbuYUCHuT5iG8LPB8EDw_Gl9MHxruqH6EtwAH3Ow_uHqB_ON0YpzAd2goSav_XbWCzvEc_-r3oLsxgrl4QnQ-lQOIw9VNAjUMlpNQlcEKgix26qd8gW8WgaHFZmzfkcOY23PZnonm8QgFxm35chEzAGXcCMTX0L4xM)](https://www.star-history.com/?repos=jshn9515%2Fdeep-learning-notes&type=date&legend=top-left)
