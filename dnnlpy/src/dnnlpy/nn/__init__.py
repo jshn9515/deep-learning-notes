@@ -68,6 +68,7 @@ from .regularization import (
     Dropout2d as Dropout2d,
     Dropout3d as Dropout3d,
 )
+from .representation import Embedding as Embedding
 from .transformer import (
     LearnablePositionalEmbedding as LearnablePositionalEmbedding,
     SinusoidalPositionalEncoding as SinusoidalPositionalEncoding,

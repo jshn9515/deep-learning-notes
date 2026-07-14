@@ -67,3 +67,4 @@ from .regularization import (
     dropout2d as dropout2d,
     dropout3d as dropout3d,
 )
+from .representation import embedding as embedding
