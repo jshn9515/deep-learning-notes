@@ -28,12 +28,12 @@ class ConvBlock(nn.Module):
             padding='same',
         )
         self.norm = dnn.GroupNorm(groups, out_channels)
-        self.act = dnn.SiLU()
+        self.activation = dnn.SiLU()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.proj(x)
         x = self.norm(x)
-        x = self.act(x)
+        x = self.activation(x)
         return x
 
 
@@ -199,7 +199,7 @@ class UNet2DModel(nn.Module):
             in_ch = out_ch
             skip_channels.append(out_ch)
 
-        # Middle
+        # Middle path
         last_ch = block_out_channels[-1]
         self.mid_block1 = ResBlock(last_ch, last_ch, time_emb_dim)
         self.mid_attn = AttentionBlock(last_ch)
