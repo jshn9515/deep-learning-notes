@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose, assert_equal
 
 import dnnlpy.models.mlp as mlp
 
@@ -13,8 +14,8 @@ def test_parameter_tracks_grad_and_returns_plain_data():
     assert isinstance(param, np.ndarray)
     assert not isinstance(param.data, mlp.Parameter)
     assert not isinstance(result, mlp.Parameter)
-    assert np.allclose(param.data, np.array([[1.0, 2.0]]))
-    assert np.allclose(param.grad, np.array([[0.5, -0.25]]))
+    assert_allclose(param.data, np.array([[1.0, 2.0]]))
+    assert_allclose(param.grad, np.array([[0.5, -0.25]]))
 
 
 def test_flatten_forward_and_backward():
@@ -25,7 +26,7 @@ def test_flatten_forward_and_backward():
     dx = module.backward(np.ones_like(output))
 
     assert output.shape == (2, 12)
-    assert np.array_equal(output[0], np.arange(12))
+    assert_equal(output[0], np.arange(12))
     assert dx.shape == x.shape
 
 
@@ -46,12 +47,12 @@ def test_linear_forward_backward_and_parameters():
     expected_b_grad = np.array([1.5, 1.5, 2.0])
     expected_grad = np.array([[-3.5, 4.0], [3.0, -1.5]])
 
-    assert np.allclose(actual, expected)
+    assert_allclose(actual, expected)
     assert module.W.grad is not None
-    assert np.allclose(module.W.grad, expected_W_grad)
+    assert_allclose(module.W.grad, expected_W_grad)
     assert module.b.grad is not None
-    assert np.allclose(module.b.grad, expected_b_grad)
-    assert np.allclose(actual_grad, expected_grad)
+    assert_allclose(module.b.grad, expected_b_grad)
+    assert_allclose(actual_grad, expected_grad)
     assert params[0] is module.W
     assert params[1] is module.b
     assert 'in_features=2' in repr(module)
@@ -95,8 +96,8 @@ def test_elementwise_activations_forward_and_backward(
     actual = module(x)
     actual_grad = module.backward(grad)
 
-    assert np.allclose(actual, expected)
-    assert np.allclose(actual_grad, expected_grad)
+    assert_allclose(actual, expected)
+    assert_allclose(actual_grad, expected_grad)
 
 
 def test_softmax_forward_and_backward():
@@ -111,9 +112,9 @@ def test_softmax_forward_and_backward():
     expected_dot = np.sum(grad * expected, axis=1, keepdims=True)
     expected_grad = expected * (grad - expected_dot)
 
-    assert np.allclose(actual, expected)
-    assert np.allclose(np.sum(actual, axis=1), np.array([1.0]))
-    assert np.allclose(actual_grad, expected_grad)
+    assert_allclose(actual, expected)
+    assert_allclose(np.sum(actual, axis=1), np.array([1.0]))
+    assert_allclose(actual_grad, expected_grad)
 
 
 def test_cross_entropy_loss_forward_backward():
@@ -133,8 +134,8 @@ def test_cross_entropy_loss_forward_backward():
     expected_grad[np.arange(2), targets] -= 1
     expected_grad = expected_grad / 2
 
-    assert np.allclose(actual, expected)
-    assert np.allclose(actual_grad, expected_grad)
+    assert_allclose(actual, expected)
+    assert_allclose(actual_grad, expected_grad)
 
 
 def test_cross_entropy_backward_requires_forward():
@@ -171,14 +172,13 @@ def test_sgd_updates_parameters_and_zeroes_gradients():
     skipped = mlp.Parameter([3.0])
 
     optimizer = mlp.SGD([param, skipped], lr=0.1)
-
     optimizer.step()
 
-    assert np.allclose(param, np.array([0.95, -1.975]))
-    assert np.allclose(skipped, np.array([3.0]))
+    assert_allclose(param, np.array([0.95, -1.975]))
+    assert_allclose(skipped, np.array([3.0]))
 
     optimizer.zero_grad(set_to_none=False)
-    assert np.allclose(param.grad, np.zeros_like(param))
+    assert_allclose(param.grad, np.zeros_like(param))
 
     optimizer.zero_grad()
     assert param.grad is None
@@ -194,12 +194,12 @@ def test_mlp_training_step_reduces_cross_entropy_loss():
     model.fc2.W[:] = np.array([[1.0, -1.0], [0.5, 0.25], [-0.5, 2.0]])
     model.fc2.b[:] = np.array([0.1, -0.2])
 
-    criterion = mlp.CrossEntropyLoss()
+    loss_fn = mlp.CrossEntropyLoss()
     optimizer = mlp.SGD(model.parameters(), lr=0.1)
 
-    loss_before = criterion(model(x), targets)
-    model.backward(criterion.backward())
+    loss_before = loss_fn(model(x), targets)
+    model.backward(loss_fn.backward())
     optimizer.step()
-    loss_after = criterion(model(x), targets)
+    loss_after = loss_fn(model(x), targets)
 
-    assert loss_after < loss_before
+    assert loss_after.item() < loss_before.item()
