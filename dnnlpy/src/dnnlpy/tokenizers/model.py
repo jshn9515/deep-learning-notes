@@ -1,6 +1,8 @@
 import itertools as it
+import json
+import os
 from collections.abc import Iterable, Sequence
-from typing import Literal, overload, override
+from typing import override
 
 from .base import Encoding, Model, Tokenizer
 from .trainer import BPETrainer
@@ -37,46 +39,93 @@ class BPE(Model):
         """Refresh the mapping of merge pairs to their ranks based on the current merges."""
         self._merge_ranks = {pair: rank for rank, pair in enumerate(self.merges)}
 
-    @overload
-    def encode(
-        self,
-        tokenizer: Tokenizer,
-        text: str,
-        is_pretokenized: Literal[False] = False,
-        add_special_tokens: bool = True,
-    ) -> Encoding: ...
+    @override
+    def save(self, tokenizer: Tokenizer, path: str | os.PathLike[str]) -> None:
+        """Save the BPE data needed to restore an existing tokenizer."""
+        data = {
+            'version': 1,
+            'model': 'BPE',
+            'vocab': dict(tokenizer.vocab),
+            'merges': [list(pair) for pair in self.merges],
+            'unk_token': tokenizer.unk_token,
+            'special_tokens': list(tokenizer.special_tokens),
+        }
 
-    @overload
-    def encode(
-        self,
-        tokenizer: Tokenizer,
-        text: Sequence[str],
-        is_pretokenized: Literal[True],
-        add_special_tokens: bool = True,
-    ) -> Encoding: ...
+        with open(path, 'w', encoding='utf-8') as fp:
+            json.dump(data, fp, ensure_ascii=False, indent=2)
+            fp.write('\n')
+
+    @override
+    def load(self, tokenizer: Tokenizer, path: str | os.PathLike[str]) -> None:
+        """Load BPE data without replacing the tokenizer's processing components."""
+        with open(path, 'r', encoding='utf-8') as fp:
+            data = json.load(fp)
+
+        if not isinstance(data, dict):
+            raise TypeError('Tokenizer JSON must contain a dict object.')
+
+        version = data.get('version', 0)
+        if version != 1:
+            raise RuntimeError(f'Unsupported tokenizer version: {version!r}.')
+
+        model = data.get('model', 'unknown')
+        if model != 'BPE':
+            raise RuntimeError(f'Expected a BPE model, got {model!r}.')
+
+        vocab = data.get('vocab', {})
+        try:
+            vocab = {str(token): int(index) for token, index in vocab.items()}
+        except TypeError, ValueError:
+            raise RuntimeError(
+                'Vocabulary must be a dict of string keys and integer values.'
+            )
+
+        merges = data.get('merges', [])
+        try:
+            merges = [(str(pair[0]), str(pair[1])) for pair in merges]
+        except TypeError, ValueError:
+            raise RuntimeError(
+                'Merges must be a list of two-token pairs (lists or tuples).'
+            )
+
+        unk_token = data.get('unk_token', '<unk>')
+        if not isinstance(unk_token, str) or unk_token not in vocab:
+            raise RuntimeError('[UNK] token must be present in the vocabulary.')
+
+        special_tokens = data.get('special_tokens', [])
+        try:
+            special_tokens = [str(token) for token in special_tokens]
+        except TypeError, ValueError:
+            raise RuntimeError('Special tokens must be a list of strings.')
+
+        if unk_token not in special_tokens:
+            raise ValueError('[UNK] token must be marked as special.')
+
+        self.vocab = vocab
+        self.merges = merges
+        self.unk_token = unk_token
+        self._refresh_merge_ranks()
+
+        tokenizer.vocab = vocab
+        tokenizer.unk_token = unk_token
+        tokenizer.special_tokens = list(special_tokens)
 
     @override
     def encode(
         self,
         tokenizer: Tokenizer,
-        text: str | Sequence[str],
-        is_pretokenized: bool = False,
-        add_special_tokens: bool = True,
+        text: str,
     ) -> Encoding:
         """Encode the input text into a sequence of token IDs.
 
         Args:
             tokenizer (Tokenizer): The tokenizer instance.
-            text (str | Sequence[str]): The input text or pretokenized sequence.
-            is_pretokenized (bool, default: False): Whether the input is pretokenized.
-            add_special_tokens (bool, default: True): Whether to add special tokens.
+            text (str): The input text.
 
         Returns:
             Encoding: An Encoding object containing token IDs, tokens, and offsets.
         """
-        tokens, offsets = self._prepare_input(
-            tokenizer, text, is_pretokenized=is_pretokenized
-        )
+        tokens, offsets = self._prepare_input(tokenizer, text)
 
         ids = []
         output_tokens = []
@@ -101,48 +150,32 @@ class BPE(Model):
             offsets=output_offsets,
         )
 
-        if add_special_tokens and tokenizer.post_processor is not None:
+        if tokenizer.post_processor is not None:
             return tokenizer._post_process(encoding)
+
         return encoding
 
     def _prepare_input(
         self,
         tokenizer: Tokenizer,
-        text: str | Sequence[str],
-        is_pretokenized: bool,
+        text: str,
     ) -> tuple[list[str], list[Offset]]:
         """Prepare input tokens and offsets for encoding.
 
         Args:
             tokenizer (Tokenizer): The tokenizer instance.
-            text (str | Sequence[str]): The input text or pretokenized sequence.
-            is_pretokenized (bool): Whether the input is pretokenized.
+            text (str): The input text.
 
         Returns:
             tuple[list[str], list[Offset]]: A tuple containing the list of tokens and
                 their corresponding offsets.
 
-        Raises:
-            TypeError: If the input types do not match the expected types based on
-                `is_pretokenized` flag.
         """
-        if is_pretokenized:
-            if not isinstance(text, Sequence):
-                raise TypeError(
-                    '`text` must be a sequence of strings when `is_pretokenized=True`.'
-                )
-            tokens = list(text)
-            return tokens, [(0, 0)] * len(tokens)
-
-        else:
-            if not isinstance(text, str):
-                raise TypeError('`text` must be a string when `is_pretokenized=False`.')
-
-            normalized = tokenizer._normalize(text)
-            pieces = tokenizer._pre_tokenize(normalized)
-            tokens = [piece for piece, _ in pieces]
-            offsets = [offset for _, offset in pieces]
-            return tokens, offsets
+        normalized = tokenizer._normalize(text)
+        pieces = list(tokenizer._pre_tokenize(normalized))
+        tokens = [piece for piece, _ in pieces]
+        offsets = [offset for _, offset in pieces]
+        return tokens, offsets
 
     def _encode_token(self, token: str) -> list[SymbolSpan]:
         """Encode a single token into subword units using BPE merges.
@@ -242,9 +275,11 @@ class BPE(Model):
             >>> bpe.decode(tokenizer, ids)
             'lowest'
         """
-        tokens = tokenizer.lookup_indices(ids, skip_special_tokens)
+        tokens = tokenizer.lookup_tokens(ids, skip_special_tokens)
+
         if tokenizer.decoder is not None:
             return tokenizer._decode(tokens)
+
         return ' '.join(tokens)
 
     @override

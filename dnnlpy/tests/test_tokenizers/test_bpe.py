@@ -1,10 +1,10 @@
+import json
 from typing import cast
 
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 
 import dnnlpy.tokenizers as dltk
-import dnnlpy.tokenizers.base as dltk_base
 
 
 def test_bpe_encode_matches_hf_tokenizers():
@@ -22,16 +22,14 @@ def test_bpe_encode_matches_hf_tokenizers():
     }
     merges = [('l', 'o'), ('lo', 'w'), ('e', 'r'), ('low', 'er')]
 
-    tokenizer = dltk.Tokenizer(
-        dltk.BPE(vocab=vocab, merges=merges, unk_token='<unk>'),
-        num_workers=1,
-    )
-    hf_tokenizer = Tokenizer(BPE(vocab=vocab, merges=merges, unk_token='<unk>'))
+    tokenizer = dltk.Tokenizer(dltk.BPE(vocab, merges), num_workers=1)
+    hf_tokenizer = Tokenizer(BPE(vocab, merges, unk_token='<unk>'))
 
     text = 'lower'
 
-    actual = tokenizer.encode(text, add_special_tokens=False)
+    actual = tokenizer.encode(text)
     expected = hf_tokenizer.encode(text, add_special_tokens=False)
+
     assert actual.ids == expected.ids
     assert actual.tokens == expected.tokens
     assert actual.offsets == expected.offsets
@@ -41,16 +39,14 @@ def test_bpe_encode_unknown_piece_matches_hf_tokenizers():
     vocab = {'<unk>': 0, 'l': 1, 'o': 2, 'w': 3, 'lo': 4, 'low': 5}
     merges = [('l', 'o'), ('lo', 'w')]
 
-    tokenizer = dltk.Tokenizer(
-        dltk.BPE(vocab=vocab, merges=merges, unk_token='<unk>'),
-        num_workers=1,
-    )
-    hf_tokenizer = Tokenizer(BPE(vocab=vocab, merges=merges, unk_token='<unk>'))
+    tokenizer = dltk.Tokenizer(dltk.BPE(vocab, merges), num_workers=1)
+    hf_tokenizer = Tokenizer(BPE(vocab, merges, unk_token='<unk>'))
 
     text = 'lowx'
 
-    actual = tokenizer.encode(text, add_special_tokens=False)
+    actual = tokenizer.encode(text)
     expected = hf_tokenizer.encode(text, add_special_tokens=False)
+
     assert actual.ids == expected.ids
     assert actual.tokens == expected.tokens
     assert actual.offsets == expected.offsets
@@ -60,11 +56,8 @@ def test_bpe_decode_matches_hf_tokenizers():
     vocab = {'<unk>': 0, 'l': 1, 'o': 2, 'w': 3, 'lo': 4, 'low': 5}
     merges = [('l', 'o'), ('lo', 'w')]
 
-    tokenizer = dltk.Tokenizer(
-        dltk.BPE(vocab=vocab, merges=merges, unk_token='<unk>'),
-        num_workers=1,
-    )
-    hf_tokenizer = Tokenizer(BPE(vocab=vocab, merges=merges, unk_token='<unk>'))
+    tokenizer = dltk.Tokenizer(dltk.BPE(vocab, merges), num_workers=1)
+    hf_tokenizer = Tokenizer(BPE(vocab, merges, unk_token='<unk>'))
 
     ids = [5, 0]
 
@@ -73,9 +66,38 @@ def test_bpe_decode_matches_hf_tokenizers():
     assert actual == expected
 
 
+def test_bpe_batch_encode_and_decode_match_hf_tokenizers():
+    vocab = {'<unk>': 0, 'l': 1, 'o': 2, 'w': 3, 'lo': 4, 'low': 5}
+    merges = [('l', 'o'), ('lo', 'w')]
+
+    tokenizer = dltk.Tokenizer(dltk.BPE(vocab, merges), num_workers=1)
+    hf_tokenizer = Tokenizer(BPE(vocab, merges, unk_token='<unk>'))
+    texts = ['low', 'lowx']
+
+    actual = tokenizer.encode_batch(texts, batch_size=1)
+    expected = hf_tokenizer.encode_batch(texts, add_special_tokens=False)
+
+    flag1 = [encoding.tokens for encoding in actual]
+    flag2 = [encoding.tokens for encoding in expected]
+    assert flag1 == flag2
+
+    flag1 = tokenizer.decode_batch(
+        [encoding.ids for encoding in actual],
+        skip_special_tokens=False,
+        batch_size=1,
+    )
+    flag2 = hf_tokenizer.decode_batch(
+        [encoding.ids for encoding in expected],
+        skip_special_tokens=False,
+    )
+    assert flag1 == flag2
+
+
 def test_bpe_train_from_iterator_accepts_batches():
     tokenizer = dltk.Tokenizer(
-        dltk.BPE(), normalizer=dltk.StripNormalizer(), num_workers=1
+        dltk.BPE(),
+        normalizer=dltk.StripNormalizer(),
+        num_workers=1,
     )
     texts = [[' low ', ' lower '], [' lowest ']]
 
@@ -148,22 +170,68 @@ def test_bpe_training_ignores_empty_texts():
     assert model.merges
 
 
-def test_pre_token_counts_are_processed_in_bounded_batches(monkeypatch):
-    batch_sizes = []
+def test_bpe_save_and_load_restore_data_without_replacing_components(tmp_path):
+    tokenizer = dltk.Tokenizer(
+        dltk.BPE(),
+        normalizer=dltk.StripNormalizer(left=True, right=False),
+        pre_tokenizer=dltk.ByteLevelPreTokenizer(
+            add_prefix_space=False,
+            trim_offsets=False,
+        ),
+        post_processor=dltk.ByteLevelPostProcessor(trim_offsets=False),
+        decoder=dltk.ByteLevelDecoder(),
+        num_workers=1,
+    )
 
-    def serial_parallel_map(func, values, num_workers):
-        assert num_workers == 2
-        for value in values:
-            batch_sizes.append(len(value))
-            yield func(value)
+    tokenizer.train_from_iterator(
+        ['Hello world', 'Hello tokenizer'],
+        vocab_size=50,
+        special_tokens=['<unk>', '<pad>'],
+    )
 
-    monkeypatch.setattr(dltk_base, 'parallel_map', serial_parallel_map)
+    path = tmp_path / 'tokenizer.json'
+    tokenizer.save(path)
 
-    pre_tokenizer = dltk.ByteLevelPreTokenizer()
-    tokenizer = dltk.Tokenizer(dltk.BPE(), pre_tokenizer=pre_tokenizer, num_workers=2)
-    texts = ['hello'] * 2050
+    data = json.loads(path.read_text(encoding='utf-8'))
+    model = cast(dltk.BPE, tokenizer.model)
 
-    counts = tokenizer._count_pre_tokens(texts)
+    assert set(data) == {
+        'version',
+        'model',
+        'vocab',
+        'merges',
+        'unk_token',
+        'special_tokens',
+    }
+    assert data['vocab'] == tokenizer.vocab
+    assert data['merges'] == [list(pair) for pair in model.merges]
 
-    assert counts == pre_tokenizer.count_tokens(texts)
-    assert batch_sizes == [1024, 1024, 2]
+    restored = dltk.Tokenizer(
+        dltk.BPE(),
+        normalizer=dltk.StripNormalizer(left=True, right=False),
+        pre_tokenizer=dltk.ByteLevelPreTokenizer(
+            add_prefix_space=False,
+            trim_offsets=False,
+        ),
+        post_processor=dltk.ByteLevelPostProcessor(trim_offsets=False),
+        decoder=dltk.ByteLevelDecoder(),
+        num_workers=1,
+    )
+
+    restored.load(path)
+    restored_model = cast(dltk.BPE, restored.model)
+
+    assert restored.vocab == tokenizer.vocab
+    assert restored_model.vocab == tokenizer.vocab
+    assert restored_model.merges == model.merges
+    assert restored.unk_token == tokenizer.unk_token
+    assert restored.special_tokens == tokenizer.special_tokens
+
+    text = ' Hello tokenizer '
+    actual = restored.encode(text)
+    expected = tokenizer.encode(text)
+
+    assert actual.ids == expected.ids
+    assert actual.tokens == expected.tokens
+    assert actual.offsets == expected.offsets
+    assert restored.decode(actual.ids) == tokenizer.decode(expected.ids)

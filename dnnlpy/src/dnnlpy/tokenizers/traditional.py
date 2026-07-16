@@ -22,7 +22,7 @@ class CharacterTokenizer(TraditionalTokenizer):
 
     @override
     @classmethod
-    def from_text(cls, text: str | list[str], unk_token: str = '<unk>') -> Self:
+    def train(cls, text: str | list[str], unk_token: str = '<unk>') -> Self:
         """Build a character vocabulary from text.
 
         Args:
@@ -44,7 +44,6 @@ class CharacterTokenizer(TraditionalTokenizer):
 
         Args:
             text (str): Text to encode.
-
         Returns:
             list[int]: List of token IDs corresponding to the characters in the
                 input text.
@@ -92,7 +91,7 @@ class WordTokenizer(TraditionalTokenizer):
 
     @override
     @classmethod
-    def from_text(cls, text: str | list[str], unk_token: str = '<unk>') -> Self:
+    def train(cls, text: str | list[str], unk_token: str = '<unk>') -> Self:
         """Build a word vocabulary from text.
 
         Args:
@@ -114,7 +113,6 @@ class WordTokenizer(TraditionalTokenizer):
 
         Args:
             text (str): Text to encode.
-
         Returns:
             list[int]: List of token IDs corresponding to the words in the input text.
         """

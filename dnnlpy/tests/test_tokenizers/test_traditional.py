@@ -4,7 +4,7 @@ import dnnlpy.tokenizers as dltk
 
 
 @pytest.mark.parametrize(
-    ('tokenizer_class', 'text', 'expected_vocab'),
+    ('tokenizer_cls', 'text', 'expected_vocab'),
     [
         (
             dltk.CharacterTokenizer,
@@ -29,18 +29,18 @@ import dnnlpy.tokenizers as dltk
         ),
     ],
 )
-def test_from_text_builds_sorted_vocab_from_multiple_texts(
-    tokenizer_class: dltk.TraditionalTokenizer,
+def test_train_builds_sorted_vocab_from_multiple_texts(
+    tokenizer_cls: dltk.TraditionalTokenizer,
     text: str | list[str],
     expected_vocab: dict[str, int],
 ):
-    tokenizer = tokenizer_class.from_text(text)
+    tokenizer = tokenizer_cls.train(text)
 
     assert tokenizer.vocab == expected_vocab
 
 
 def test_character_tokenizer_encodes_and_decodes_characters():
-    tokenizer = dltk.CharacterTokenizer.from_text('deep')
+    tokenizer = dltk.CharacterTokenizer.train('deep')
 
     ids = tokenizer.encode('peed')
 
@@ -49,7 +49,7 @@ def test_character_tokenizer_encodes_and_decodes_characters():
 
 
 def test_word_tokenizer_encodes_and_decodes_whitespace_separated_words():
-    tokenizer = dltk.WordTokenizer.from_text('deep learning')
+    tokenizer = dltk.WordTokenizer.train('deep learning')
 
     ids = tokenizer.encode('  deep\tlearning  ')
 
@@ -60,8 +60,8 @@ def test_word_tokenizer_encodes_and_decodes_whitespace_separated_words():
 @pytest.mark.parametrize(
     ('tokenizer', 'text', 'expected'),
     [
-        (dltk.CharacterTokenizer.from_text('deep'), 'x', ''),
-        (dltk.WordTokenizer.from_text('deep learning'), 'unknown', ''),
+        (dltk.CharacterTokenizer.train('deep'), 'x', ''),
+        (dltk.WordTokenizer.train('deep learning'), 'unknown', ''),
     ],
 )
 def test_unknown_tokens_use_unk_token(
@@ -77,9 +77,9 @@ def test_unknown_tokens_use_unk_token(
 @pytest.mark.parametrize(
     ('tokenizer', 'text', 'expected_without_special', 'expected_with_special'),
     [
-        (dltk.CharacterTokenizer.from_text('ab'), 'a^b', 'ab', 'a^b'),
+        (dltk.CharacterTokenizer.train('ab'), 'a^b', 'ab', 'a^b'),
         (
-            dltk.WordTokenizer.from_text('deep learning'),
+            dltk.WordTokenizer.train('deep learning'),
             'deep <eos>',
             'deep',
             'deep <eos>',
@@ -98,6 +98,51 @@ def test_decode_can_include_or_skip_added_special_tokens(
 
     assert tokenizer.decode(ids) == expected_without_special
     assert tokenizer.decode(ids, skip_special_tokens=False) == expected_with_special
+
+
+@pytest.mark.parametrize(
+    ('tokenizer', 'tokens'),
+    [
+        (dltk.CharacterTokenizer.train('ab'), ['^', '$']),
+        (dltk.WordTokenizer.train('deep learning'), ['<mask>', '<eos>']),
+    ],
+)
+def test_add_tokens_extends_vocab_without_marking_tokens_as_special(
+    tokenizer: dltk.TraditionalTokenizer,
+    tokens: list[str],
+):
+    original_vocab_size = tokenizer.vocab_size
+
+    assert tokenizer.add_tokens(tokens) == len(tokens)
+    assert tokenizer.add_tokens(tokens) == 0
+    assert tokenizer.vocab_size == original_vocab_size + len(tokens)
+    assert tokenizer.lookup_tokens(tokenizer.lookup_indices(tokens)) == tokens
+    assert not tokenizer.special_token_ids.intersection(
+        tokenizer.lookup_indices(tokens)
+    )
+
+
+def test_add_tokens_uses_next_available_sparse_vocab_id():
+    tokenizer = dltk.CharacterTokenizer({'<unk>': 3, 'a': 7})
+
+    assert tokenizer.add_tokens(['b']) == 1
+    assert tokenizer.vocab == {'<unk>': 3, 'a': 7, 'b': 8}
+    assert tokenizer.token_to_id('b') == 8
+    assert tokenizer.id_to_token(8) == 'b'
+
+
+def test_unk_id_and_special_token_ids_follow_vocab_updates():
+    tokenizer = dltk.CharacterTokenizer({'<unk>': 0, 'a': 2})
+
+    assert tokenizer.unk_id == 0
+    assert tokenizer.special_token_ids == {0}
+
+    tokenizer.add_special_tokens(['a'])
+    assert tokenizer.special_token_ids == {0, 2}
+
+    tokenizer.set_vocab({'<unk>': 4, 'a': 7})
+    assert tokenizer.unk_id == 4
+    assert tokenizer.special_token_ids == {4, 7}
 
 
 @pytest.mark.parametrize(
