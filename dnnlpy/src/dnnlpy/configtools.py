@@ -1,15 +1,25 @@
 import os
 import random
+import sys
 
 import numpy as np
 import torch
 import torch.accelerator as accl
 
 __all__ = [
-    'set_seed',
-    'get_default_device',
     'get_data_root',
+    'get_default_device',
+    'get_num_workers',
+    'has_gil',
+    'set_seed',
 ]
+
+
+def has_gil() -> bool:
+    """Check if the current Python interpreter has a Global Interpreter Lock (GIL)."""
+    if sys.version_info >= (3, 13):
+        return sys._is_gil_enabled()
+    return True
 
 
 def set_seed(
@@ -66,3 +76,28 @@ def get_data_root() -> str:
     if not os.path.exists(root):
         os.mkdir(root)
     return root
+
+
+def get_num_workers(num_workers: int | None = None) -> int:
+    """Get the number of worker threads to use for parallel processing.
+
+    Args:
+        num_workers (int | None, optional): The number of workers to use. This function
+            can automatically determine the number of workers based on whether the Python
+            interpreter has a Global Interpreter Lock (GIL) and the number of CPU cores
+            available. If None, the default will be all available CPU cores if GIL is not
+            present, or 1/2 of the available CPU cores if GIL is present.
+
+    Returns:
+        num_workers (int): The number of worker threads to use for parallel processing.
+    """
+    if num_workers is None:
+        if sys.version_info >= (3, 13):
+            num_workers = os.process_cpu_count() or 1
+        else:
+            num_workers = os.cpu_count() or 1
+
+        if has_gil() and num_workers > 1:
+            num_workers = max(1, num_workers // 2)
+
+    return num_workers
