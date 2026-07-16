@@ -97,7 +97,7 @@ class Trainer(ABC):
     """Abstract base class for tokenizer trainers."""
 
     @abstractmethod
-    def train(self, inputs: Iterable[str | Iterable[str]]) -> None:
+    def train(self, texts: Iterable[str | Iterable[str]]) -> None:
         """Train the tokenizer model from an iterator of input texts."""
 
 
