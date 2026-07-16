@@ -75,7 +75,7 @@ class BPE(Model):
         vocab = data.get('vocab', {})
         try:
             vocab = {str(token): int(index) for token, index in vocab.items()}
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             raise RuntimeError(
                 'Vocabulary must be a dict of string keys and integer values.'
             )
@@ -83,7 +83,7 @@ class BPE(Model):
         merges = data.get('merges', [])
         try:
             merges = [(str(pair[0]), str(pair[1])) for pair in merges]
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             raise RuntimeError(
                 'Merges must be a list of two-token pairs (lists or tuples).'
             )
@@ -95,7 +95,7 @@ class BPE(Model):
         special_tokens = data.get('special_tokens', [])
         try:
             special_tokens = [str(token) for token in special_tokens]
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             raise RuntimeError('Special tokens must be a list of strings.')
 
         if unk_token not in special_tokens:
