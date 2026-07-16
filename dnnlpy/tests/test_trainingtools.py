@@ -179,6 +179,7 @@ def test_trainer_saves_and_loads_checkpoint(tmp_path):
     assert checkpoint['epoch'] == 1
     assert restored_trainer.history == history
     assert restored_scheduler.state_dict() == lr_scheduler.state_dict()
+
     for restored, trained in zip(restored_model.parameters(), model.parameters()):
         assert_close(restored, trained)
 
@@ -186,7 +187,10 @@ def test_trainer_saves_and_loads_checkpoint(tmp_path):
 def test_trainer_resume_from_checkpoint_continues_history(tmp_path):
     model = nn.Linear(1, 1)
     trainer = Trainer(
-        max_epochs=1, device='cpu', checkpoint_path=tmp_path, verbose=False
+        max_epochs=1,
+        device='cpu',
+        checkpoint_path=tmp_path,
+        verbose=False,
     )
     trainer.fit(
         model,
