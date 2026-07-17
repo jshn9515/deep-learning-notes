@@ -1,3 +1,4 @@
+from . import utils as utils
 from .activation import (
     CELU as CELU,
     ELU as ELU,

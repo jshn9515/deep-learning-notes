@@ -3,6 +3,7 @@ from .adagrad import Adagrad as Adagrad
 from .adam import Adam as Adam
 from .adamw import AdamW as AdamW
 from .base import Optimizer as Optimizer
+from .lr_schedule import CosineAnnealingLR as CosineAnnealingLR
 from .muon import Muon as Muon
 from .rmsprop import RMSprop as RMSprop
 from .sgd import SGD as SGD
