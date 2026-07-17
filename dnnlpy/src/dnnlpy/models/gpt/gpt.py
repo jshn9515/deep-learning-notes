@@ -26,6 +26,9 @@ class MiniGPTCausalSelfAttention(nn.Module):
         num_heads: int = 4,
         bias: bool = True,
         dropout: float = 0.0,
+        use_rope: bool = False,
+        *,
+        fast: bool = False,
     ):
         """Create a causal self-attention block.
 
@@ -36,16 +39,29 @@ class MiniGPTCausalSelfAttention(nn.Module):
             embed_dim (int, default: 128): Dimension of the input token embeddings.
             num_heads (int, default: 4): Number of attention heads.
             bias (bool, default: True): Whether to use bias terms in the attention layers.
-            dropout (float, default: 0.0): Dropout probability for attention weights.
+            dropout (float, default: 0.0): Dropout probability for attention weights and
+                the projected attention output.
+            use_rope (bool, default: False): Whether to apply rotary positional embeddings
+                to projected queries and keys.
+            fast (bool, default: False): Whether to use the fast attention implementation.
         """
         super().__init__()
+        self.use_rope = use_rope
+        self.fast = fast
+
         self.attn = dnn.MultiheadAttention(
-            embed_dim, num_heads, bias=bias, dropout=dropout
+            embed_dim,
+            num_heads,
+            bias=bias,
+            dropout=dropout,
+            use_rope=use_rope,
+            fast=fast,
         )
+        self.resid_dropout = dnn.Dropout(dropout)
 
     def forward(self, x: Tensor) -> Tensor:
         attn_output, _ = self.attn(x, x, x, is_causal=True, need_weights=False)
-        return attn_output
+        return self.resid_dropout(attn_output)
 
 
 class MiniGPTMLP(nn.Module):
@@ -88,6 +104,9 @@ class MiniGPTBlock(nn.Module):
         hidden_dim: int = 512,
         bias: bool = True,
         dropout: float = 0.0,
+        use_rope: bool = False,
+        *,
+        fast: bool = False,
     ):
         """Create a Transformer decoder block with pre-layer normalization.
 
@@ -96,11 +115,23 @@ class MiniGPTBlock(nn.Module):
             num_heads (int, default: 4): Number of attention heads in self-attention layer.
             hidden_dim (int, default: 512): Dimension of the hidden layer in feed-forward MLP.
             bias (bool, default: True): Whether to use bias terms in the linear layers.
+            dropout (float, default: 0.0): Dropout probability for attention and MLP outputs.
+            use_rope (bool, default: False): Whether self-attention uses rotary positional
+                embeddings.
+            fast (bool, default: False): Whether self-attention uses its fast implementation.
         """
         super().__init__()
+        self.use_rope = use_rope
+        self.fast = fast
+
         self.norm1 = dnn.LayerNorm(embed_dim, bias=bias)
         self.attn = MiniGPTCausalSelfAttention(
-            embed_dim, num_heads, bias=bias, dropout=dropout
+            embed_dim,
+            num_heads,
+            bias=bias,
+            dropout=dropout,
+            use_rope=use_rope,
+            fast=fast,
         )
         self.norm2 = dnn.LayerNorm(embed_dim, bias=bias)
         self.mlp = MiniGPTMLP(embed_dim, hidden_dim, bias=bias, dropout=dropout)
@@ -125,6 +156,9 @@ class MiniGPT(nn.Module):
         bias: bool = True,
         dropout: float = 0.0,
         weight_tying: bool = True,
+        use_rope: bool = False,
+        *,
+        fast: bool = False,
     ):
         """Create a tiny GPT-style language model.
 
@@ -140,14 +174,23 @@ class MiniGPT(nn.Module):
                 and feed-forward layers.
             weight_tying (bool, default: True): Whether to share token embedding weights
                 with the language-model output head.
+            use_rope (bool, default: False): Whether to use rotary positional embeddings
+                instead of learned absolute position embeddings.
+            fast (bool, default: False): Whether attention layers use their fast
+                implementation. Other MiniGPT modules are unaffected.
         """
         super().__init__()
         self.vocab_size = vocab_size
         self.block_size = block_size
         self.weight_tying = weight_tying
+        self.use_rope = use_rope
+        self.fast = fast
 
         self.token_embed = dnn.Embedding(vocab_size, embed_dim)
-        self.pos_embed = dnn.Embedding(block_size, embed_dim)
+        if use_rope:
+            self.register_parameter('pos_embed', None)
+        else:
+            self.pos_embed = dnn.Embedding(block_size, embed_dim)
         self.embed_dropout = dnn.Dropout(dropout)
 
         self.blocks = nn.Sequential(
@@ -158,13 +201,15 @@ class MiniGPT(nn.Module):
                     hidden_dim=hidden_dim,
                     bias=bias,
                     dropout=dropout,
+                    use_rope=use_rope,
+                    fast=fast,
                 )
                 for _ in range(num_layers)
             ]
         )
 
         self.final_norm = dnn.LayerNorm(embed_dim, bias=bias)
-        self.lm_head = dnn.Linear(embed_dim, vocab_size, bias=bias)
+        self.lm_head = dnn.Linear(embed_dim, vocab_size, bias=False)
 
         if weight_tying:
             self.lm_head.weight = cast(nn.Parameter, self.token_embed.weight)
@@ -182,6 +227,22 @@ class MiniGPT(nn.Module):
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
 
+        # Perform depth-scaled initialization for the attention and MLP layers in each block.
+        if len(self.blocks) > 0:
+            residual_std = 0.02 / (2 * len(self.blocks)) ** 0.5
+            for block in self.blocks:
+                block = cast(MiniGPTBlock, block)
+                nn.init.normal_(
+                    block.attn.attn.out_proj.weight,
+                    mean=0.0,
+                    std=residual_std,
+                )
+                nn.init.normal_(
+                    block.mlp.net[2].weight,  # type: ignore[assignment]
+                    mean=0.0,
+                    std=residual_std,
+                )
+
     def forward(self, input_ids: Tensor) -> Tensor:
         """Compute the logits for a batch of input sequences."""
         if input_ids.ndim != 2:
@@ -193,10 +254,13 @@ class MiniGPT(nn.Module):
                 f'Sequence length {T} exceeds block_size {self.block_size}.'
             )
 
-        pos = torch.arange(T, device=input_ids.device)
         x_tok = self.token_embed(input_ids)
-        x_pos = self.pos_embed(pos)
-        x = self.embed_dropout(x_tok + x_pos)
+        if self.pos_embed is None:
+            x = self.embed_dropout(x_tok)
+        else:
+            pos = torch.arange(T, device=input_ids.device)
+            x_pos = self.pos_embed(pos)
+            x = self.embed_dropout(x_tok + x_pos)
 
         x = self.blocks(x)
         x = self.final_norm(x)
