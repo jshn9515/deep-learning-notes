@@ -571,6 +571,16 @@ def test_rms_norm_function_matches_torch():
     assert_close(actual, expected)
 
 
+def test_rms_norm_function_upcasts_before_squaring():
+    x = torch.full((2, 4), 300.0, dtype=torch.float16)
+
+    actual = dF.rms_norm(x, 4)
+
+    assert actual.dtype == x.dtype
+    assert torch.isfinite(actual).all()
+    assert_close(actual, torch.ones_like(x))
+
+
 @pytest.mark.parametrize('normalized_shape', [4, (3, 4)])
 def test_rms_norm_module_matches_torch(normalized_shape: int | tuple[int, ...]):
     x = torch.randn(2, 3, 4)

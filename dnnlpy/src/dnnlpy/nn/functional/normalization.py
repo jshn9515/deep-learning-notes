@@ -372,8 +372,13 @@ def rms_norm(
     # Normalize over the trailing dimensions specified by normalized_shape.
     reduce_dims = tuple(range(x.ndim - len(normalized_shape), x.ndim))
 
+    dtype = x.dtype
+    if x.dtype in (torch.float16, torch.bfloat16):
+        x = x.to(torch.float32)
+
     mean_square = x.square().mean(dim=reduce_dims, keepdim=True)
     y = x * (mean_square + eps).rsqrt()
+    y = y.to(dtype)
 
     if weight is not None:
         broadcast_shape = (1,) * (x.ndim - len(normalized_shape)) + normalized_shape
