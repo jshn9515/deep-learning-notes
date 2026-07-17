@@ -16,7 +16,7 @@ def _as_tuple(value: Size2D) -> Tuple2D:
     return value
 
 
-def _sliding_block_count(
+def _count_sliding_blocks(
     spatial_size: Tuple2D,
     kernel_size: Tuple2D,
     dilation: Tuple2D,
@@ -64,7 +64,7 @@ def fold(
     padding = _as_tuple(padding)
     stride = _as_tuple(stride)
 
-    height, width = _sliding_block_count(
+    height, width = _count_sliding_blocks(
         output_size,
         kernel_size=kernel_size,
         dilation=dilation,
