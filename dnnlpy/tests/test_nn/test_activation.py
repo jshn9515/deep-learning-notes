@@ -64,6 +64,73 @@ def test_elementwise_activation_functions_match_torch(
     assert_close(x1.grad, x2.grad, rtol=1e-5, atol=1e-6)
 
 
+@pytest.mark.parametrize('dim', [1, -1])
+def test_glu_function_matches_torch_forward_and_backward(dim: int):
+    base = torch.randn(2, 6, 4, dtype=torch.float64)
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = dF.glu(x1, dim=dim)
+    expected = F.glu(x2, dim=dim)
+
+    assert_close(actual, expected)
+
+    grad = torch.randn_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad)
+
+
+@pytest.mark.parametrize('dim', [1, -1])
+def test_swiglu_function_matches_explicit_definition(dim: int):
+    base = torch.randn(2, 6, 4, dtype=torch.float64)
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = dF.swiglu(x1, dim=dim)
+    gate, value = x2.chunk(2, dim=dim)
+    expected = F.silu(gate) * value
+
+    assert_close(actual, expected)
+
+    grad = torch.randn_like(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert_close(x1.grad, x2.grad)
+
+
+@pytest.mark.parametrize('fast', [False, True])
+def test_gated_activation_modules_match_reference(fast: bool):
+    x = torch.randn(2, 6, 4)
+
+    glu = dnn.GLU(dim=1, fast=fast)
+    swiglu = dnn.SwiGLU(dim=1, fast=fast)
+    gate, value = x.chunk(2, dim=1)
+
+    assert_close(glu(x), F.glu(x, dim=1))
+    assert_close(swiglu(x), F.silu(gate) * value)
+    assert glu.extra_repr() == 'dim=1'
+    assert swiglu.extra_repr() == 'dim=1'
+
+
+@pytest.mark.parametrize(
+    'activation',
+    [
+        dF.glu,
+        dF.swiglu,
+        dnn.GLU(),
+        dnn.GLU(fast=True),
+        dnn.SwiGLU(),
+        dnn.SwiGLU(fast=True),
+    ],
+)
+def test_gated_activations_reject_odd_split_dimension(activation: ActFn):
+    with pytest.raises(AssertionError, match='split dimension must be even'):
+        activation(torch.randn(2, 5))
+
+
 def test_prelu_function_matches_torch():
     base = torch.linspace(-3, 3, steps=24).reshape(2, 3, 4)
     x1 = _copy(base)
