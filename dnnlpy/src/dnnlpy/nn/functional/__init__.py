@@ -30,9 +30,9 @@ from .activation import (
 )
 from .affine import bilinear as bilinear, linear as linear
 from .attention import (
+    basic_attention as basic_attention,
     generate_causal_mask as generate_causal_mask,
     multi_head_attention as multi_head_attention,
-    naive_attention as naive_attention,
     scaled_dot_product_attention as scaled_dot_product_attention,
 )
 from .convolution import (

@@ -10,14 +10,14 @@ from .. import functional as dF
 type AttentionOutput = tuple[Tensor, Tensor | None]
 
 __all__ = [
+    'basic_attention',
     'generate_causal_mask',
     'multi_head_attention',
-    'naive_attention',
     'scaled_dot_product_attention',
 ]
 
 
-def naive_attention(
+def basic_attention(
     query: Tensor,
     key: Tensor,
     value: Tensor,
