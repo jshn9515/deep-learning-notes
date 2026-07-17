@@ -103,7 +103,10 @@ def test_multihead_attention_extra_repr_exposes_attention_configuration():
 
     _assert_extra_repr(
         module,
-        ('embed_dim=8, num_heads=2, dropout=0.2, bias=False, kdim=6, vdim=7'),
+        (
+            'embed_dim=8, num_heads=2, dropout=0.2, bias=False, kdim=6, vdim=7, '
+            'use_rope=False'
+        ),
     )
 
 
@@ -116,6 +119,11 @@ def test_multihead_attention_extra_repr_exposes_attention_configuration():
 )
 def test_positional_encoding_extra_repr(module: nn.Module):
     _assert_extra_repr(module, 'embed_dim=8, max_len=128')
+
+
+def test_rotary_positional_embedding_extra_repr():
+    module = dnn.RotaryPositionalEmbedding(embed_dim=8, base=5000.0)
+    _assert_extra_repr(module, 'embed_dim=8, base=5000.0')
 
 
 def test_transformer_layer_extra_repr_exposes_layer_configuration():
@@ -141,7 +149,8 @@ def test_transformer_layer_extra_repr_exposes_layer_configuration():
     )
     expected = (
         'd_model=8, num_heads=2, dim_feedforward=16, dropout=0.2, '
-        "activation='gelu', layer_norm_eps=0.0001, norm_first=True, bias=False"
+        "activation='gelu', layer_norm_eps=0.0001, norm_first=True, bias=False, "
+        'use_rope=False'
     )
 
     _assert_extra_repr(encoder, expected)
@@ -165,7 +174,10 @@ def test_transformer_container_extra_repr_exposes_stack_sizes():
     _assert_extra_repr(decoder, 'num_layers=3')
     _assert_extra_repr(
         transformer,
-        'd_model=8, num_heads=2, num_encoder_layers=2, num_decoder_layers=3',
+        (
+            'd_model=8, num_heads=2, num_encoder_layers=2, num_decoder_layers=3, '
+            'use_rope=False'
+        ),
     )
 
 
