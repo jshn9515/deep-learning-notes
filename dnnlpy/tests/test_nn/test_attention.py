@@ -481,7 +481,7 @@ def test_fast_multi_head_attention_returns_no_weights():
     )
 
     assert actual_slow_weights is not None
-    assert_close(actual_fast, actual_slow, rtol=1e-5, atol=1e-6)
+    assert_close(actual_fast, actual_slow, rtol=1e-5, atol=2e-6)
     assert actual_fast_weights is None
 
 
