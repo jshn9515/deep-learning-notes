@@ -16,6 +16,7 @@ type Activation = Callable[[Tensor], Tensor]
 
 __all__ = [
     'LearnablePositionalEmbedding',
+    'RotaryPositionalEmbedding',
     'SinusoidalPositionalEncoding',
     'Transformer',
     'TransformerDecoder',
@@ -114,6 +115,42 @@ class SinusoidalPositionalEncoding(nn.Module):
         return f'embed_dim={self.embed_dim}, max_len={self.max_len}'
 
 
+class RotaryPositionalEmbedding(nn.Module):
+    """Apply rotary positional embeddings to sequence features."""
+
+    def __init__(self, embed_dim: int, base: float = 10000.0):
+        """Initialize rotary frequencies.
+
+        Args:
+            embed_dim (int): Even feature dimension to rotate.
+            base (float, default: 10000.0): Base used to construct rotary frequencies.
+        """
+        super().__init__()
+        if base <= 0.0:
+            raise AssertionError('`base` must be positive.')
+        if embed_dim % 2 != 0:
+            raise AssertionError('RoPE requires an even embedding dimension.')
+
+        self.embed_dim = embed_dim
+        self.base = base
+
+    def forward(self, x: Tensor, position_offset: int = 0) -> Tensor:
+        """Rotate `x` according to its sequence positions."""
+        if x.size(-1) != self.embed_dim:
+            raise AssertionError(
+                f'Expected feature dimension {self.embed_dim}, got {x.size(-1)}.'
+            )
+
+        return dF.rotary_positional_embedding(
+            x,
+            base=self.base,
+            position_offset=position_offset,
+        )
+
+    def extra_repr(self) -> str:
+        return f'embed_dim={self.embed_dim}, base={self.base}'
+
+
 class TransformerEncoderLayer(nn.Module):
     """A batch-first Transformer encoder layer."""
 
@@ -126,6 +163,7 @@ class TransformerEncoderLayer(nn.Module):
         dropout: float = 0.1,
         activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
+        use_rope: bool = False,
         norm_first: bool = False,
         *,
         fast: bool = False,
@@ -140,16 +178,24 @@ class TransformerEncoderLayer(nn.Module):
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
+            use_rope (bool, default: False): Whether self-attention uses rotary
+                positional embeddings.
             norm_first (bool, default: False): If `True`, use pre-normalization.
             fast (bool, default: False): If set to True, will use the fast implementation
                 from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.norm_first = norm_first
+        self.use_rope = use_rope
         self.fast = fast
 
         self.self_attn = MultiheadAttention(
-            d_model, num_heads, dropout=dropout, bias=bias, fast=fast
+            d_model,
+            num_heads,
+            dropout=dropout,
+            bias=bias,
+            use_rope=use_rope,
+            fast=fast,
         )
 
         self.linear1 = Linear(d_model, dim_feedforward, bias=bias, fast=fast)
@@ -228,7 +274,8 @@ class TransformerEncoderLayer(nn.Module):
             f'activation={_get_activation_name(self.activation)!r}, '
             f'layer_norm_eps={self.norm1.eps}, '
             f'norm_first={self.norm_first}, '
-            f'bias={self.self_attn.bias}'
+            f'bias={self.self_attn.bias}, '
+            f'use_rope={self.use_rope}'
         )
 
 
@@ -291,6 +338,7 @@ class TransformerDecoderLayer(nn.Module):
         dropout: float = 0.1,
         activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
+        use_rope: bool = False,
         norm_first: bool = False,
         *,
         fast: bool = False,
@@ -305,19 +353,32 @@ class TransformerDecoderLayer(nn.Module):
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
+            use_rope (bool, default: False): Whether self-attention and cross-attention
+                use rotary positional embeddings.
             norm_first (bool, default: False): If `True`, use pre-normalization.
             fast (bool, default: False): If set to True, will use the fast implementation
                 from :func:`torch.nn.functional`. Default: False.
         """
         super().__init__()
         self.norm_first = norm_first
+        self.use_rope = use_rope
         self.fast = fast
 
         self.self_attn = MultiheadAttention(
-            d_model, num_heads, bias=bias, dropout=dropout, fast=fast
+            d_model,
+            num_heads,
+            bias=bias,
+            dropout=dropout,
+            use_rope=use_rope,
+            fast=fast,
         )
         self.mha_attn = MultiheadAttention(
-            d_model, num_heads, bias=bias, dropout=dropout, fast=fast
+            d_model,
+            num_heads,
+            bias=bias,
+            dropout=dropout,
+            use_rope=use_rope,
+            fast=fast,
         )
 
         self.linear1 = Linear(d_model, dim_feedforward, bias=bias, fast=fast)
@@ -434,7 +495,8 @@ class TransformerDecoderLayer(nn.Module):
             f'activation={_get_activation_name(self.activation)!r}, '
             f'layer_norm_eps={self.norm1.eps}, '
             f'norm_first={self.norm_first}, '
-            f'bias={self.self_attn.bias}'
+            f'bias={self.self_attn.bias}, '
+            f'use_rope={self.use_rope}'
         )
 
 
@@ -507,6 +569,7 @@ class Transformer(nn.Module):
         dropout: float = 0.1,
         activation: str | Activation = 'relu',
         layer_norm_eps: float = 1e-5,
+        use_rope: bool = False,
         norm_first: bool = False,
         *,
         fast: bool = False,
@@ -523,6 +586,8 @@ class Transformer(nn.Module):
             dropout (float, default: 0.1): Dropout probability.
             activation (str | Activation, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
+            use_rope (bool, default: False): Whether all attention layers use rotary
+                positional embeddings.
             norm_first (bool, default: False): If `True`, use pre-normalization inside layers.
             fast (bool, default: False): If set to True, will use the fast implementation
                 from :func:`torch.nn.functional`. Default: False.
@@ -530,6 +595,7 @@ class Transformer(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.num_heads = num_heads
+        self.use_rope = use_rope
         self.fast = fast
 
         encoder_layer = TransformerEncoderLayer(
@@ -541,6 +607,7 @@ class Transformer(nn.Module):
             activation=activation,
             layer_norm_eps=layer_norm_eps,
             norm_first=norm_first,
+            use_rope=use_rope,
             fast=fast,
         )
         encoder_norm = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
@@ -559,6 +626,7 @@ class Transformer(nn.Module):
             activation=activation,
             layer_norm_eps=layer_norm_eps,
             norm_first=norm_first,
+            use_rope=use_rope,
             fast=fast,
         )
         decoder_norm = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
@@ -613,5 +681,6 @@ class Transformer(nn.Module):
             f'd_model={self.d_model}, '
             f'num_heads={self.num_heads}, '
             f'num_encoder_layers={self.encoder.num_layers}, '
-            f'num_decoder_layers={self.decoder.num_layers}'
+            f'num_decoder_layers={self.decoder.num_layers}, '
+            f'use_rope={self.use_rope}'
         )

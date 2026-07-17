@@ -135,6 +135,7 @@ def multi_head_attention(
     is_causal: bool = False,
     dropout: float = 0.0,
     training: bool = True,
+    use_rope: bool = False,
     need_weights: bool = False,
     *,
     fast: bool = False,
@@ -162,6 +163,8 @@ def multi_head_attention(
         is_causal (bool, default: False): Whether to apply a causal mask.
         dropout (float, default: 0.0): Dropout probability for attention weights.
         training (bool, default: True): Whether dropout is active.
+        use_rope (bool, default: False): Whether to apply rotary positional embeddings
+            to the projected queries and keys.
         need_weights (bool, default: False): Whether to return per-head attention weights.
 
     Returns:
@@ -195,6 +198,10 @@ def multi_head_attention(
     q = q.view(batch_size, tgt_len, num_heads, head_dim).transpose(1, 2)
     k = k.view(batch_size, src_len, num_heads, head_dim).transpose(1, 2)
     v = v.view(batch_size, src_len, num_heads, head_dim).transpose(1, 2)
+
+    if use_rope:
+        q = dF.rotary_positional_embedding(q)
+        k = dF.rotary_positional_embedding(k)
 
     if fast:
         if attn_mask is not None and attn_mask.dtype == torch.bool:

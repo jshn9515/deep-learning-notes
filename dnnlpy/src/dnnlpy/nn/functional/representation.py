@@ -4,7 +4,10 @@ import torch
 from torch import Tensor
 from torch.autograd import Function
 
-__all__ = ['embedding']
+__all__ = [
+    'embedding',
+    'rotary_positional_embedding',
+]
 
 
 def _normalize_padding_idx(padding_idx: int | None, num_embeddings: int) -> int | None:
@@ -124,3 +127,55 @@ def embedding(
         _renorm_embedding_weight_(x, weight, max_norm, norm_type)
 
     return _Embedding.apply(x, weight, padding_idx, scale_grad_by_freq)
+
+
+def rotary_positional_embedding(
+    x: Tensor,
+    base: float = 10000.0,
+    position_offset: int = 0,
+) -> Tensor:
+    """Apply rotary positional embeddings to adjacent feature pairs.
+
+    The sequence dimension is the penultimate dimension, so this function works
+    with both `(batch, sequence, features)` and multi-head
+    `(batch, heads, sequence, head_dim)` tensors.
+
+    Args:
+        x (Tensor): Input tensor whose final dimension is rotated in pairs.
+        base (float, default: 10000.0): Base used to construct rotary frequencies.
+        position_offset (int, default: 0): Position assigned to the first token.
+
+    Returns:
+        Tensor: The position-rotated tensor with the same shape and dtype as `x`.
+    """
+    if base <= 0.0:
+        raise AssertionError('`base` must be positive.')
+    if position_offset < 0:
+        raise AssertionError('`position_offset` must be non-negative.')
+    if x.size(-1) % 2 != 0:
+        raise AssertionError('RoPE requires an even feature dimension.')
+
+    dtype = torch.float64 if x.dtype == torch.float64 else torch.float32
+    positions = torch.arange(
+        position_offset,
+        position_offset + x.size(-2),
+        device=x.device,
+        dtype=dtype,
+    )
+
+    dim = x.size(-1)
+    exponent = -torch.arange(0, dim, 2, device=x.device, dtype=dtype) / dim
+    inv_freq = torch.pow(base, exponent)
+
+    angles = positions.outer(inv_freq)
+    cos = angles.cos().to(dtype=x.dtype)
+    sin = angles.sin().to(dtype=x.dtype)
+
+    x_even = x[..., 0::2]
+    x_odd = x[..., 1::2]
+
+    rope1 = x_even * cos - x_odd * sin
+    rope2 = x_even * sin + x_odd * cos
+
+    rotated = torch.stack([rope1, rope2], dim=-1)
+    return rotated.flatten(-2)
