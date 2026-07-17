@@ -13,6 +13,7 @@ __all__ = [
     'CELU',
     'ELU',
     'GELU',
+    'GLU',
     'HardShrink',
     'HardSigmoid',
     'HardSwish',
@@ -33,6 +34,7 @@ __all__ = [
     'Softplus',
     'SoftShrink',
     'SoftSign',
+    'SwiGLU',
     'Tanh',
     'TanhShrink',
     'Threshold',
@@ -129,6 +131,32 @@ class GELU(nn.Module):
 
     def extra_repr(self) -> str:
         return f'approximate={self.approximate!r}'
+
+
+class GLU(nn.Module):
+    """Apply the gated linear unit along a specified dimension."""
+
+    def __init__(self, dim: int = -1, *, fast: bool = False):
+        """Initialize the gated linear unit.
+
+        Args:
+            dim (int, default: -1): Dimension along which to split the input.
+            fast (bool, default: False): If set to True, use the implementation
+                from :func:`torch.nn.functional.glu`.
+        """
+        super().__init__()
+        self.dim = dim
+        self.fast = fast
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.size(self.dim) % 2 != 0:
+            raise AssertionError('The size of the split dimension must be even.')
+        if self.fast:
+            return F.glu(x, dim=self.dim)
+        return dF.glu(x, dim=self.dim)
+
+    def extra_repr(self) -> str:
+        return f'dim={self.dim}'
 
 
 class HardShrink(nn.Module):
@@ -679,6 +707,35 @@ class SoftSign(nn.Module):
         if self.fast:
             return F.softsign(x)
         return dF.softsign(x)
+
+
+class SwiGLU(nn.Module):
+    """Apply the SwiGLU activation along a specified dimension."""
+
+    def __init__(self, dim: int = -1, *, fast: bool = False):
+        """Initialize the SwiGLU activation.
+
+        Args:
+            dim (int, default: -1): Dimension along which to split the input.
+            fast (bool, default: False): If set to True, use the fast SiLU
+                implementation from :func:`torch.nn.functional.silu`.
+        """
+        super().__init__()
+        self.dim = dim
+        self.fast = fast
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.size(self.dim) % 2 != 0:
+            raise AssertionError('The size of the split dimension must be even.')
+
+        if self.fast:
+            gate, value = x.chunk(2, dim=self.dim)
+            return F.silu(gate) * value
+
+        return dF.swiglu(x, dim=self.dim)
+
+    def extra_repr(self) -> str:
+        return f'dim={self.dim}'
 
 
 class Tanh(nn.Module):

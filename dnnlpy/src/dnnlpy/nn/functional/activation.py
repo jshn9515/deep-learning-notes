@@ -7,6 +7,7 @@ __all__ = [
     'celu',
     'elu',
     'gelu',
+    'glu',
     'hardshrink',
     'hardsigmoid',
     'hardswish',
@@ -27,10 +28,18 @@ __all__ = [
     'softplus',
     'softshrink',
     'softsign',
+    'swiglu',
     'tanh',
     'tanhshrink',
     'threshold',
 ]
+
+
+def _split_gated_input(x: Tensor, dim: int) -> tuple[Tensor, ...]:
+    """Split an input into equally sized gate and value tensors."""
+    if x.size(dim) % 2 != 0:
+        raise AssertionError('The size of the split dimension must be even.')
+    return x.chunk(2, dim=dim)
 
 
 def celu(x: Tensor, alpha: float = 1.0, inplace: bool = False) -> Tensor:
@@ -56,6 +65,12 @@ def gelu(x: Tensor, approximate: str = 'none') -> Tensor:
         return 0.5 * x * (1.0 + tanh(scale * (x + 0.044715 * x.pow(3))))
     else:
         return 0.5 * x * (1.0 + (x / math.sqrt(2)).erf())
+
+
+def glu(x: Tensor, dim: int = -1) -> Tensor:
+    """Apply the gated linear unit along the specified dimension."""
+    value, gate = _split_gated_input(x, dim)
+    return value * sigmoid(gate)
 
 
 def hardshrink(x: Tensor, lambd: float = 0.5) -> Tensor:
@@ -222,6 +237,12 @@ def softshrink(x: Tensor, lambd: float = 0.5) -> Tensor:
 def softsign(x: Tensor) -> Tensor:
     """Apply the softsign function element-wise."""
     return x / (1 + x.abs())
+
+
+def swiglu(x: Tensor, dim: int = -1) -> Tensor:
+    """Apply the SwiGLU activation along the specified dimension."""
+    gate, value = _split_gated_input(x, dim)
+    return silu(gate) * value
 
 
 def tanh(x: Tensor) -> Tensor:
