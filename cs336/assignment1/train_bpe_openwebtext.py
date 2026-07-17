@@ -36,11 +36,11 @@ def main():
         initial_alphabet=INITIAL_ALPHABET,
     )
     end = time.perf_counter()
-    elapsed = end - start
+    print(f'Training completed in {start - end:.4f} seconds.')
 
-    print(f'Training completed in {elapsed:.4f} seconds.')
-
-    tokenizer.save('bpe_openwebtext.json')
+    file_name = 'bpe_openwebtext.json'
+    tokenizer.save(file_name)
+    print(f'Tokenizer saved to {file_name}.')
 
 
 if __name__ == '__main__':
