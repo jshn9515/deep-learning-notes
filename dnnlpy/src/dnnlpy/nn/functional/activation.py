@@ -196,7 +196,9 @@ def selu(x: Tensor, inplace: bool = False) -> Tensor:
 
 def sigmoid(x: Tensor) -> Tensor:
     """Apply the sigmoid function element-wise."""
-    return 1 / (1 + (-x).exp())
+    nonneg = x >= 0
+    exp_term = torch.where(nonneg, -x, x).exp()
+    return torch.where(nonneg, 1 / (1 + exp_term), exp_term / (1 + exp_term))
 
 
 def silu(x: Tensor, inplace: bool = False) -> Tensor:
