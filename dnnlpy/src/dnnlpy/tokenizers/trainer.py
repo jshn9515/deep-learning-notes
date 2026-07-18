@@ -7,6 +7,8 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, override
 
+import regex as re
+
 from .base import Tokenizer, Trainer
 
 if TYPE_CHECKING:
@@ -29,7 +31,6 @@ class BPETrainer(Trainer):
         tokenizer: Tokenizer,
         vocab_size: int,
         min_frequency: int = 2,
-        special_tokens: list[str] | None = None,
         initial_alphabet: list[str] | None = None,
     ):
         """Initialize the BPETrainer with the given parameters.
@@ -40,8 +41,6 @@ class BPETrainer(Trainer):
             vocab_size (int): The maximum size of the vocabulary to build.
             min_frequency (int, default: 2): The minimum frequency for a token to be
                 included in the vocabulary.
-            special_tokens (list[str] | None, optinal): A list of special tokens to
-                include in the vocabulary. If None, only the unknown token will be included.
             initial_alphabet (list[str] | None, optional): Characters to include in the
                 initial alphabet, even when they are not present in the training corpus.
                 If an entry contains multiple characters, only the first one is used.
@@ -59,28 +58,8 @@ class BPETrainer(Trainer):
         self.vocab_size = vocab_size
         self.min_frequency = min_frequency
         self.num_workers = tokenizer.num_workers
-        self.special_tokens = self._prepare_special_tokens(special_tokens)
+        self.special_tokens = list(dict.fromkeys(tokenizer.special_tokens))
         self.initial_alphabet = self._prepare_initial_alphabet(initial_alphabet)
-
-    def _prepare_special_tokens(self, special_tokens: list[str] | None) -> list[str]:
-        """Prepare special tokens for training.
-
-        Args:
-            special_tokens (list[str] | None): List of special tokens to include.
-
-        Returns:
-            list[str]: A list of **unique** special tokens, ensuring the unknown token
-                is included.
-        """
-        if special_tokens is None:
-            tokens = [self.model.unk_token]
-        else:
-            tokens = list(special_tokens)
-
-        if self.model.unk_token not in tokens:
-            tokens.insert(0, self.model.unk_token)
-
-        return list(dict.fromkeys(tokens))
 
     def _prepare_initial_alphabet(
         self,
@@ -202,12 +181,33 @@ class BPETrainer(Trainer):
         self._save_result(vocab_tokens, merges)
 
     def _iter_texts(self, inputs: Iterable[str | Iterable[str]]) -> Iterator[str]:
-        """Flatten an iterable of iterables of strings into a single iterator of strings."""
+        """Flatten inputs and yield pieces outside registered special tokens."""
+        special_tokens = sorted(
+            (token for token in self.special_tokens if token),
+            key=len,
+            reverse=True,
+        )
+        pattern = (
+            re.compile('|'.join(re.escape(token) for token in special_tokens))
+            if special_tokens
+            else None
+        )
+
         for item in inputs:
-            if isinstance(item, str):
-                yield item
-            else:
-                yield from item
+            texts = (item,) if isinstance(item, str) else item
+            for text in texts:
+                if pattern is None:
+                    yield text
+                    continue
+
+                start = 0
+                for match in pattern.finditer(text):
+                    if start < match.start():
+                        yield text[start : match.start()]
+                    start = match.end()
+
+                if start < len(text):
+                    yield text[start:]
 
     def _count_pre_tokens(self, texts: Iterable[str]) -> Counter[str]:
         """Count how often each pre-token appears in the input texts. The texts are
@@ -558,6 +558,29 @@ class BPETrainer(Trainer):
         self.model.merges = list(merges)
         self.model._refresh_merge_ranks()
 
-        vocab = {token: index for index, token in enumerate(vocab_tokens)}
+        vocab = {}
+        used_ids = set()
+        for token in self.special_tokens:
+            token_id = self.tokenizer.token_to_id(token)
+            if token_id is None:
+                raise KeyError(f'Special token {token!r} is not in the vocabulary.')
+            if token_id in used_ids:
+                raise ValueError(f'Duplicate special token ID: {token_id}.')
+
+            vocab[token] = token_id
+            used_ids.add(token_id)
+
+        next_id = 0
+        for token in vocab_tokens:
+            if token in vocab:
+                continue
+
+            while next_id in used_ids:
+                next_id += 1
+
+            vocab[token] = next_id
+            used_ids.add(next_id)
+            next_id += 1
+
         self.tokenizer.vocab = vocab
         self.tokenizer.special_tokens = list(self.special_tokens)

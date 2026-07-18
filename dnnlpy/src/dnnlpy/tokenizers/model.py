@@ -289,10 +289,12 @@ class BPE(Model):
         texts: Iterable[str | Iterable[str]],
         vocab_size: int = 100,
         min_frequency: int = 0,
-        special_tokens: list[str] | None = None,
         initial_alphabet: list[str] | None = None,
     ) -> None:
         """Train the BPE model from an iterator of texts.
+
+        Special tokens must be registered through ``Tokenizer.add_special_tokens``.
+        Registered tokens keep their IDs and are excluded from the training corpus.
 
         Args:
             tokenizer (Tokenizer): The tokenizer instance.
@@ -301,8 +303,6 @@ class BPE(Model):
             vocab_size (int, default: 100): The desired vocabulary size.
             min_frequency (int, default: 0): The minimum frequency for a token to be
                 included in the vocabulary.
-            special_tokens (list[str] | None, default: None): A list of special tokens
-                to include in the vocabulary.
             initial_alphabet (list[str] | None, default: None): A list of characters to
                 include in the initial alphabet, even if they are not present in the
                 training texts. If an entry has multiple characters, only the first
@@ -313,7 +313,6 @@ class BPE(Model):
             tokenizer=tokenizer,
             vocab_size=vocab_size,
             min_frequency=min_frequency,
-            special_tokens=special_tokens,
             initial_alphabet=initial_alphabet,
         )
         trainer.train(texts)

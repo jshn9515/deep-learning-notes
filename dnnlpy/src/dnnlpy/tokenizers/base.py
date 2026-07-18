@@ -56,7 +56,7 @@ class Model(ABC):
     """Abstract base class for tokenizer models."""
 
     unk_token: str
-    vocab: dict[str, int] | None = None
+    vocab: dict[str, int]
 
     @abstractmethod
     def encode(
@@ -80,7 +80,6 @@ class Model(ABC):
         texts: Iterable[str | Iterable[str]],
         vocab_size: int = 100,
         min_frequency: int = 0,
-        special_tokens: list[str] | None = None,
         initial_alphabet: list[str] | None = None,
     ) -> None: ...
 
@@ -430,7 +429,7 @@ class Tokenizer:
         self.unk_token = model.unk_token
         self.special_tokens = [self.unk_token]
 
-        self._vocab = model.vocab or {self.unk_token: 0}
+        self._vocab = model.vocab
         self._refresh_id_lookup()
 
     @property
@@ -545,10 +544,12 @@ class Tokenizer:
             count (int): The number of new tokens added to the vocabulary.
         """
         count = 0
+        next_id = max(self._vocab.values(), default=-1) + 1
 
         for token in tokens:
             if token not in self._vocab:
-                self._vocab[token] = len(self._vocab)
+                self._vocab[token] = next_id
+                next_id += 1
                 count += 1
 
         if count:
@@ -558,6 +559,10 @@ class Tokenizer:
 
     def add_special_tokens(self, tokens: list[str]) -> int:
         """Add special tokens to the tokenizer's vocabulary.
+
+        This is the only API for registering special tokens. Tokens registered before
+        training keep their IDs and are excluded from the training corpus. Tokens
+        registered after training are appended without changing existing token IDs.
 
         Args:
             tokens (list[str]): A list of special tokens to add.
@@ -654,10 +659,12 @@ class Tokenizer:
         texts: Iterable[str | Iterable[str]],
         vocab_size: int = 100,
         min_frequency: int = 0,
-        special_tokens: list[str] | None = None,
         initial_alphabet: list[str] | None = None,
     ) -> None:
         """Train the tokenizer model from an iterator.
+
+        Register special tokens with :meth:`add_special_tokens`. Their existing IDs
+        are preserved, and their occurrences are excluded from the training corpus.
 
         Args:
             texts (Iterable[str | Iterable[str]]): An iterable of input texts or
@@ -665,8 +672,6 @@ class Tokenizer:
             vocab_size (int, default: 100): The desired vocabulary size.
             min_frequency (int, default: 0): The minimum frequency for a token to be
                 included in the vocabulary.
-            special_tokens (list[str] | None, default: None): A list of special tokens
-                to include in the vocabulary.
             initial_alphabet (list[str] | None, default: None): A list of characters to
                 include in the initial alphabet, even if they are not present in the
                 training texts. If an entry has multiple characters, only the first
@@ -677,7 +682,6 @@ class Tokenizer:
             texts,
             vocab_size=vocab_size,
             min_frequency=min_frequency,
-            special_tokens=special_tokens,
             initial_alphabet=initial_alphabet,
         )
 
@@ -692,7 +696,7 @@ class Tokenizer:
     def _refresh_id_lookup(self) -> None:
         """Refresh the reverse mapping from IDs to tokens."""
         self._token_to_id = self._vocab
-        self._id_to_token = {index: token for token, index in self._vocab.items()}
+        self._id_to_token = {idx: token for token, idx in self._vocab.items()}
 
     def _normalize(self, text: str) -> str:
         """Normalize a string with the registered normalizer."""

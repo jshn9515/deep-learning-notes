@@ -124,36 +124,61 @@ def test_bpe_train_from_iterator_uses_first_initial_alphabet_character():
     assert 'xyz' not in tokenizer.vocab
 
 
-def test_bpe_train_records_merge_when_merged_token_already_exists():
+def test_bpe_training_preserves_preadded_special_token_ids_and_excludes_them():
     tokenizer = dltk.Tokenizer(dltk.BPE(), num_workers=1)
+    tokenizer.add_tokens(['ordinary'])
+    tokenizer.add_special_tokens(['<eos>', '<pad>'])
+    special_tokens = tokenizer.special_tokens
+
+    special_ids = {}
+    for token in special_tokens:
+        special_ids[token] = tokenizer.token_to_id(token)
 
     tokenizer.train_from_iterator(
-        ['abab'],
-        vocab_size=6,
-        special_tokens=['<unk>', 'ab'],
+        ['ab<eos>cd<pad>ef'],
+        vocab_size=12,
     )
 
     model = cast(dltk.BPE, tokenizer.model)
+    ordinary_tokens = set(tokenizer.vocab) - set(special_tokens)
 
-    assert hasattr(tokenizer.model, 'merges')
-    assert model.merges == [('a', 'b'), ('ab', 'ab')]
-    assert tokenizer.vocab == {'<unk>': 0, 'ab': 1, 'a': 2, 'b': 3, 'abab': 4}
+    for token in special_tokens:
+        assert tokenizer.token_to_id(token) == special_ids[token]
+
+    assert all('<' not in token for token in ordinary_tokens)
+    assert all('>' not in token for token in ordinary_tokens)
+    assert all('<' not in ''.join(pair) for pair in model.merges)
+    assert all('>' not in ''.join(pair) for pair in model.merges)
+    assert ('ab', 'cd') not in model.merges
+    assert ('cd', 'ef') not in model.merges
 
 
-def test_bpe_train_does_not_duplicate_existing_vocab_token():
+def test_bpe_add_special_tokens_after_training_preserves_existing_ids():
     tokenizer = dltk.Tokenizer(dltk.BPE(), num_workers=1)
-
-    tokenizer.train_from_iterator(
-        ['ab'],
-        vocab_size=6,
-        special_tokens=['<unk>', 'ab'],
-    )
+    tokenizer.train_from_iterator(['abab'], vocab_size=6)
 
     model = cast(dltk.BPE, tokenizer.model)
+    vocab = tokenizer.vocab
+    merges = list(model.merges)
+    special_tokens = tokenizer.special_tokens
+    expected_id = max(vocab.values()) + 1
 
-    assert hasattr(tokenizer.model, 'merges')
-    assert model.merges == [('a', 'b')]
-    assert list(tokenizer.vocab) == ['<unk>', 'ab', 'a', 'b']
+    tokenizer.add_special_tokens(['<eos>'])
+
+    assert tokenizer.token_to_id('<eos>') == expected_id
+
+    for token, token_id in vocab.items():
+        assert tokenizer.token_to_id(token) == token_id
+
+    assert model.merges == merges
+
+    tokenizer.train_from_iterator(['cd<eos>cd'], vocab_size=6)
+
+    assert tokenizer.token_to_id('<eos>') == expected_id
+
+    for token in vocab:
+        if token not in special_tokens:
+            assert '<' not in token and '>' not in token
 
 
 def test_bpe_training_ignores_empty_texts():
@@ -182,12 +207,15 @@ def test_bpe_save_and_load_restore_data_without_replacing_components(tmp_path):
         decoder=dltk.ByteLevelDecoder(),
         num_workers=1,
     )
+    tokenizer.add_special_tokens(['<pad>'])
+    pad_id = tokenizer.token_to_id('<pad>')
 
     tokenizer.train_from_iterator(
         ['Hello world', 'Hello tokenizer'],
         vocab_size=50,
-        special_tokens=['<unk>', '<pad>'],
     )
+
+    assert tokenizer.token_to_id('<pad>') == pad_id
 
     path = tmp_path / 'tokenizer.json'
     tokenizer.save(path)
