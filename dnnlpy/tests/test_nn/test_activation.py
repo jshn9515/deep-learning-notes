@@ -64,6 +64,24 @@ def test_elementwise_activation_functions_match_torch(
     assert_close(x1.grad, x2.grad, rtol=1e-5, atol=1e-6)
 
 
+def test_sigmoid_is_stable_for_extreme_inputs():
+    base = torch.tensor([-1000.0, -100.0, 0.0, 100.0, 1000.0], dtype=torch.float64)
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = dF.sigmoid(x1)
+    expected = torch.sigmoid(x2)
+
+    assert torch.isfinite(actual).all()
+    assert_close(actual, expected)
+
+    actual.sum().backward()
+    expected.sum().backward()
+
+    assert torch.isfinite(x1.grad).all()
+    assert_close(x1.grad, x2.grad)
+
+
 @pytest.mark.parametrize('dim', [1, -1])
 def test_glu_function_matches_torch_forward_and_backward(dim: int):
     base = torch.randn(2, 6, 4, dtype=torch.float64)
@@ -294,6 +312,38 @@ def test_rrelu_function_training_samples_negative_slopes_in_range():
     assert torch.all(slopes >= 0.1)
     assert torch.all(slopes <= 0.3)
     assert_close(actual[2:], x[2:])
+
+
+@pytest.mark.parametrize(
+    ('custom_fn', 'reference_fn'),
+    [(dF.softmax, F.softmax), (dF.log_softmax, F.log_softmax)],
+)
+def test_softmax_functions_are_stable_for_extreme_inputs(
+    custom_fn: Callable[..., Tensor], reference_fn: Callable[..., Tensor]
+):
+    base = torch.tensor(
+        [
+            [-1000.0, 0.0, 1000.0],
+            [1000.0, 1001.0, 1002.0],
+            [-1000.0, -999.0, -998.0],
+        ]
+    )
+    x1 = _copy(base)
+    x2 = _copy(base)
+
+    actual = custom_fn(x1, dim=-1)
+    expected = reference_fn(x2, dim=-1)
+
+    assert torch.isfinite(actual).all()
+    assert_close(actual, expected)
+
+    grad = torch.linspace(-1.0, 1.0, steps=actual.numel()).reshape_as(actual)
+    actual.backward(grad)
+    expected.backward(grad)
+
+    assert x1.grad is not None
+    assert torch.isfinite(x1.grad).all()
+    assert_close(x1.grad, x2.grad)
 
 
 @pytest.mark.parametrize('dim', [0, 1, -1])
