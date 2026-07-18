@@ -48,12 +48,22 @@ website:
       input-position: top
       language: en
   navbar:
+    left:
+      - text: CS336
+        href: cs336/index.qmd
     right:
       - text: 中文
         href: zh/
       - text: English
         href: en/
   sidebar:
+    - id: cs336
+      title: "CS336: Language Modeling from Scratch"
+      style: floating
+      contents:
+        - href: "cs336/index.qmd"
+          text: Overview
+        - "cs336/assignment1/assignment1.qmd"
     - id: zh
       style: floating
       contents:
