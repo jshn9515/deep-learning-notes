@@ -26,7 +26,6 @@ class MiniGPTCausalSelfAttention(nn.Module):
         num_heads: int = 4,
         bias: bool = True,
         dropout: float = 0.0,
-        use_rope: bool = False,
         *,
         fast: bool = False,
     ):
@@ -41,12 +40,9 @@ class MiniGPTCausalSelfAttention(nn.Module):
             bias (bool, default: True): Whether to use bias terms in the attention layers.
             dropout (float, default: 0.0): Dropout probability for attention weights and
                 the projected attention output.
-            use_rope (bool, default: False): Whether to apply rotary positional embeddings
-                to projected queries and keys.
             fast (bool, default: False): Whether to use the fast attention implementation.
         """
         super().__init__()
-        self.use_rope = use_rope
         self.fast = fast
 
         self.attn = dnn.MultiheadAttention(
@@ -54,7 +50,6 @@ class MiniGPTCausalSelfAttention(nn.Module):
             num_heads,
             bias=bias,
             dropout=dropout,
-            use_rope=use_rope,
             fast=fast,
         )
         self.resid_dropout = dnn.Dropout(dropout)
@@ -104,7 +99,6 @@ class MiniGPTBlock(nn.Module):
         hidden_dim: int = 512,
         bias: bool = True,
         dropout: float = 0.0,
-        use_rope: bool = False,
         *,
         fast: bool = False,
     ):
@@ -116,12 +110,9 @@ class MiniGPTBlock(nn.Module):
             hidden_dim (int, default: 512): Dimension of the hidden layer in feed-forward MLP.
             bias (bool, default: True): Whether to use bias terms in the linear layers.
             dropout (float, default: 0.0): Dropout probability for attention and MLP outputs.
-            use_rope (bool, default: False): Whether self-attention uses rotary positional
-                embeddings.
             fast (bool, default: False): Whether self-attention uses its fast implementation.
         """
         super().__init__()
-        self.use_rope = use_rope
         self.fast = fast
 
         self.norm1 = dnn.LayerNorm(embed_dim, bias=bias)
@@ -130,7 +121,6 @@ class MiniGPTBlock(nn.Module):
             num_heads,
             bias=bias,
             dropout=dropout,
-            use_rope=use_rope,
             fast=fast,
         )
         self.norm2 = dnn.LayerNorm(embed_dim, bias=bias)
@@ -156,7 +146,6 @@ class MiniGPT(nn.Module):
         bias: bool = True,
         dropout: float = 0.0,
         weight_tying: bool = True,
-        use_rope: bool = False,
         *,
         fast: bool = False,
     ):
@@ -174,8 +163,6 @@ class MiniGPT(nn.Module):
                 and feed-forward layers.
             weight_tying (bool, default: True): Whether to share token embedding weights
                 with the language-model output head.
-            use_rope (bool, default: False): Whether to use rotary positional embeddings
-                instead of learned absolute position embeddings.
             fast (bool, default: False): Whether attention layers use their fast
                 implementation. Other MiniGPT modules are unaffected.
         """
@@ -183,14 +170,10 @@ class MiniGPT(nn.Module):
         self.vocab_size = vocab_size
         self.block_size = block_size
         self.weight_tying = weight_tying
-        self.use_rope = use_rope
         self.fast = fast
 
         self.token_embed = dnn.Embedding(vocab_size, embed_dim)
-        if use_rope:
-            self.register_parameter('pos_embed', None)
-        else:
-            self.pos_embed = dnn.Embedding(block_size, embed_dim)
+        self.pos_embed = dnn.Embedding(block_size, embed_dim)
         self.embed_dropout = dnn.Dropout(dropout)
 
         self.blocks = nn.Sequential(
@@ -201,7 +184,6 @@ class MiniGPT(nn.Module):
                     hidden_dim=hidden_dim,
                     bias=bias,
                     dropout=dropout,
-                    use_rope=use_rope,
                     fast=fast,
                 )
                 for _ in range(num_layers)

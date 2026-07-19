@@ -19,7 +19,6 @@ class MultiheadAttention(nn.Module):
         kdim: int | None = None,
         vdim: int | None = None,
         dropout: float = 0.0,
-        use_rope: bool = False,
         *,
         fast: bool = False,
     ):
@@ -32,8 +31,6 @@ class MultiheadAttention(nn.Module):
             kdim (int | None, default: None): Input dimension for keys.
             vdim (int | None, default: None): Input dimension for values.
             dropout (float, default: 0.0): Dropout probability applied to attention weights.
-            use_rope (bool, default: False): Whether to apply rotary positional embeddings
-                to projected queries and keys.
             fast (bool, default: False): If set to True, will use the fast implementation
                 from :func:`torch.nn.functional`. Default: False.
         """
@@ -44,15 +41,11 @@ class MultiheadAttention(nn.Module):
         self.kdim = kdim or embed_dim
         self.vdim = vdim or embed_dim
         self.dropout = dropout
-        self.use_rope = use_rope
         self.fast = fast
 
         if embed_dim % num_heads != 0:
             raise AssertionError('`embed_dim` must be divisible by `num_heads`.')
         self.head_dim = embed_dim // num_heads
-
-        if use_rope and self.head_dim % 2 != 0:
-            raise AssertionError('RoPE requires an even head dimension.')
 
         self.q_proj = Linear(embed_dim, embed_dim, bias=bias, fast=fast)
         self.k_proj = Linear(self.kdim, embed_dim, bias=bias, fast=fast)
@@ -120,7 +113,6 @@ class MultiheadAttention(nn.Module):
             dropout=self.dropout,
             training=self.training,
             need_weights=need_weights,
-            use_rope=self.use_rope,
             fast=self.fast,
         )
 
@@ -138,6 +130,5 @@ class MultiheadAttention(nn.Module):
             f'dropout={self.dropout}, '
             f'bias={self.bias}, '
             f'kdim={self.kdim}, '
-            f'vdim={self.vdim}, '
-            f'use_rope={self.use_rope}'
+            f'vdim={self.vdim}'
         )

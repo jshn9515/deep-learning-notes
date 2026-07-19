@@ -1,8 +1,9 @@
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import torch
 import torch.nn.functional as F
+from torch import Tensor
 from torch.testing import assert_close
 
 import dnnlpy.models.gpt as gpt
@@ -68,7 +69,7 @@ def test_minigpt_scales_residual_projection_initialization_by_depth(monkeypatch)
     num_layers = 4
     model = _make_model(num_layers=num_layers, weight_tying=False)
 
-    def fill_with_std(tensor, mean=0.0, std=1.0):
+    def fill_with_std(tensor: Tensor, mean: float = 0.0, std: float = 1.0):
         del mean
         with torch.no_grad():
             tensor.fill_(std)
@@ -79,55 +80,19 @@ def test_minigpt_scales_residual_projection_initialization_by_depth(monkeypatch)
 
     expected_residual_std = 0.02 / (2 * num_layers) ** 0.5
     for block in model.blocks:
+        block = cast(gpt.MiniGPTBlock, block)
         assert_close(
             block.attn.attn.out_proj.weight,
             torch.full_like(block.attn.attn.out_proj.weight, expected_residual_std),
         )
         assert_close(
             block.mlp.net[2].weight,
-            torch.full_like(block.mlp.net[2].weight, expected_residual_std),
+            torch.full_like(block.mlp.net[2].weight, expected_residual_std),  # type: ignore[arg-type]
         )
         assert_close(
             block.attn.attn.q_proj.weight,
             torch.full_like(block.attn.attn.q_proj.weight, 0.02),
         )
-
-
-def test_minigpt_exposes_rope_and_fast_only_to_attention():
-    model = _make_model(num_layers=2, use_rope=True, fast=True)
-
-    assert model.use_rope is True
-    assert model.fast is True
-    assert model.pos_embed is None
-
-    for block in model.blocks:
-        assert block.use_rope is True
-        assert block.fast is True
-        assert block.attn.use_rope is True
-        assert block.attn.fast is True
-        assert block.attn.attn.use_rope is True
-        assert block.attn.attn.fast is True
-        assert block.attn.resid_dropout.fast is False
-        assert block.norm1.fast is False
-        assert block.norm2.fast is False
-        assert block.mlp.net[0].fast is False
-        assert block.mlp.net[1].fast is False
-        assert block.mlp.net[2].fast is False
-        assert block.mlp.net[3].fast is False
-
-    assert model.embed_dropout.fast is False
-    assert model.final_norm.fast is False
-    assert model.lm_head.fast is False
-
-    input_ids = torch.randint(0, 17, (2, 5))
-    assert model(input_ids).shape == (2, 5, 17)
-
-
-def test_minigpt_uses_learned_positions_without_rope():
-    model = _make_model(use_rope=False)
-
-    assert model.pos_embed is not None
-    assert all(not block.attn.attn.use_rope for block in model.blocks)
 
 
 def test_minigpt_ties_token_embedding_and_lm_head_by_default():

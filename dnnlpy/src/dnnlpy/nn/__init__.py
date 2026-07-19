@@ -75,7 +75,6 @@ from .regularization import (
 from .representation import Embedding as Embedding
 from .transformer import (
     LearnablePositionalEmbedding as LearnablePositionalEmbedding,
-    RotaryPositionalEmbedding as RotaryPositionalEmbedding,
     SinusoidalPositionalEncoding as SinusoidalPositionalEncoding,
     Transformer as Transformer,
     TransformerDecoder as TransformerDecoder,

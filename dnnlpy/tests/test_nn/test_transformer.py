@@ -318,34 +318,3 @@ def test_transformer_omits_batch_first_parameter():
 
     actual = custom(src, tgt)
     assert actual.shape == tgt.shape
-
-
-@pytest.mark.parametrize('fast', [False, True])
-def test_transformer_use_rope_propagates_to_every_attention_layer(fast: bool):
-    custom = dnn.Transformer(
-        d_model=D_MODEL,
-        num_heads=NUM_HEADS,
-        num_encoder_layers=2,
-        num_decoder_layers=2,
-        dim_feedforward=16,
-        dropout=0.0,
-        use_rope=True,
-        fast=fast,
-    )
-
-    assert custom.use_rope is True
-    assert all(layer.use_rope for layer in custom.encoder.layers)
-    assert all(layer.self_attn.use_rope for layer in custom.encoder.layers)
-    assert all(layer.use_rope for layer in custom.decoder.layers)
-    assert all(layer.self_attn.use_rope for layer in custom.decoder.layers)
-    assert all(layer.mha_attn.use_rope for layer in custom.decoder.layers)
-
-    src = torch.randn(BATCH_SIZE, SRC_LEN, D_MODEL)
-    tgt = torch.randn(BATCH_SIZE, TGT_LEN, D_MODEL)
-    actual = custom(src, tgt)
-    assert actual.shape == tgt.shape
-
-
-def test_transformer_use_rope_requires_even_head_dimension():
-    with pytest.raises(AssertionError, match='even head dimension'):
-        dnn.Transformer(d_model=6, num_heads=2, use_rope=True)

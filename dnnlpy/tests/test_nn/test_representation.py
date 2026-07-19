@@ -16,57 +16,6 @@ def _copy(x: Tensor, mode: bool = True) -> Tensor:
     return x.detach().clone().requires_grad_(mode)
 
 
-def test_rotary_positional_embedding_matches_precalculated_rotation_matrices():
-    x = torch.tensor(
-        [
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [-1.0, 0.5, 2.0, -3.0],
-                [0.25, -0.75, 1.5, 2.5],
-            ],
-            [
-                [-2.0, 1.0, 0.5, 3.0],
-                [4.0, -1.0, -2.0, 0.25],
-                [1.25, 2.25, -0.5, -1.5],
-            ],
-        ],
-        dtype=torch.float64,
-    )
-
-    # For dim=4 and base=10000, the two pair frequencies are 1 and 0.01.
-    # Each sequence position p uses R(p) = diag(R_2(p), R_2(p / 100)).
-    rotation_matrices = torch.tensor(
-        [
-            [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            [
-                [0.5403023058681398, -0.8414709848078965, 0.0, 0.0],
-                [0.8414709848078965, 0.5403023058681398, 0.0, 0.0],
-                [0.0, 0.0, 0.9999500004166653, -0.0099998333341667],
-                [0.0, 0.0, 0.0099998333341667, 0.9999500004166653],
-            ],
-            [
-                [-0.4161468365471424, -0.9092974268256817, 0.0, 0.0],
-                [0.9092974268256817, -0.4161468365471424, 0.0, 0.0],
-                [0.0, 0.0, 0.9998000066665778, -0.0199986666933331],
-                [0.0, 0.0, 0.0199986666933331, 0.9998000066665778],
-            ],
-        ],
-        dtype=torch.float64,
-    )
-    expected = torch.einsum('sij,bsj->bsi', rotation_matrices, x)
-
-    actual = dF.rotary_positional_embedding(x)
-    assert_close(actual, expected)
-
-    actual = dnn.RotaryPositionalEmbedding(embed_dim=4)(x)
-    assert_close(actual, expected)
-
-
 def _assert_embedding_matches_torch(x: Tensor, weight: Tensor, **kwargs: Any) -> None:
     actual_weight = _copy(weight)
     expected_weight = _copy(weight)
