@@ -1,5 +1,8 @@
+import time
 import warnings
 from collections.abc import Mapping, Sequence
+from datetime import timedelta
+from itertools import count
 from os import PathLike
 from pathlib import Path
 from typing import Any, Literal
@@ -35,7 +38,9 @@ class Trainer:
         benchmark: bool = False,
         gradient_clip_val: float | None = None,
         gradient_clip_algorithm: Literal['norm', 'value'] = 'norm',
-        max_epochs: int = 1,
+        max_epochs: int | None = None,
+        max_steps: int | None = None,
+        max_time: float | timedelta | None = None,
         checkpoint_path: str | PathLike[str] | None = None,
         checkpoint_every_n_epochs: int = 1,
         verbose: bool = True,
@@ -43,31 +48,31 @@ class Trainer:
         """Initialize a trainer.
 
         Args:
-            device (Device, default: None):
-                Device used for model, batches, and metrics.
-                `None` and `'auto'` select `get_default_device()`.
-            amp (bool, default: False):
-                Whether to enable automatic mixed precision.
-            precision ({'fp32', 'fp16', 'bf16'}, default: 'fp32'):
-                Floating-point precision used by autocast when `amp=True`.
-            seed (int | None, default: None):
-                Random seed passed to `set_seed`.
-            deterministic (bool, default: False):
-                Whether to request deterministic PyTorch algorithms.
-            benchmark (bool, default: False):
-                Whether to enable cuDNN benchmarking.
-            gradient_clip_val (float | None, default: None):
-                Gradient clipping value. `None` disables clipping.
-            gradient_clip_algorithm ({'norm', 'value'}, default: 'norm'):
-                Clipping algorithm used when `gradient_clip_val` is set.
-            max_epochs (int, default: 1):
-                Number of training epochs to run.
-            checkpoint_path (str | PathLike[str] | None, default: None):
-                Checkpoint file or directory path. `None` disables automatic checkpointing.
-            checkpoint_every_n_epochs (int, default: 1):
-                Frequency for automatic checkpoint saves.
-            verbose (bool, default: True):
-                Whether to print training progress.
+            device (Device, default: None): Device used for model, batches, and metrics.
+                If `None` or `'auto'`, `get_default_device()` function is used to select
+                the device.
+            amp (bool, default: False): Whether to enable automatic mixed precision.
+            precision ({'fp32', 'fp16', 'bf16'}, default: 'fp32'): Floating-point precision
+                used by autocast when `amp=True`.
+            seed (int | None, default: None): Random seed passed to `set_seed`.
+            deterministic (bool, default: False): Whether to request deterministic PyTorch
+                algorithms. We use a `warn_only` policy to avoid exceptions when deterministic
+                algorithms are not available.
+            benchmark (bool, default: False): Whether to enable cuDNN benchmarking.
+            gradient_clip_val (float | None, default: None): Gradient clipping value. `None`
+                disables gradient clipping.
+            gradient_clip_algorithm ({'norm', 'value'}, default: 'norm'): Clipping algorithm
+                used when `gradient_clip_val` is set.
+            max_epochs (int | None, default: None): Number of training epochs to run. `None`
+                disables this limit.
+            max_steps (int | None, default: None): Maximum number of optimizer steps. `None`
+                disables this limit.
+            max_time (float | timedelta | None, default: None): Maximum duration of each `fit`
+                call. Floats are interpreted as seconds, and `None` disables this limit.
+            checkpoint_path (str | PathLike[str] | None, default: None): Checkpoint file or
+                directory path. `None` disables automatic checkpointing.
+            checkpoint_every_n_epochs (int, default: 1): Frequency for automatic checkpoint saves.
+            verbose (bool, default: True): Whether to print training progress.
         """
         self.amp = amp
         self.precision = precision
@@ -77,18 +82,33 @@ class Trainer:
         self.gradient_clip_val = gradient_clip_val
         self.gradient_clip_algorithm = gradient_clip_algorithm
         self.max_epochs = max_epochs
+        self.max_steps = max_steps
+        self.max_time = max_time
+
+        if isinstance(max_time, timedelta):
+            self._max_time_seconds = max_time.total_seconds()
+        elif max_time is not None:
+            self._max_time_seconds = float(max_time)
+        else:
+            self._max_time_seconds = None
 
         if checkpoint_path is not None:
             self.checkpoint_path = Path(checkpoint_path)
         else:
             self.checkpoint_path = None
+
         self.checkpoint_every_n_epochs = checkpoint_every_n_epochs
 
         self.verbose = verbose
         self.history = []
+        self.global_step = 0
 
-        if self.max_epochs < 1:
+        if self.max_epochs is not None and self.max_epochs < 1:
             raise AssertionError('`max_epochs` must be at least 1.')
+        if self.max_steps is not None and self.max_steps < 1:
+            raise AssertionError('`max_steps` must be at least 1.')
+        if self._max_time_seconds is not None and self._max_time_seconds <= 0:
+            raise AssertionError('`max_time` must be positive.')
         if self.gradient_clip_val is not None and self.gradient_clip_val < 0:
             raise AssertionError('`gradient_clip_val` must be non-negative.')
         if self.gradient_clip_algorithm not in {'norm', 'value'}:
@@ -111,7 +131,7 @@ class Trainer:
             else torch.device(device)
         )
         self._amp_dtype = self._get_amp_dtype()
-        self._scaler = torch.amp.GradScaler(
+        self._scaler = torch.GradScaler(
             self.device.type,
             enabled=self.amp
             and self.precision == 'fp16'
@@ -186,12 +206,23 @@ class Trainer:
             start_epoch = int(checkpoint.get('epoch', 0)) + 1
         else:
             self.history.clear()
+            self.global_step = 0
+
+        start_time = time.monotonic()
 
         if self.verbose:
             print(f'Training on {self.device}...')
 
-        for epoch in range(start_epoch, self.max_epochs + 1):
-            train_logs = self._train_epoch(
+        if self.max_epochs is None:
+            epochs = count(start_epoch)
+        else:
+            epochs = range(start_epoch, self.max_epochs + 1)
+
+        for epoch in epochs:
+            if self._training_limit_reached(start_time):
+                break
+
+            train_logs, limit_reached = self._train_epoch(
                 model=model,
                 dataloader=train_dataloader,
                 loss_fn=loss_fn,
@@ -199,10 +230,11 @@ class Trainer:
                 lr_scheduler=lr_scheduler,
                 lr_scheduler_interval=lr_scheduler_interval,
                 metrics=train_metrics,
+                start_time=start_time,
             )
             logs = {f'train_{name}': value for name, value in train_logs.items()}
 
-            if val_dataloader is not None:
+            if val_dataloader is not None and not self._time_limit_reached(start_time):
                 val_logs = self._validate_epoch(
                     model=model,
                     dataloader=val_dataloader,
@@ -220,6 +252,9 @@ class Trainer:
                 self._print_epoch(epoch, logs)
 
             self._save_checkpoint_if_needed(epoch, model, optimizer, lr_scheduler)
+
+            if limit_reached:
+                break
 
         return self.history
 
@@ -277,6 +312,7 @@ class Trainer:
         checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         checkpoint = {
             'epoch': len(self.history) if epoch is None else epoch,
+            'global_step': self.global_step,
             'model': model.state_dict(),
             'history': self.history,
             'trainer': self._state_dict(),
@@ -333,6 +369,7 @@ class Trainer:
             self._scaler.load_state_dict(checkpoint['scaler'])
 
         self.history = list(checkpoint.get('history', []))
+        self.global_step = int(checkpoint.get('global_step', 0))
 
         return checkpoint
 
@@ -346,11 +383,14 @@ class Trainer:
         lr_scheduler: lr.LRScheduler | None,
         lr_scheduler_interval: Literal['epoch', 'step'],
         metrics: dict[str, Metric],
-    ) -> dict[str, float]:
-        """Run one training epoch and return aggregate logs."""
+        start_time: float,
+    ) -> tuple[dict[str, float], bool]:
+        """Run one training epoch and report whether a training limit was reached."""
         model.train()
         self._reset_metrics(metrics)
         total_loss = 0.0
+        num_batches = 0
+        limit_reached = False
 
         for batch in dataloader:
             batch = self._move_batch(batch)
@@ -359,14 +399,20 @@ class Trainer:
             with self._autocast_context():
                 loss, preds, targets = self._default_step(model, batch, loss_fn)
             self._backward_and_step(loss, model, optimizer)
+            self.global_step += 1
 
             if lr_scheduler_interval == 'step':
                 self._step_lr_scheduler(lr_scheduler)
 
             total_loss += loss.detach().item()
+            num_batches += 1
             self._update_metrics(metrics, preds, targets)
 
-        return self._build_logs(total_loss, len(dataloader), metrics)
+            if self._training_limit_reached(start_time):
+                limit_reached = True
+                break
+
+        return self._build_logs(total_loss, num_batches, metrics), limit_reached
 
     def _validate_epoch(
         self,
@@ -547,6 +593,8 @@ class Trainer:
             'gradient_clip_val': self.gradient_clip_val,
             'gradient_clip_algorithm': self.gradient_clip_algorithm,
             'max_epochs': self.max_epochs,
+            'max_steps': self.max_steps,
+            'max_time': self.max_time,
             'checkpoint_path': checkpoint_path,
             'checkpoint_every_n_epochs': self.checkpoint_every_n_epochs,
         }
@@ -608,10 +656,26 @@ class Trainer:
             return value.item()
         return float(value)
 
+    def _time_limit_reached(self, start_time: float) -> bool:
+        """Return whether the configured wall-clock limit has elapsed."""
+        if self._max_time_seconds is None:
+            return False
+        return time.monotonic() - start_time >= self._max_time_seconds
+
+    def _training_limit_reached(self, start_time: float) -> bool:
+        """Return whether the step or wall-clock training limit was reached."""
+        if self.max_steps is not None and self.global_step >= self.max_steps:
+            return True
+        return self._time_limit_reached(start_time)
+
     def _print_epoch(self, epoch: int, logs: dict[str, float]) -> None:
         """Print one formatted epoch log line."""
-        width = len(str(self.max_epochs))
         metrics = ' | '.join(f'{name}: {value:.4f}' for name, value in logs.items())
+        if self.max_epochs is None:
+            print(f'Epoch [{epoch}] | {metrics}')
+            return
+
+        width = len(str(self.max_epochs))
         print(f'Epoch [{epoch:{width}d}/{self.max_epochs:{width}d}] | {metrics}')
 
     def __repr__(self) -> str:
@@ -627,6 +691,8 @@ class Trainer:
             f'gradient_clip_val={self.gradient_clip_val!r}, '
             f'gradient_clip_algorithm={self.gradient_clip_algorithm!r}, '
             f'max_epochs={self.max_epochs!r}, '
+            f'max_steps={self.max_steps!r}, '
+            f'max_time={self.max_time!r}, '
             f'checkpoint_path={self.checkpoint_path!r}, '
             f'checkpoint_every_n_epochs={self.checkpoint_every_n_epochs!r}, '
             f'verbose={self.verbose!r}'
