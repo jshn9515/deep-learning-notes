@@ -1,6 +1,6 @@
 [project]
 name = "deep-learning-notes"
-version = "2026.06.11"
+version = "2026.07.21"
 keywords = ["deep learning tutorials", "PyTorch", "Quarto"]
 description = "A collection of notes and code examples for deep learning concepts and techniques."
 authors = [{ name = "jshn9515", email = "jshn9510@gmail.com" }]
