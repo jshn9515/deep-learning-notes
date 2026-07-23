@@ -49,7 +49,7 @@ jobs:
 
       - name: Generate zh package attestation
         if: ${{ hashFiles('dnnl-zh.tar.gz') != '' }}
-        uses: actions/attest@v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6  # v4
         with:
           subject-path: dnnl-zh.tar.gz
 
@@ -122,7 +122,7 @@ jobs:
 
       - name: Generate en package attestation
         if: ${{ hashFiles('dnnl-en.tar.gz') != '' }}
-        uses: actions/attest@v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6  # v4
         with:
           subject-path: dnnl-en.tar.gz
 

@@ -51,7 +51,7 @@ jobs:
 
       - name: Generate zh PDF attestation
         if: ${{ hashFiles('_typst/deep-learning-notes-zh.pdf') != '' }}
-        uses: actions/attest@v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6  # v4
         with:
           subject-path: _typst/deep-learning-notes-zh.pdf
 
@@ -95,7 +95,7 @@ jobs:
 
       - name: Generate en PDF attestation
         if: ${{ hashFiles('_typst/deep-learning-notes-en.pdf') != '' }}
-        uses: actions/attest@v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6  # v4
         with:
           subject-path: _typst/deep-learning-notes-en.pdf
 
