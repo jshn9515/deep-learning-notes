@@ -150,7 +150,7 @@ Q, K, V
 这里还有一个容易忽略的细节。SDPA 的 `dropout_p` 会根据传入值执行 dropout，而不会自动读取模块的 `training` 状态（因为这是一个函数）。因此应该显式写：
 
 ```python
-dropout_p=self.dropout if self.training else 0.0
+dropout_p = self.dropout if self.training else 0.0
 ```
 
 而不是在推理阶段仍然传入训练时的 dropout probability。
