@@ -13,8 +13,8 @@ eval: false
 第 10 章我们已经完整讨论过 FlashAttention 的算法原理：
 
 - 为什么标准 attention 会产生大量 HBM 读写？
-- 如何通过分块计算避免物化完整 attention 矩阵？
-- Online Softmax 为什么能保证结果正确？
+- 如何通过分块计算避免构造完整 attention 矩阵？
+- Online softmax 为什么能保证结果正确？
 
 因此，这一节不再重新解释 FlashAttention。我们把重点转向一个更实际的问题：
 
@@ -61,6 +61,7 @@ import torch.nn.attention.flex_attention as flex_attn
 import torch.nn.functional as F
 import xformers.ops as xops
 from torch import Tensor
+from torch.nn.attention import SDPBackend
 from transformers import AutoModelForCausalLM
 
 print('PyTorch version:', torch.__version__)
@@ -126,7 +127,7 @@ print('Causal attention output shape:', output.shape)
 
 ## 19.8.2 SDPA 为什么比手写 Attention 更适合作为默认实现
 
-手写 Attention 往往是：
+手写 attention 往往是：
 
 ```python
 scores = query @ key.transpose(-2, -1)
@@ -212,7 +213,7 @@ CUDNN_ATTENTION
 例如，强制使用数学后端：
 
 ```{python}
-with attn.sdpa_kernel(attn.SDPBackend.MATH):
+with attn.sdpa_kernel(SDPBackend.MATH):
     output = F.scaled_dot_product_attention(query, key, value, is_causal=True)
 
 print('Attention output shape:', output.shape)
@@ -223,10 +224,10 @@ print('Attention output shape:', output.shape)
 ```{python}
 with attn.sdpa_kernel(
     [
-        attn.SDPBackend.MATH,
-        attn.SDPBackend.FLASH_ATTENTION,
-        attn.SDPBackend.EFFICIENT_ATTENTION,
-        attn.SDPBackend.CUDNN_ATTENTION,
+        SDPBackend.MATH,
+        SDPBackend.FLASH_ATTENTION,
+        SDPBackend.EFFICIENT_ATTENTION,
+        SDPBackend.CUDNN_ATTENTION,
     ]
 ):
     output = F.scaled_dot_product_attention(query, key, value, is_causal=True)
@@ -262,7 +263,7 @@ def benchmark_sdpa(
     query: Tensor,
     key: Tensor,
     value: Tensor,
-    attn_backend: attn.SDPBackend,
+    attn_backend: SDPBackend,
     num_warmup: int = 5,
     num_steps: int = 20,
 ) -> float:
@@ -282,12 +283,7 @@ def benchmark_sdpa(
         start.record()
 
         for _ in range(num_steps):
-            F.scaled_dot_product_attention(
-                query,
-                key,
-                value,
-                is_causal=True,
-            )
+            F.scaled_dot_product_attention(query, key, value, is_causal=True)
 
         end.record()
         backend.synchronize()
@@ -309,29 +305,29 @@ query = torch.randn(
     seq_len,
     head_dim,
     dtype=torch.bfloat16,
-    xdevice=device,
+    device=device,
 )
 key = torch.randn_like(query)
 value = torch.randn_like(query)
 
 for backend in [
-    attn.SDPBackend.MATH,
-    attn.SDPBackend.FLASH_ATTENTION,
-    attn.SDPBackend.EFFICIENT_ATTENTION,
-    attn.SDPBackend.CUDNN_ATTENTION,
+    SDPBackend.MATH,
+    SDPBackend.FLASH_ATTENTION,
+    SDPBackend.EFFICIENT_ATTENTION,
+    SDPBackend.CUDNN_ATTENTION,
 ]:
     try:
-        avg_time = benchmark_sdpa(query, key, value, backend)
-        print(f'Backend: {backend.name}, Average time: {avg_time:.2f} ms.')
+        avg_time = benchmark_sdpa(query, key, value, backend=backend)
+        print(f'Backend: {backend.name} | Average time: {avg_time:.2f} ms.')
     except RuntimeError as err:
         print(f'Backend: {backend.name}, Error: {err}.')
 ```
 
 ```code
-Backend: MATH, Average time: 438.57 ms.
-Backend: FLASH_ATTENTION, Average time: 7.17 ms.
-Backend: EFFICIENT_ATTENTION, Average time: 11.58 ms.
-Backend: CUDNN_ATTENTION, Average time: 7.64 ms.
+Backend: MATH | Average time: 438.57 ms.
+Backend: FLASH_ATTENTION | Average time: 7.17 ms.
+Backend: EFFICIENT_ATTENTION | Average time: 11.58 ms.
+Backend: CUDNN_ATTENTION | Average time: 7.64 ms.
 ```
 
 当然，训练场景中只测 forward 不够，还应该测 forward + backward，并关注 peak memory 和完整训练 step 的时间。因为一个 kernel 的 forward 更快，不代表整个训练 step 一定更快。
@@ -417,7 +413,14 @@ q_len = 128
 kv_len = 128
 head_dim = 32
 
-query = torch.randn(batch_size, num_heads, q_len, head_dim, device=device)
+query = torch.randn(
+    batch_size,
+    num_heads,
+    q_len,
+    head_dim,
+    dtype=torch.bfloat16,
+    device=device,
+)
 key = torch.randn_like(query)
 value = torch.randn_like(query)
 
@@ -506,7 +509,7 @@ Hugging Face Transformers 也支持在加载模型时指定 attention kernel：
 ```{python}
 model = AutoModelForCausalLM.from_pretrained(
     'Qwen/Qwen3-0.6B',
-    attn_implementation=('kernels-community/flash-attn3'),
+    attn_implementation='kernels-community/flash-attn3',
     device_map='auto',
 )
 ipy.clear_output()
@@ -519,7 +522,7 @@ ipy.clear_output()
 ```{python}
 model = AutoModelForCausalLM.from_pretrained(
     'Qwen/Qwen3-0.6B',
-    attn_implementation=('kernels-community/flash-attn3'),
+    attn_implementation='kernels-community/flash-attn3',
     device_map='auto',
     use_kernels=True,
 )
@@ -611,7 +614,7 @@ Hugging Face `kernels` 则进一步解决了 kernel 的分发、版本管理和�
 可以把整张地图压缩成：
 
 - 普通 attention，优先使用 SDPA；
-- 需要控制后端，使用 `SDPBackend` + `sdpa_kernel`
+- 需要控制后端，使用 `SDPBackend` + `sdpa_kernel`；
 - 需要自定义 mask、bias 或 attention 变体，使用 FlexAttention；
 - 已有项目依赖 xFormers 或需要其 AttentionBias，继续使用 `xFormers`；
 - 使用 Transformers 并希望动态加载社区 kernel，使用 Hugging Face `kernels`。
