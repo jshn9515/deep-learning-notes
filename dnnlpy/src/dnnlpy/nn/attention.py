@@ -86,13 +86,13 @@ class MultiheadAttention(nn.Module):
             )
 
         if key_padding_mask is not None:
-            padding_mask = key_padding_mask[:, None, None, :]
+            key_padding_mask = key_padding_mask[:, None, None, :]
             attn_mask = (
-                padding_mask
+                key_padding_mask
                 if attn_mask is None
-                else attn_mask.logical_or(padding_mask)
+                else attn_mask.logical_or(key_padding_mask)
                 if attn_mask.dtype == torch.bool
-                else attn_mask.masked_fill(padding_mask, -torch.inf)
+                else attn_mask.masked_fill(key_padding_mask, -torch.inf)
             )
 
         attn_output, attn_weights = dF.multi_head_attention(
