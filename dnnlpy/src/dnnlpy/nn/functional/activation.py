@@ -119,7 +119,7 @@ def leaky_relu(
 def log_softmax(x: Tensor, dim: int) -> Tensor:
     """Apply the log-softmax function along the specified dimension."""
     max_x = x.max(dim=dim, keepdim=True).values
-    log_sum_exp = (x - max_x).logsumexp(dim=dim, keepdim=True)
+    log_sum_exp = torch.logsumexp(x - max_x, dim=dim, keepdim=True)
     return x - max_x - log_sum_exp
 
 
@@ -143,8 +143,8 @@ def prelu(x: Tensor, weight: Tensor) -> Tensor:
     else:
         if x.ndim < 2:
             raise AssertionError(
-                'Expected input with at least 2 dimensions when '
-                '`weight` has more than one element.'
+                'Expected input with at least 2 dimensions when `weight` has '
+                'more than one element.'
             )
         negative_slope = weight.reshape(1, weight.numel(), *([1] * (x.ndim - 2)))
 
