@@ -65,12 +65,12 @@ def scaled_dot_product_attention(
         query (Tensor): Query tensor of shape `(batch, target_len, embed_dim)`.
         key (Tensor): Key tensor of shape `(batch, source_len, key_dim)`.
         value (Tensor): Value tensor of shape `(batch, source_len, value_dim)`.
-        attn_mask (Tensor | None, default: None): Optional attention mask.
+        attn_mask (Tensor, optional): Optional attention mask.
         is_causal (bool, default: False): Whether to apply a causal mask.
         dropout (float, default: 0.0): Dropout probability for attention weights.
         training (bool, default: True): Whether dropout is active.
         need_weights (bool, default: True): Whether to return attention weights.
-        scale (float | None, default: None): Optional scaling factor for attention scores.
+        scale (float, optional): Optional scaling factor for attention scores.
             If `None`, defaults to `1 / sqrt(embed_dim)`.
 
     Returns:
@@ -154,11 +154,11 @@ def multi_head_attention(
         k_proj_weight (Tensor): Key projection weight.
         v_proj_weight (Tensor): Value projection weight.
         out_proj_weight (Tensor): Output projection weight.
-        q_proj_bias (Tensor | None, default: None): Optional query projection bias.
-        k_proj_bias (Tensor | None, default: None): Optional key projection bias.
-        v_proj_bias (Tensor | None, default: None): Optional value projection bias.
-        out_proj_bias (Tensor | None, default: None): Optional output projection bias.
-        attn_mask (Tensor | None, default: None): Optional attention mask.
+        q_proj_bias (Tensor, optional): Optional query projection bias.
+        k_proj_bias (Tensor, optional): Optional key projection bias.
+        v_proj_bias (Tensor, optional): Optional value projection bias.
+        out_proj_bias (Tensor, optional): Optional output projection bias.
+        attn_mask (Tensor, optional): Optional attention mask.
         is_causal (bool, default: False): Whether to apply a causal mask.
         dropout (float, default: 0.0): Dropout probability for attention weights.
         training (bool, default: True): Whether dropout is active.
@@ -244,6 +244,6 @@ def generate_causal_mask(
     Returns:
         Tensor: A square mask where positions above the diagonal are masked.
     """
-    mask = torch.full((sz, sz), -torch.inf, device=device)
+    mask = torch.full((sz, sz), -math.inf, device=device)
     mask = mask.triu(diagonal=1)
     return mask
