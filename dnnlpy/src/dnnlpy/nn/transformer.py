@@ -6,11 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+from .. import nn as dnn
 from . import functional as dF
-from .affine import Linear
-from .attention import MultiheadAttention
-from .normalization import LayerNorm
-from .regularization import Dropout
 
 type Activation = Callable[[Tensor], Tensor]
 
@@ -148,7 +145,7 @@ class TransformerEncoderLayer(nn.Module):
         self.norm_first = norm_first
         self.fast = fast
 
-        self.self_attn = MultiheadAttention(
+        self.self_attn = dnn.MultiheadAttention(
             d_model,
             num_heads,
             dropout=dropout,
@@ -156,14 +153,14 @@ class TransformerEncoderLayer(nn.Module):
             fast=fast,
         )
 
-        self.linear1 = Linear(d_model, dim_feedforward, bias=bias, fast=fast)
-        self.dropout = Dropout(dropout, fast=fast)
-        self.linear2 = Linear(dim_feedforward, d_model, bias=bias, fast=fast)
+        self.linear1 = dnn.Linear(d_model, dim_feedforward, bias=bias, fast=fast)
+        self.dropout = dnn.Dropout(dropout, fast=fast)
+        self.linear2 = dnn.Linear(dim_feedforward, d_model, bias=bias, fast=fast)
 
-        self.norm1 = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
-        self.norm2 = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
-        self.dropout1 = Dropout(dropout, fast=fast)
-        self.dropout2 = Dropout(dropout, fast=fast)
+        self.norm1 = dnn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
+        self.norm2 = dnn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
+        self.dropout1 = dnn.Dropout(dropout, fast=fast)
+        self.dropout2 = dnn.Dropout(dropout, fast=fast)
 
         self.activation = _get_activation_fn(activation, fast=fast)
 
@@ -339,14 +336,14 @@ class TransformerDecoderLayer(nn.Module):
         self.norm_first = norm_first
         self.fast = fast
 
-        self.self_attn = MultiheadAttention(
+        self.self_attn = dnn.MultiheadAttention(
             d_model,
             num_heads,
             bias=bias,
             dropout=dropout,
             fast=fast,
         )
-        self.mha_attn = MultiheadAttention(
+        self.mha_attn = dnn.MultiheadAttention(
             d_model,
             num_heads,
             bias=bias,
@@ -354,16 +351,16 @@ class TransformerDecoderLayer(nn.Module):
             fast=fast,
         )
 
-        self.linear1 = Linear(d_model, dim_feedforward, bias=bias, fast=fast)
-        self.dropout = Dropout(dropout, fast=fast)
-        self.linear2 = Linear(dim_feedforward, d_model, bias=bias, fast=fast)
+        self.linear1 = dnn.Linear(d_model, dim_feedforward, bias=bias, fast=fast)
+        self.dropout = dnn.Dropout(dropout, fast=fast)
+        self.linear2 = dnn.Linear(dim_feedforward, d_model, bias=bias, fast=fast)
 
-        self.norm1 = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
-        self.norm2 = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
-        self.norm3 = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
-        self.dropout1 = Dropout(dropout, fast=fast)
-        self.dropout2 = Dropout(dropout, fast=fast)
-        self.dropout3 = Dropout(dropout, fast=fast)
+        self.norm1 = dnn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
+        self.norm2 = dnn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
+        self.norm3 = dnn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
+        self.dropout1 = dnn.Dropout(dropout, fast=fast)
+        self.dropout2 = dnn.Dropout(dropout, fast=fast)
+        self.dropout3 = dnn.Dropout(dropout, fast=fast)
 
         self.activation = _get_activation_fn(activation, fast=fast)
 
@@ -609,7 +606,7 @@ class Transformer(nn.Module):
             norm_first=norm_first,
             fast=fast,
         )
-        encoder_norm = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
+        encoder_norm = dnn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
         self.encoder = TransformerEncoder(
             encoder_layer,
             num_encoder_layers,
@@ -627,12 +624,29 @@ class Transformer(nn.Module):
             norm_first=norm_first,
             fast=fast,
         )
-        decoder_norm = LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
+        decoder_norm = dnn.LayerNorm(d_model, eps=layer_norm_eps, bias=bias, fast=fast)
         self.decoder = TransformerDecoder(
             decoder_layer,
             num_decoder_layers,
             norm=decoder_norm,
         )
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        """Reset parameters of the encoder and decoder."""
+        for module in self.modules():
+            if isinstance(module, dnn.Linear):
+                nn.init.normal_(module.weight, mean=0.0, std=0.02)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+            elif isinstance(module, dnn.Embedding):
+                nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            elif isinstance(module, dnn.LayerNorm):
+                if module.weight is not None:
+                    nn.init.ones_(module.weight)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
 
     def forward(
         self,
