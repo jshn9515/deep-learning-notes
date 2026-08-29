@@ -138,7 +138,7 @@ class TransformerEncoderLayer(nn.Module):
             dim_feedforward (int, default: 2048): Hidden dimension of the feed-forward block.
             bias (bool, default: True): Whether linear and layer norm modules include bias.
             dropout (float, default: 0.1): Dropout probability.
-            activation (str | Activation, default: 'relu'): Feed-forward activation.
+            activation (str | Callable, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If `True`, use pre-normalization.
             fast (bool, default: False): If set to True, will use the fast implementation
@@ -174,7 +174,18 @@ class TransformerEncoderLayer(nn.Module):
         src_key_padding_mask: Tensor | None = None,
         is_causal: bool = False,
     ) -> Tensor:
-        """Pass source tokens through the encoder layer."""
+        """Pass source tokens through the encoder layer.
+
+        Args:
+            src (Tensor): Source tokens of shape `(batch, seq_len, d_model)`.
+            src_mask (Tensor, optional): Optional source attention mask.
+            src_key_padding_mask (Tensor, optional): Optional source key padding mask.
+            is_causal (bool, default: False): If `True`, apply causal masking to
+                self-attention.
+
+        Returns:
+            Tensor: Output of the encoder layer of shape `(batch, seq_len, d_model)`.
+        """
         if self.norm_first:  # Pre-LN
             x = src + self._sa_block(
                 self.norm1(src),
@@ -250,7 +261,7 @@ class TransformerEncoder(nn.Module):
         Args:
             encoder_layer (TransformerEncoderLayer): Prototype encoder layer to clone.
             num_layers (int): Number of encoder layers.
-            norm (nn.Module | None, default: None): Optional final normalization module.
+            norm (nn.Module, optional): Optional final normalization module.
         """
         super().__init__()
         self.layers = _clone_module(encoder_layer, num_layers)
@@ -264,7 +275,18 @@ class TransformerEncoder(nn.Module):
         src_key_padding_mask: Tensor | None = None,
         is_causal: bool = False,
     ) -> Tensor:
-        """Pass source tokens through all encoder layers."""
+        """Pass source tokens through all encoder layers.
+
+        Args:
+            src (Tensor): Source tokens of shape `(batch, seq_len, d_model)`.
+            mask (Tensor, optional): Optional source attention mask.
+            src_key_padding_mask (Tensor, optional): Optional source key padding mask.
+            is_causal (bool, default: False): If `True`, apply causal masking to
+                self-attention.
+
+        Returns:
+            Tensor: Output of the encoder stack of shape `(batch, seq_len, d_model)`.
+        """
         output = src
         for layer in self.layers:
             output = layer(
@@ -307,7 +329,7 @@ class TransformerDecoderLayer(nn.Module):
             dim_feedforward (int, default: 2048): Hidden dimension of the feed-forward block.
             bias (bool, default: True): Whether linear and layer norm modules include bias.
             dropout (float, default: 0.1): Dropout probability.
-            activation (str | Activation, default: 'relu'): Feed-forward activation.
+            activation (str | Callable, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If `True`, use pre-normalization.
             fast (bool, default: False): If set to True, will use the fast implementation
@@ -356,7 +378,23 @@ class TransformerDecoderLayer(nn.Module):
         tgt_is_causal: bool = False,
         memory_is_causal: bool = False,
     ) -> Tensor:
-        """Pass target tokens through the decoder layer."""
+        """Pass target tokens through the decoder layer.
+
+        Args:
+            tgt (Tensor): Target tokens of shape `(batch, seq_len, d_model)`.
+            memory (Tensor): Encoder memory of shape `(batch, seq_len, d_model)`.
+            tgt_mask (Tensor, optional): Optional target attention mask.
+            memory_mask (Tensor, optional): Optional memory attention mask.
+            tgt_key_padding_mask (Tensor, optional): Optional target key padding mask.
+            memory_key_padding_mask (Tensor, optional): Optional memory key padding mask.
+            tgt_is_causal (bool, default: False): If `True`, apply causal masking to
+                target self-attention.
+            memory_is_causal (bool, default: False): If `True`, apply causal masking to
+                memory cross-attention.
+
+        Returns:
+            Tensor: Output of the decoder layer of shape `(batch, seq_len, d_model)`.
+        """
         if self.norm_first:
             x = tgt + self._sa_block(
                 self.norm1(tgt),
@@ -482,7 +520,23 @@ class TransformerDecoder(nn.Module):
         tgt_is_causal: bool = False,
         memory_is_causal: bool = False,
     ) -> Tensor:
-        """Pass target tokens and encoder memory through all decoder layers."""
+        """Pass target tokens and encoder memory through all decoder layers.
+
+        Args:
+            tgt (Tensor): Target tokens of shape `(batch, seq_len, d_model)`.
+            memory (Tensor): Encoder memory of shape `(batch, seq_len, d_model)`.
+            tgt_mask (Tensor, optional): Optional target attention mask.
+            memory_mask (Tensor, optional): Optional memory attention mask.
+            tgt_key_padding_mask (Tensor, optional): Optional target key padding mask.
+            memory_key_padding_mask (Tensor, optional): Optional memory key padding mask.
+            tgt_is_causal (bool, default: False): If `True`, apply causal masking to
+                target self-attention.
+            memory_is_causal (bool, default: False): If `True`, apply causal masking to
+                memory cross-attention.
+
+        Returns:
+            Tensor: Output of the decoder stack of shape `(batch, seq_len, d_model)`.
+        """
         output = tgt
         for layer in self.layers:
             output = layer(
@@ -533,7 +587,7 @@ class Transformer(nn.Module):
             dim_feedforward (int, default: 2048): Hidden dimension of feed-forward blocks.
             bias (bool, default: True): Whether linear and layer norm modules include bias.
             dropout (float, default: 0.1): Dropout probability.
-            activation (str | Activation, default: 'relu'): Feed-forward activation.
+            activation (str | Callable, default: 'relu'): Feed-forward activation.
             layer_norm_eps (float, default: 1e-5): Epsilon for layer normalization.
             norm_first (bool, default: False): If `True`, use pre-normalization inside layers.
             fast (bool, default: False): If set to True, will use the fast implementation
@@ -594,7 +648,27 @@ class Transformer(nn.Module):
         tgt_is_causal: bool = False,
         memory_is_causal: bool = False,
     ) -> Tensor:
-        """Encode `src` and decode `tgt` against the encoder memory."""
+        """Encode `src` and decode `tgt` against the encoder memory.
+
+        Args:
+            src (Tensor): Source tokens of shape `(batch, seq_len, d_model)`.
+            tgt (Tensor): Target tokens of shape `(batch, seq_len, d_model)`.
+            src_mask (Tensor, optional): Optional source attention mask.
+            tgt_mask (Tensor, optional): Optional target attention mask.
+            memory_mask (Tensor, optional): Optional memory attention mask.
+            src_key_padding_mask (Tensor, optional): Optional source key padding mask.
+            tgt_key_padding_mask (Tensor, optional): Optional target key padding mask.
+            memory_key_padding_mask (Tensor, optional): Optional memory key padding mask.
+            src_is_causal (bool, default: False): If `True`, apply causal masking to
+                source self-attention.
+            tgt_is_causal (bool, default: False): If `True`, apply causal masking to
+                target self-attention.
+            memory_is_causal (bool, default: False): If `True`, apply causal masking to
+                memory cross-attention.
+
+        Returns:
+            Tensor: Output of the decoder stack of shape `(batch, seq_len, d_model)`.
+        """
         if src.size(-1) != self.d_model or tgt.size(-1) != self.d_model:
             raise AssertionError(
                 'The feature number of `src` and `tgt` must be equal to `d_model`.'
