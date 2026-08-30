@@ -67,6 +67,13 @@ website:
         - href: "cs336/index.qmd"
           text: Overview
         - "cs336/assignment1/assignment1.qmd"
+    - id: cs224n
+      title: "CS224N: Natural Language Processing with Deep Learning"
+      style: floating
+      contents:
+        - href: "cs224n/index.qmd"
+          text: Overview
+        - "cs224n/assignment3/assignment3.qmd"
     - id: zh
       style: floating
       contents:
