@@ -1,4 +1,5 @@
 import math
+from typing import Literal, Self
 
 import torch
 import torch.nn as nn
@@ -8,8 +9,10 @@ from transformers import GPT2LMHeadModel
 import dnnlpy.nn as dnn
 import dnnlpy.nn.functional as dF
 
-from .config import GPT2Config
+from .config import *
 from .utils import state_dict_converter
+
+type ModelSize = Literal['small', 'medium', 'large', 'xl']
 
 __all__ = [
     'GPT2MLP',
@@ -180,21 +183,28 @@ class GPT2Model(nn.Module):
         return loss
 
     @classmethod
-    def from_pretrained(cls):
+    def from_pretrained(cls, size: ModelSize) -> Self:
         """Load a pretrained GPT-2 model from HuggingFace."""
-        config = GPT2Config(
-            vocab_size=50257,
-            context_length=1024,
-            d_model=768,
-            n_heads=12,
-            n_layers=12,
-            weight_tying=True,
-            fast=False,
-        )
+        match size:
+            case 'small':
+                config = GPT2_SMALL
+            case 'medium':
+                config = GPT2_MEDIUM
+            case 'large':
+                config = GPT2_LARGE
+            case 'xl':
+                config = GPT2_XL
+            case _:
+                raise RuntimeError(f'Invalid model size: {size}.')
+
         model = cls(config)
 
         # Load weights from HuggingFace
-        hf_model = GPT2LMHeadModel.from_pretrained('gpt2')
+        if size == 'small':
+            hf_model = GPT2LMHeadModel.from_pretrained('openai-community/gpt2')
+        else:
+            hf_model = GPT2LMHeadModel.from_pretrained(f'openai-community/gpt2-{size}')
+
         converted_state_dict = state_dict_converter(hf_model.state_dict())
         model.load_state_dict(converted_state_dict)
 
