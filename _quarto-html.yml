@@ -52,6 +52,8 @@ website:
     left:
       - text: CS336
         href: cs336/index.qmd
+      - text: CS224n
+        href: cs224n/index.qmd
     right:
       - text: 中文
         href: zh/
