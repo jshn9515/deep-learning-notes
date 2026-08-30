@@ -16,5 +16,5 @@ listing:
 
 open-graph:
   title: cs224n-natural-language-processing
-  description: "Stanford CS224n: Natural Language Processing"
+  description: "Stanford CS224N: Natural Language Processing"
 ---
