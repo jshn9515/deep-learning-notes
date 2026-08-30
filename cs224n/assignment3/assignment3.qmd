@@ -3,9 +3,9 @@ author: jshn9515
 date: 2026-08-30
 date-modified: 2026-08-30
 open-graph:
-  title: cs336-assignment1-writeup
-  description: "CS336 Assignment 3 Writeup: Self-Attention and Transformers"
-title: "C224n Assignment 3：Self-Attention 和 Transformers"
+  title: cs224n-assignment3-writeup
+  description: "C224N Assignment 3：Self-Attention and Transformers"
+title: "C224N Assignment 3：Self-Attention 和 Transformers"
 order: 1
 ---
 
