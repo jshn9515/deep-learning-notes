@@ -6,7 +6,7 @@ open-graph:
   title: cs224n-assignment3-writeup
   description: "C224N Assignment 3：Self-Attention and Transformers"
 title: "C224N Assignment 3：Self-Attention 和 Transformers"
-order: 1
+order: 3
 ---
 
 本次作业将探究 Transformer —— 当前前沿大语言模型（LLM）中占主导地位的架构。
