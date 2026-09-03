@@ -49,7 +49,7 @@ notebook = ["ipython>=9.15.0"]
 Homepage = "https://github.com/jshn9515/deep-learning-notes"
 
 [tool.uv]
-torch-backend = "auto"
+torch-backend = "cpu"
 
 [build-system]
 requires = ["uv_build>=0.12.0,<0.13.0"]
