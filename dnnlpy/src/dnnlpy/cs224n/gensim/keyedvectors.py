@@ -233,8 +233,8 @@ class KeyedVectors:
         Args:
             keys (Iterable[Key]): Collection of keys corresponding to the vector
                 rows. For one vector, pass a collection containing one key.
-            weights (Iterable[np.ndarray]): Array of vector values of shape
-                `(n_keys, vector_size)`, converted to the storage dtype.
+            weights (np.ndarray | Iterable[np.ndarray]): Array of vector values
+                of shape `(n_keys, vector_size)`, converted to the storage dtype.
                 A collection containing one vector must still be two-dimensional.
             replace (bool, default: False): Whether to overwrite existing keys.
                 Otherwise, their supplied vectors are ignored.
