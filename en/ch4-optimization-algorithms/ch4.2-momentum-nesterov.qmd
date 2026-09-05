@@ -144,8 +144,8 @@ If the gradients over many consecutive steps point in similar directions, these 
 
 Therefore, momentum does two things at the same time:
 
-1. it accelerates along consistent directions;
-2. it smooths directions that repeatedly oscillate.
+1. It accelerates along consistent directions;
+2. It smooths directions that repeatedly oscillate.
 
 This is why momentum is often explained as “inertia.” Ordinary SGD decides the direction from scratch at every step, while momentum is like a small ball with velocity. It does not immediately make a sharp turn just because the current gradient changes slightly; instead, it preserves the motion trend from the past.
 
@@ -167,9 +167,9 @@ In other words, momentum does not only look at the current gradient. It looks at
 
 This matches our intuition during training:
 
-- the gradient of the current mini-batch is important;
-- the gradients from the most recent few steps are also useful references;
-- gradients from a long time ago should gradually fade out.
+- The gradient of the current mini-batch is important;
+- The gradients from the most recent few steps are also useful references;
+- Gradients from a long time ago should gradually fade out.
 
 So momentum can be understood as a kind of smoothing over gradient directions. It turns a noisy single-step gradient into a more stable accumulated direction. In this way, inside a long and narrow valley, the parameters will not oscillate back and forth as much, but will move more smoothly along the bottom of the valley.
 
