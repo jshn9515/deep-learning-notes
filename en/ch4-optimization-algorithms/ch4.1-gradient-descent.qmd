@@ -321,7 +321,7 @@ $$
 L_{\text{reg}}(\theta) = L(\theta) + \frac{\lambda}{2}\|\theta\|_2^2
 $$
 
-Here, $\lambda$ is the regularization strength, controlling how strongly we want the parameters to become smaller. $\|\theta\|_2^2$ denotes the sum of squared parameters. The larger this term is, the larger the parameters are overall. After adding this term, the optimizer must not only reduce the original training loss, but also avoid making the parameters grow without bound.
+Here, $\lambda$ is the regularization strength, controlling how strongly we want the parameters to become smaller. $||\theta||_2^2$ denotes the sum of squared parameters. The larger this term is, the larger the parameters are overall. After adding this term, the optimizer must not only reduce the original training loss, but also avoid making the parameters grow without bound.
 
 This is usually called **L2 regularization**. In SGD, it is also often called **weight decay**.
 
