@@ -132,7 +132,7 @@ elapsed = time.perf_counter() - start
 
 可以把过程粗略理解成：
 
-![图 19.3.3 GPU 异步执行示意图](figures/ch19.3-gpu-execusion.svg){width=80%}
+![图 19.3.3 GPU 异步执行示意图](figures/ch19.3-gpu-execution.svg){width=80%}
 
 因此，如果要用 CPU timer 测 CUDA workload，需要在计时边界进行同步：
 
@@ -270,7 +270,7 @@ Self XPU time total: 453.482ms
 如果使用 GPU，可以先按照：
 
 ```python
-sort_by = 'self_cuda_time_total'
+sort_by = f'self_{device.type}_time_total'
 ```
 
 排序，看看哪些 operator 真正在 GPU 上消耗了最多时间。如果程序主要运行在 CPU，则可以看：
