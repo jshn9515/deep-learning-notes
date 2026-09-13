@@ -257,7 +257,7 @@ def add_triton_kernel(
 
 ![图 19.10.3 Triton 的执行顺序](figures/ch19.10-triton-execution.svg){height=450px}
 
-代码里的 `@triton.jit` 表示这个函数会由 Triton JIT compiler 编译成 GPU kernel；`a_ptr`、`b_ptr` 和 `y_ptr` 可以理解为指向 GPU tensor 数据的 tl.tensor。`tl.load()` 根据 tl.tensor 和 offsets 读取一整个 block，计算完成后，再通过 `tl.store()` 写回结果。
+代码里的 `@triton.jit` 表示这个函数会由 Triton JIT compiler 编译成 GPU kernel；`a_ptr`、`b_ptr` 和 `output_ptr` 是指向输入/输出 tensor 数据的指针参数。`tl.load()` 根据这些指针和 offsets 读取一整个 block，计算完成后，再通过 `tl.store()` 写回结果。
 
 因此，Triton 代码虽然写起来像 Python，但 kernel 内部并不是普通 Python 在逐元素执行。
 
