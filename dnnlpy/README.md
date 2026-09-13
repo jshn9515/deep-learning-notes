@@ -4,11 +4,12 @@
 
 The package structure is similar to PyTorch, but keeps a clear boundary between reusable neural network building blocks and complete model implementations:
 
+- `dnnlpy.cs224n` contains implementations and utilities for the CS224N assignments.
+- `dnnlpy.cs336` contains implementations and utilities for the CS336 assignments.
+- `dnnlpy.models` contains higher-level model architectures or model-specific components, such as ViT, DDPM, or other models introduced in the notes.
 - `dnnlpy.nn` contains general neural network modules, such as attention layers, positional encodings, and other reusable components.
 - `dnnlpy.nn.functional` contains stateless helper functions, such as functional attention implementations.
 - `dnnlpy.optim` contains small optimizer implementations for teaching purposes, such as SGD and Adam.
-- `dnnlpy.models` contains higher-level model architectures or model-specific components, such as ViT, DDPM, or other models introduced in the notes.
-- `dnnlpy.cs336` contains implementations and utilities for the CS336 assignments.
 - `dnnlpy.tokenizers` contains small tokenizer implementations for teaching purposes, such as a simple BPE tokenizer.
 
 The APIs are designed to feel close to their PyTorch counterparts where practical, while still keeping the code lightweight and easy to read for tutorial purposes.
@@ -31,7 +32,7 @@ In short, this package serves as the code companion to the tutorial.
 ## Requirements
 
 - Python 3.12 or newer
-- PyTorch 2.13 or newer
+- PyTorch 2.14 or newer
 
 ## Installation
 

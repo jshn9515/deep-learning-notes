@@ -1,10 +1,13 @@
+<!-- markdownlint-disable-file MD041 -->
+
 ## Type of change
 
 <!-- Check all that apply. -->
 
+- [ ] Adds a new tutorial on a specific topic
+- [ ] Adds or updates notes, examples, or code commentsAdds or updates examples, derivations, or code comment
 - [ ] Fixes an error or unclear explanation in the notes
 - [ ] Improves wording, structure, formatting, or references
-- [ ] Adds or updates examples, derivations, or code comments
 - [ ] Updates `dnnlpy` package code
 - [ ] Updates repository tooling, build, or workflow files
 - [ ] Other:
