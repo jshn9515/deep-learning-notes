@@ -528,7 +528,7 @@ Triton: 3.3234 ms.
 
 > **手写 Triton 能不能比已经经过 PyTorch 优化的实现更好，而且收益是否值得维护成本？**
 
-另外，benchmark 不能只测试一个 shape。可能一个 kernel 在 `[4096, 4096]` 上上表现很好，但不代表在 `[8, 4096]` 上仍然很好。LLM 中的 batch size、sequence length、hidden size 都可能改变 kernel 的工作规模，因此最终应该测试真实 workload 中常见的 shape 分布，而不是只选择一个 benchmark。
+另外，benchmark 不能只测试一个 shape。可能一个 kernel 在 `[4096, 4096]` 上表现很好，但不代表在 `[8, 4096]` 上仍然很好。LLM 中的 batch size、sequence length、hidden size 都可能改变 kernel 的工作规模，因此最终应该测试真实 workload 中常见的 shape 分布，而不是只选择一个 benchmark。
 
 ## 19.10.9 为什么训练 Kernel 比 Forward Demo 更难
 
