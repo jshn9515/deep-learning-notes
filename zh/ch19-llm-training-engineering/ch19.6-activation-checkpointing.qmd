@@ -337,7 +337,7 @@ def benchmark_checkpointing(
 
 ```{python}
 #| eval: false
-for enabled in [True, False]:
+for enabled in [False, True]:
     peak_mem, step_time = benchmark_checkpointing(enabled)
     print(
         f'Checkpoint: {str(enabled):<5} | '
