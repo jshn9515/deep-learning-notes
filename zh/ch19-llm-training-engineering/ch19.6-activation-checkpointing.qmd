@@ -88,7 +88,7 @@ $$
 
 ![图 19.6.2.2 正常训练过程](figures/ch19.6-forward-normal.svg){width=70%}
 
-Activation checkpointing 会选择某些边界作为 **checkpoint**。例如我们把 Block 1 和 Block 3 做 checkpoint，此时 forward 时重点保留的是 block 的输入，而不是 block 内部所有原本要为 backward 保存的 tensor：
+Activation checkpointing 会选择某些边界作为 **checkpoint**。例如我们把 Block 2 和 Block 4 做 checkpoint，此时 forward 时重点保留的是 block 的输入，而不是 block 内部所有原本要为 backward 保存的 tensor：
 
 ![图 19.6.2.3 开启 Activation Checkpoint 过程](figures/ch19.6-forward-checkpoint.svg){height=450px}
 
@@ -116,7 +116,7 @@ Activation checkpointing 会选择某些边界作为 **checkpoint**。例如我�
 
 Checkpointing 最关键的一步发生在 backward。
 
-假设 Block 1 和 Block 3 被 checkpoint。正常情况下，forward 会保存它内部 backward 需要的 activation。但开启 checkpointing 后，forward 不再保留这些内部 activation。等 backward 来到这一段时，它先从 checkpoint 输入重新运行这段 forward，把原本 forward 时的中间结果重新算出来，然后再继续 backward。
+假设 Block 2 和 Block 4 被 checkpoint。正常情况下，forward 会保存它内部 backward 需要的 activation。但开启 checkpointing 后，forward 不再保留这些内部 activation。等 backward 来到这一段时，它先从 checkpoint 输入重新运行这段 forward，把原本 forward 时的中间结果重新算出来，然后再继续 backward。
 
 ![图 19.6.3 Backward 时的重计算](figures/ch19.6-backard-checkpoint.svg){height=800px}
 
