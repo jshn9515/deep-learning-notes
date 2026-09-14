@@ -434,7 +434,7 @@ $$
 
 给定相同输入、参数和随机状态时，应该产生一致的计算语义。这也是为什么 Transformer block 这种边界明确、主要由 tensor operation 组成的模块非常适合 activation checkpointing。
 
-## 19.6.8 为什么推荐 use_reentrant=False
+## 19.6.8 为什么推荐 use_reentrant 等于 False
 
 现在使用 PyTorch activation checkpointing 时，经常会看到：
 
