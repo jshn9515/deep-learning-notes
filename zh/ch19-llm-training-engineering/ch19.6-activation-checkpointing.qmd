@@ -118,7 +118,7 @@ Checkpointing 最关键的一步发生在 backward。
 
 假设 Block 2 和 Block 4 被 checkpoint。正常情况下，forward 会保存它内部 backward 需要的 activation。但开启 checkpointing 后，forward 不再保留这些内部 activation。等 backward 来到这一段时，它先从 checkpoint 输入重新运行这段 forward，把原本 forward 时的中间结果重新算出来，然后再继续 backward。
 
-![图 19.6.3 Backward 时的重计算](figures/ch19.6-backard-checkpoint.svg){height=800px}
+![图 19.6.3 Backward 时的重计算](figures/ch19.6-backward-checkpoint.svg){height=800px}
 
 所以对于被 checkpoint 的区域，计算过程从原来的：
 
