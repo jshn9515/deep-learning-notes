@@ -7,6 +7,7 @@ on:
 
 permissions:
   actions: read
+  deployments: write
   pull-requests: write
 
 concurrency:
@@ -71,6 +72,43 @@ jobs:
         with:
           node-version: 24
 
+      - name: Register GitHub deployment
+        id: deployment
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const environment = "netlify-preview";
+            const { data: deployment } = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: process.env.SOURCE_SHA,
+              task: "deploy",
+              auto_merge: false,
+              required_contexts: [],
+              environment,
+              description: `Netlify documentation preview for PR #${process.env.PR_NUMBER}`,
+              transient_environment: true,
+              production_environment: false,
+            });
+
+            core.setOutput("id", deployment.id);
+            core.setOutput("environment", environment);
+
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.id,
+              state: "in_progress",
+              environment,
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: "Uploading rendered documentation to Netlify.",
+              auto_inactive: false,
+            });
+
       - name: Deploy preview to Netlify
         id: netlify
         shell: bash
@@ -106,6 +144,41 @@ jobs:
           }
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `url=${result.deploy_url}\n`);
           NODE
+
+      - name: Update GitHub deployment status
+        if: ${{ always() && steps.deployment.outputs.id != '' }}
+        uses: actions/github-script@v9
+        env:
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.id }}
+          DEPLOYMENT_ENVIRONMENT: ${{ steps.deployment.outputs.environment }}
+          DEPLOY_OUTCOME: ${{ steps.netlify.outcome }}
+          PREVIEW_URL: ${{ steps.netlify.outputs.url }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deploymentId = Number(process.env.DEPLOYMENT_ID);
+            if (!Number.isInteger(deploymentId)) {
+              throw new Error(`Invalid deployment ID: ${process.env.DEPLOYMENT_ID}`);
+            }
+
+            const succeeded = process.env.DEPLOY_OUTCOME === "success";
+            const status = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deploymentId,
+              state: succeeded ? "success" : "failure",
+              environment: process.env.DEPLOYMENT_ENVIRONMENT,
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: succeeded
+                ? "Documentation preview deployed successfully."
+                : "Documentation preview deployment failed.",
+              auto_inactive: false,
+            };
+            if (succeeded) {
+              status.environment_url = process.env.PREVIEW_URL;
+            }
+
+            await github.rest.repos.createDeploymentStatus(status);
 
       - name: Comment preview URL on pull request
         uses: actions/github-script@v9
