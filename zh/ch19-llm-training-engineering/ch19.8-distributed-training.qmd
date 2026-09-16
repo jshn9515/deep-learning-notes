@@ -32,6 +32,7 @@ order: 9
 
 ```{python}
 import os
+from functools import partial
 
 import dnnlpy
 import torch
@@ -209,9 +210,11 @@ torchrun --standalone --nproc-per-node=4 train.py
 
 ```python
 local_rank = int(os.environ['LOCAL_RANK'])
+device = torch.device(device.type, local_rank)
+backend = dist.get_default_backend_for_device(device)
 
-accl.set_device_index(local_rank)
-dist.init_process_group()
+accl.set_device_index(device)
+dist.init_process_group(backend)
 
 print(
     f'rank: {dist.get_rank()}, '
@@ -274,13 +277,14 @@ optimizer.step()
 
 ```python
 local_rank = int(os.environ['LOCAL_RANK'])
+device = torch.device(device.type, local_rank)
 backend = dist.get_default_backend_for_device(device)
 
-accl.set_device_index(local_rank)
+accl.set_device_index(backend)
 dist.init_process_group(backend)
 
-model = Model().to(device)
-model = DistributedDataParallel(model, device_ids=[local_rank])
+model = nn.Transformer().to(device)
+model = DistributedDataParallel(model, device_ids=[device])
 
 sampler = utils.DistributedSampler(dataset, shuffle=True)
 dataloader = utils.DataLoader(dataset, batch_size=micro_batch_size, sampler=sampler)
@@ -538,18 +542,25 @@ from torch.distributed.fsdp import ShardingStrategy
 
 ```python
 local_rank = int(os.environ['LOCAL_RANK'])
-accl.set_device_index(local_rank)
-dist.init_process_group()
+device = torch.device(device.type, local_rank)
+backend = dist.get_default_backend_for_device(device)
+
+accl.set_device_index(device)
+dist.init_process_group(backend)
 
 sampler = utils.DistributedSampler(dataset, shuffle=True)
 dataloader = utils.DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+auto_wrap_policy = partial(
+    wrap.transformer_auto_wrap_policy,
+    transformer_layer_cls={...},
+)
 
-model = Model().to(device)
+model = nn.Transformer().to(device)
 model = FullyShardedDataParallel(
     model,
     sharding_strategy=ShardingStrategy.FULL_SHARD,
-    auto_wrap_policy=wrap.transformer_auto_wrap_policy(...),
-    device_id=local_rank,
+    auto_wrap_policy=auto_wrap_policy,
+    device_id=device,
 )
 optimizer = optim.AdamW(model.parameters(), lr=3e-4)
 
@@ -569,7 +580,7 @@ for epoch in range(num_epochs):
 和 DDP 对比：
 
 ```python
-model = DistributedDataParallel(model, device_ids=[local_rank])
+model = DistributedDataParallel(model, device_ids=[device])
 ```
 
 FSDP1 看起来只是把 wrapper 换成了：
@@ -588,8 +599,8 @@ FSDP1 还提供另一种配置：
 model = FullyShardedDataParallel(
     model,
     sharding_strategy=ShardingStrategy.SHARD_GRAD_OP,
-    auto_wrap_policy=wrap.transformer_auto_wrap_policy(...),
-    device_id=local_rank,
+    auto_wrap_policy=auto_wrap_policy,
+    device_id=device,
 )
 ```
 
@@ -781,7 +792,7 @@ micro-batch 4 → backward → all-reduce
 但如果我们本来就准备累计 4 次 backward，前 3 次的跨 rank 同步其实没有必要，因为 optimizer 要到第 4 次 backward 后才真正更新。因此，DDP 提供了 `no_sync()`：
 
 ```python
-model = DistributedDataParallel(model, device_ids=[local_rank])
+model = DistributedDataParallel(model, device_ids=[device])
 
 with model.no_sync():
     loss1.div(4).backward()
@@ -845,4 +856,4 @@ micro-batch 4 → backward → all-reduce → optimizer.step()
 
 这就是从普通 data parallel 走向 large-model distributed training 最核心的一步。同时，这也解释了为什么上一节里的 distributed checkpoint 会比单卡 checkpoint 更复杂：当 parameters、gradients 和 optimizer states 不再完整存在于任何一个 rank 上时，保存和恢复也必须理解这些 shard 的布局。
 
-到这里，我们已经把大模型训练里的 memory、profiling、mixed precision、gradient accumulation、activation checkpointing 和 distributed training 串了起来。下一节会从训练系统回到更底层的执行效率：如何在 GPU 上高效执行 attention，以及 PyTorch 和 Transformers 常见的 attention 算子。
+到这里，我们已经把大模型训练里的 memory、profiling、mixed precision、gradient accumulation、activation checkpointing 和 distributed training 串了起来。下一节，我们来看看，怎么在分布式训练环境下正确地保存和恢复训练状态，也就是 **distributed checkpointing**。
