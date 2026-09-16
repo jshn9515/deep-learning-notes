@@ -1,7 +1,7 @@
 ---
 author: jshn9515
 date: 2026-09-14
-date-modified: 2026-09-14
+date-modified: 2026-09-15
 open-graph:
   title: ch19.8-distributed-training
   description: "19.8 Distributed Training: Intuition for DDP, ZeRO, and FSDP"
@@ -38,9 +38,12 @@ import torch
 import torch.accelerator as accl
 import torch.distributed as dist
 import torch.distributed.fsdp as fsdp
+import torch.distributed.fsdp.wrap as wrap
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as utils
+from torch.distributed.fsdp import FullyShardedDataParallel, ShardingStrategy
+from torch.distributed.optim import ZeroRedundancyOptimizer
 from torch.nn.parallel import DistributedDataParallel
 
 print('PyTorch version:', torch.__version__)
@@ -104,19 +107,19 @@ Data Parallel 的关键就是：
 例如 4 个 GPU 分别得到：
 
 $$
-g_0,\quad g_1,\quad g_2,\quad g_3
+g_0, \quad g_1, \quad g_2, \quad g_3
 $$
 
 同步后，每张 GPU 使用同一个平均梯度：
 
 $$
-\bar g = \frac{1}{4} \left(g_0 + g_1 + g_2 + g_3 \right)
+\bar g = \frac{1}{4} (g_0 + g_1 + g_2 + g_3)
 $$
 
 然后每张 GPU 都执行相同的 optimizer update：
 
 $$
-\theta_{t+1} = \operatorname{Update}(\theta_t,\bar g)
+\theta_{t+1} = \operatorname{Update}(\theta_t, \bar g)
 $$
 
 只要初始模型一致、同步梯度一致、optimizer state 一致，那么各个 GPU 上的模型参数就会一直保持一致。
@@ -125,7 +128,9 @@ $$
 
 > **复制模型，切分数据，最后同步梯度。**
 
-这也解释了 global batch size 怎样计算。假设每张 GPU 的 micro-batch size 是 $B_{\text{micro}}$，总的 GPU 个数是 $N_{\text{dp}}$，gradient accumulation steps 是 $N_{\text{accum}}$，那么：
+这也解释了 global batch size 怎样计算。
+
+假设每张 GPU 的 micro-batch size 是 $B_{\text{micro}}$，总的 GPU 个数是 $N_{\text{dp}}$，gradient accumulation steps 是 $N_{\text{accum}}$，那么：
 
 $$
 B_{\text{global}} = B_{\text{micro}} \times N_{\text{dp}} \times N_{\text{accum}}
@@ -186,8 +191,7 @@ Node 1:
 - `reduce`：所有 rank 的数据做聚合，结果只放到一个 rank；
 - `all_reduce`：所有 rank 的数据做聚合，并且每个 rank 都拿到结果；
 - `all_gather`：每个 rank 提供一份数据，最后每个 rank 都收集到所有人的数据；
-- `reduce_scatter`：每个 rank 提供一份数据，先做聚合，然后把结果分片给每个 rank；
-- `all_to_all`：每个 rank 都向其他 rank 发送不同的数据块。
+- `reduce_scatter`：每个 rank 提供一份数据，先做聚合，然后把结果分片给每个 rank。
 
 可以把 process group 理解成：
 
@@ -204,7 +208,7 @@ torchrun --standalone --nproc-per-node=4 train.py
 `torchrun` 会为每个进程设置 rank、world size 和 local rank 等环境信息。训练程序再初始化 process group：
 
 ```python
-local_rank = int(os.environ["LOCAL_RANK"])
+local_rank = int(os.environ['LOCAL_RANK'])
 
 accl.set_device_index(local_rank)
 dist.init_process_group()
@@ -212,7 +216,7 @@ dist.init_process_group()
 print(
     f'rank: {dist.get_rank()}, '
     f'world_size: {dist.get_world_size()}, '
-    f'local_rank: {local_rank}'.
+    f'local_rank: {local_rank}'
 )
 ```
 
@@ -282,12 +286,16 @@ sampler = utils.DistributedSampler(dataset, shuffle=True)
 dataloader = utils.DataLoader(dataset, batch_size=micro_batch_size, sampler=sampler)
 optimizer = optim.AdamW(model.parameters(), lr=3e-4)
 
-for batch in dataloader:
-    optimizer.zero_grad()
-    batch = batch.to(device)
-    loss = model(batch)
-    loss.backward()
-    optimizer.step()
+for epoch in range(num_epochs):
+    # Must happen before go through the dataloader
+    sampler.set_epoch(epoch)
+
+    for batch in dataloader:
+        optimizer.zero_grad()
+        batch = batch.to(device)
+        loss = model(batch)
+        loss.backward()
+        optimizer.step()
 ```
 
 这里 `DistributedSampler` 也很重要。DDP 会同步 gradient，但 DDP 本身不会自动把输入 dataset 切成不同部分。如果每个 rank 都遍历完整 dataset，那么 4 张 GPU 很可能在重复计算同样的数据。
@@ -314,7 +322,7 @@ batch 2 → GPU 2 ┤
 batch 3 → GPU 3 ┘
 ```
 
-但 DDP 并不是等 backward 完全结束以后，再一次性同步所有 gradient。因为如果真的这样做，通信时间会完全暴露在挂念关键路径上，从而拖慢整个训练。
+但 DDP 并不是等 backward 完全结束以后，再一次性同步所有 gradient。因为如果真的这样做，通信时间会完全暴露在关键路径上，从而拖慢整个训练。
 
 实际 DDP 会把 gradients 分成多个 bucket。当某个 bucket 的梯度已经 ready，就可以开始对应的 all-reduce，同时 autograd 继续计算更前面层的 backward：
 
@@ -416,7 +424,17 @@ ZeRO 最常见的实现来自 DeepSpeed，所以很多时候我们会把 DeepSpe
 - **ZeRO**：训练状态去冗余和分片的算法思想；
 - **DeepSpeed**：ZeRO 的一个具体训练系统实现。
 
-PyTorch 的 `ZeroRedundancyOptimizer` 实现了类似 ZeRO-1 的思路，但它并不提供 ZeRO-2 / ZeRO-3。PyTorch 的 FSDP 则是 ZeRO-3 风格的 fully sharded data parallel。
+PyTorch 里也能看到这几个 stage 对应的实现。最简单的是 `ZeroRedundancyOptimizer`。它和 DDP 配合使用，只把 optimizer states 分散到不同 rank，因此可以把它理解成 **ZeRO-1 风格**的实现：
+
+```python
+optimizer = ZeroRedundancyOptimizer(
+    model.parameters(),
+    optimizer_class=optim.AdamW,
+    lr=3e-4,
+)
+```
+
+这里 parameters 和 gradients 仍然像 DDP 一样保持 replicated，只是每个 rank 不再保存所有参数对应的 optimizer states。后面会看到，PyTorch 的 FSDP 则进一步把 gradients，甚至 parameters 也分片。
 
 下一步最值得理解的是：如果 ZeRO-3 连 parameter 都拆掉了，forward 到底怎么算？
 
@@ -445,17 +463,19 @@ ZeRO-3 的基本思路是：
 
 可以把一个 layer 的生命周期粗略理解成：
 
-![图 19.8.6.1 ZeRO-3 中 layer 的生命周期](figures/ch19.8-layer-life-cycle.svg){height=430px}
+1. 平时：每个 rank 只保留自己的参数 shard；
+2. Forward 前：通过 all-gather 把完整参数恢复出来；
+3. Forward 后：把完整参数释放，只保留自己的 shard；
+4. Backward 前：再次 all-gather 完整参数；
+5. Backward 后：reduce-scatter 梯度，只保留自己的 gradient shard。
 
-同时，backward 也有类似过程。
+这里的 reduce-scatter 是一个非常重要的 collective。它和 all-gather 正好相反：每个 rank 提供一份数据，先做 reduction，然后把结果分片给每个 rank：
 
-为了计算某一层的 gradient，需要再次拿到这层参数。梯度计算完成以后，不再让所有 rank 都长期保存完整 gradient，而是通过 reduce-scatter 一边完成跨 rank reduction，一边只让每个 rank 保留自己的 gradient shard：
-
-![图 19.8.6.2 Reduce-scatter 示意图](figures/ch19.8-reduce-scatter.svg){height=180px}
+![图 19.8.6.1 reduce-scatter 示意图](figures/ch19.8-reduce-scatter.svg){height=180px}
 
 于是，一整个 block 可以粗略画成：
 
-![图 19.8.6.3 ZeRO-3 中 block 的计算流程](figures/ch19.8-block-life-cycle.svg){height=600px}
+![图 19.8.6.2 ZeRO-3 中 block 的计算流程](figures/ch19.8-block-life-cycle.svg){height=300px}
 
 这带来了一个非常重要的 trade-off：
 
@@ -474,105 +494,173 @@ DDP 的参数一直都在本地，所以 forward 不需要为参数本身做 all
 - Activation checkpointing：用计算换显存；
 - ZeRO-3：用通信换显存。
 
-## 19.8.7 FSDP2：PyTorch 里的 Fully Sharded Data Parallel
+## 19.8.7 从 ZeRO 到 PyTorch FSDP
 
-PyTorch 自己也提供 fully-sharded data parallel。
+前面讲的 ZeRO 更像是一套**训练状态如何分片**的思想：先分 optimizer states（ZeRO-1），再分 gradients（ZeRO-2），最后连 parameters 也一起分（ZeRO-3）。
 
-当前的接口是 **FSDP2**：
+PyTorch 自己也提供了对应的实现。把最基础的关系放在一起，可以先记成：
+
+::: {.list-table}
+表 19.8.7 ZeRO 与 PyTorch 分布式 API 的基本对应关系
+
+- - 思路
+  - PyTorch 中可以看到的对应实现
+
+- - DDP
+  - `DistributedDataParallel`
+
+- - ZeRO-1 风格
+  - `ZeroRedundancyOptimizer`
+
+- - ZeRO-2 风格
+  - FSDP1 `SHARD_GRAD_OP` / FSDP2 `reshard_after_forward=False`
+
+- - ZeRO-3 风格
+  - FSDP1 `FULL_SHARD` / FSDP2 `reshard_after_forward=True`
+:::
+
+这里需要注意，ZeRO 和 FSDP 不是两套完全无关的东西。ZeRO 描述的是：哪些训练状态应该 replicated，哪些训练状态应该 sharded；FSDP 描述的是：PyTorch 如何把 fully sharded data parallel 真正放进 module、autograd、collective communication 和 optimizer 的训练流程里。
+
+对于 FSDP，PyTorch 先后提供了两代主要接口：FSDP1 和 FSDP2。下面分别看一下它们最基本的写法。
+
+## 19.8.8 FSDP1：用 Wrapper 把模型变成 Fully Sharded Data Parallel
+
+PyTorch 最早广泛使用的接口通常被称为 **FSDP1**，核心类是 `FullyShardedDataParallel`：
+
+```python
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp import ShardingStrategy
+```
+
+它的使用方式和 DDP 有一点相似：先构造普通 PyTorch model，然后再用 FSDP wrapper 包起来。
+
+把 19.8.2 的 process-group 初始化也放进来，一个最小的 FSDP1 结构可以写成：
+
+```python
+local_rank = int(os.environ['LOCAL_RANK'])
+accl.set_device_index(local_rank)
+dist.init_process_group()
+
+model = MyModel().to(device)
+model = FullyShardedDataParallel(
+    model,
+    sharding_strategy=ShardingStrategy.FULL_SHARD,
+    auto_wrap_policy=wrap.transformer_auto_wrap_policy(...),
+    device_id=local_rank,
+)
+optimizer = optim.AdamW(model.parameters(), lr=3e-4)
+
+for batch in dataloader:
+    optimizer.zero_grad()
+    batch = batch.to(device)
+    loss = model(batch)
+    loss.backward()
+    optimizer.step()
+```
+
+注意，这里的 optimizer 不需要使用 `ZeroRedundancyOptimizer`，因为 FSDP1 会在内部把 optimizer states 分片。
+
+和 DDP 对比：
+
+```python
+model = DistributedDataParallel(model, device_ids=[local_rank])
+```
+
+FSDP1 看起来只是把 wrapper 换成了：
+
+```python
+model = FullyShardedDataParallel(model, ...)
+```
+
+但它背后的状态管理完全不同。
+
+当使用 `ShardingStrategy.FULL_SHARD` 时，FSDP1 会对 parameters、gradients 和 optimizer states 进行分片。对于一个 FSDP unit，具体计算过程和图 19.8.6.2 一致。因此，FSDP1 的 `FULL_SHARD` 基本就是前面介绍的 ZeRO-3 风格。
+
+FSDP1 还提供另一个值得认识的配置：
+
+```python
+model = FullyShardedDataParallel(
+    model,
+    sharding_strategy=ShardingStrategy.SHARD_GRAD_OP,
+    auto_wrap_policy=wrap.transformer_auto_wrap_policy(...),
+    device_id=local_rank,
+)
+```
+
+`SHARD_GRAD_OP` 不会在 forward 结束以后立刻把完整参数重新 shard，而是让它继续留在显存里供 backward 使用。因此 backward 前可以少做一次 parameter all-gather，但代价是 forward 和 backward 之间需要占用更多显存。从最基础的 memory / communication trade-off 来看，它的行为更接近 **ZeRO-2 风格**。
+
+::: {.callout-warning}
+FSDP1 现在主要应该用于读懂已有代码和理解 FSDP 的演进。当前 PyTorch 官方教程已经明确把 FSDP1 标记为 deprecated，并推荐新代码使用 FSDP2。所以下面不会继续展开 FSDP1 的 auto wrap、state dict、prefetch 等细节。
+:::
+
+## 19.8.9 FSDP2：fully_shard() 代替 FSDP1 Wrapper
+
+FSDP2 把最主要的入口改成了：
 
 ```python
 from torch.distributed.fsdp import fully_shard
 ```
 
-它的核心思想和刚才看到的 ZeRO-3 非常接近：
-
-- Parameters are sharded；
-- Gradients are sharded；
-- Optimizer states follow sharded parameters；
-- 计算某个 FSDP unit 之前 all-gather 参数；
-- Backward 后 reduce-scatter gradients。
-
-所以从训练状态分片的直觉上，可以把 FSDP 看成 ZeRO-3 风格的 fully sharded data parallel。但不应该简单地说 FSDP 就是 DeepSpeed ZeRO-3。它们属于不同实现，API、内部表示、调度方式、offload 能力和工程生态都可能不同。这里真正应该抓住的是共同的算法结构。
-
-PyTorch FSDP2 的一个重要概念是 **FSDP unit**。
-
-假设 Transformer 有很多 block：
-
-```text
-Transformer
-├── Block 0
-├── Block 1
-├── Block 2
-├── Block 3
-└── ...
-```
-
-如果把每个 block 分别 `fully_shard()`：
+最简单的形式不再是重新构造一个 wrapper：
 
 ```python
-model = nn.Transformer(...)
-
-for block in model.encoder.layers:
-    fsdp.fully_shard(block)
-
-for block in model.decoder.layers:
-    fsdp.fully_shard(block)
-
-fsdp.fully_shard(model)
+model = FullyShardedDataParallel(model)
 ```
 
-那么每个 block 可以形成自己的 communication group。训练时更接近：
-
-```text
-model
-├── encoder
-│   ├── layer 0 ← fully_shard
-│   ├── layer 1 ← fully_shard
-│   └── ...
-│
-├── decoder
-│   ├── layer 0 ← fully_shard
-│   ├── layer 1 ← fully_shard
-│   └── ...
-│
-└── remaining parameters → final fully_shard(model)
-```
-
-而不是一开始就把整个模型所有参数 gather 到每张 GPU。
-
-这点非常重要。如果我们只在最外层调用一次 `fully_shard(model)`，那么一个大模型可能会形成一个巨大的 communication group。Forward 开始前，需要一次性 gather 很多参数，既增加 peak memory，也很难让 communication 和 computation 重叠。因此，对于 Transformer，更常见的思路是按照 block 划分 FSDP unit，让后续 layer 的通信有机会和当前 layer 的计算流水化。
-
-另外，FSDP2 应该在 optimizer 创建之前应用：
+而是直接对已有 module 应用：
 
 ```python
-model = nn.Transformer(...)
-
-for block in model.encoder.layers:
-    fsdp.fully_shard(block)
-
-for block in model.decoder.layers:
-    fsdp.fully_shard(block)
-
-fsdp.fully_shard(model)
-
-optimizer = optim.AdamW(model.parameters(), lr=3e-4)
+fsdp.fully_shard(model, reshard_after_forward=True)
 ```
 
-因为 `fully_shard()` 会把参数转换为 sharded parameter 表示，而 optimizer 应该持有这些已经 sharded 的参数。
+这一节暂时不讨论 FSDP1 和 FSDP2 更底层的实现差异，只看一个最重要的参数：
 
-这一节不需要深入 FSDP2 的所有配置。现阶段只需要记住：
+```python
+reshard_after_forward
+```
 
-> **DDP 是 full replica；FSDP 是 full sharding，但计算某一层时会临时恢复它需要的参数。**
+它控制的是：
 
-## 19.8.8 从 All-Reduce 看 DDP、ZeRO 与 FSDP
+> **forward 已经用完完整参数以后，要不要立刻把完整参数释放，只重新保留 parameter shard。**
+
+先看：
+
+```python
+fsdp.fully_shard(
+    model,
+    reshard_after_forward=True,
+)
+```
+
+这时一个 parameter group 的生命周期和 ZeRO-3 一致。Forward 完成以后，完整参数会被释放，因此 backward 真正需要这组参数时，还要重新做一次 all-gather。这就是最经典的 **ZeRO-3 风格**。
+
+如果改成：
+
+```python
+fsdp.fully_shard(
+    model,
+    reshard_after_forward=False,
+)
+```
+
+那么 forward 结束以后不会马上 reshard。因为 full parameter 还在，所以 backward 不需要再次 all-gather。因此可以把它理解成 **ZeRO-2 风格**的 FSDP2 执行方式：gradients 和 optimizer states 被 shard，而 forward materialize 出来的完整 parameters 会一直保留到 backward 使用完。
+
+不过这里需要注意一点。`reshard_after_forward=False` 并不意味着 FSDP2 从此把 parameters 永久复制在每张 GPU 上，它们在不需要计算时仍然可以回到 sharded 状态。这里说“ZeRO-2 风格”，主要描述的是 forward 与 backward 之间保留完整参数，从而避免 backward all-gather 这一行为。
+
+所以，在这一节的抽象层次上，可以先记住：
+
+- FSDP1 `FULL_SHARD` 对应 FSDP2 `reshard_after_forward=True`：ZeRO-3 风格，forward 后立即 reshard，backward 前需要 all-gather；
+- FSDP1 `SHARD_GRAD_OP` 对应 FSDP2 `reshard_after_forward=False`：ZeRO-2 风格，forward 后保留 full parameters，backward 前少一次 all-gather。
+
+这也说明 `reshard_after_forward` 本质上仍然是在做前面反复出现的 trade-off：
+
+> **是否愿意多占一些显存，换取更少的通信。**
+
+## 19.8.10 从 All-Reduce 看 DDP、ZeRO 与 FSDP
 
 DDP、ZeRO 和 FSDP 看起来像三套完全不同的技术，但它们其实可以放在同一张图里理解。
 
-DDP backward 的核心操作是：
-
-![图 19.8.8.1 DDP backward 的 all-reduce](figures/ch19.8-ddp-backward.svg){height=230px}
-
-而从 collective 的角度，一个 all-reduce 可以概念性地拆成 `reduce-scatter` + `all-gather`。
+DDP backward 的核心操作是 `all-reduce`。而从 collective 的角度，一个 all-reduce 可以概念性地拆成 `reduce-scatter` + `all-gather`。
 
 先用 `reduce-scatter` 做 reduction，并让每个 rank 只保留其中一个 shard：
 
@@ -595,67 +683,67 @@ Fully sharded training 则会问：
 
 - 既然 reduce-scatter 之后每个 rank 已经有一个正确的 gradient shard，为什么一定要立刻让所有 rank 再保存一份完整 gradient？
 - 进一步，如果每个 rank 只负责更新对应的 parameter shard，那么 optimizer state 是不是也只需要保存对应 shard？
-- 再进一步，参数本身是不是也可以长期保持 shard，只在 layer 真正需要时 all-gather？
+- 再进一步，parameters 本身是不是也可以长期保持 shard，只在 layer 真正需要时 all-gather？
 
 于是就得到：
 
-![图 19.8.8.2 ZeRO 的渐进式分片](figures/ch19.8-ddp-zero-fsdp.svg){height=360px}
+![图 19.8.10 ZeRO 的渐进式分片](figures/ch19.8-ddp-zero-fsdp.svg){height=360px}
 
 可以用下面这张表建立整体直觉：
 
 ::: {.list-table}
-表 19.8.8 DDP、ZeRO 与 FSDP 的对比
+表 19.8.10 DDP、ZeRO 与 PyTorch FSDP 的对比
 
 - - 方法
-  - 主要目标
-  - 每个 Rank 的参数
-  - 每个 Rank 的梯度
-  - 每个 Rank 的 Optimizer State
-  - 主要通信
+  - Parameters
+  - Gradients
+  - Optimizer States
+  - 最主要的通信直觉
 
 - - DDP
-  - 提高吞吐量
   - Full
   - Full
   - Full
   - Gradient All-Reduce
 
-- - ZeRO-1
-  - 省 optimizer memory
+- - ZeRO-1 / `ZeroRedundancyOptimizer`
   - Full
   - Full
   - Shard
-  - Reduce / synchronize updates
+  - 分散 optimizer states，并同步参数更新
 
 - - ZeRO-2
-  - 继续省 gradient memory
   - Full
   - Shard
   - Shard
-  - Reduce-Scatter 等
+  - Gradient Reduce-Scatter
 
 - - ZeRO-3
-  - 让模型状态整体分片
   - Shard
   - Shard
   - Shard
-  - Parameter Gather + Gradient Reduce-Scatter
+  - Parameter All-Gather + Gradient Reduce-Scatter
 
-- - FSDP2
-  - PyTorch fully-sharded DP
+- - FSDP2 `reshard_after_forward=False`
+  - Forward 后暂时 Full
   - Shard
   - Shard
+  - Forward All-Gather + Gradient Reduce-Scatter
+
+- - FSDP2 `reshard_after_forward=True`
+  - 不计算时 Shard
   - Shard
-  - All-Gather + Reduce-Scatter
+  - Shard
+  - Forward / Backward All-Gather + Gradient Reduce-Scatter
 :::
 
-这里也能看出一个重要事实：
+从这里也能看出一个重要事实：
 
 > **FSDP / ZeRO-3 的目标首先是 memory scalability，不保证一定比 DDP 更快。**
 
-如果模型本来就轻松放进每张 GPU，而网络通信反而很慢，那么 DDP 可能更简单，也可能有更好的 throughput；反过来，如果 DDP 已经因为 model states OOM，那么 DDP 理论上通信更少也没有意义，因为它根本跑不起来。
+如果模型本来就轻松放进每张 GPU，而网络通信反而很慢，那么 DDP 可能更简单，也可能有更好的 throughput。反过来，如果 DDP 已经因为 model states OOM，那么 DDP 理论上通信更少也没有意义，因为它根本跑不起来。
 
-## 19.8.9 和 Gradient Accumulation、Activation Checkpointing 怎么组合
+## 19.8.11 和 Gradient Accumulation、Activation Checkpointing 怎么组合
 
 前面几节的技术并不会因为进入分布式训练就消失，它们实际上解决的是不同维度的问题：
 
@@ -720,15 +808,27 @@ micro-batch 4 → backward → all-reduce → optimizer.step()
 
 > **先保证数学和状态正确，再 profile memory、communication 和 step time。**
 
-## 19.8.10 什么时候用 DDP，什么时候需要 FSDP / ZeRO
+## 19.8.12 本章小结
 
 最后把这一节压缩成一个实际的选择流程。
 
-如果模型完整训练状态可以轻松放进单张 GPU，只是训练太慢，那 DDP 通常是最简单的起点。如果 parameters 能放下，但 Adam optimizer states 已经成为主要显存压力，那应该选择 ZeRO-1。如果 gradients 也开始成为明显问题，那应该选择 ZeRO-2。如果完整 parameters、gradients、optimizer states 已经无法同时放进单卡，那就需要 ZeRO-3 或 FSDP 了。
+如果模型完整训练状态可以轻松放进单张 GPU，只是训练太慢，那么 DDP 通常是最简单的起点。
 
-可以画成：
+如果 parameters 和 gradients 都能放下，但 Adam optimizer states 已经成为明显的显存压力，可以先想到 ZeRO-1。PyTorch 的 `ZeroRedundancyOptimizer` 就体现了这个思路：parameters 和 gradients 仍然 replicated，只把 optimizer states 分散到不同 rank。
 
-![图 19.8.10 选择 DDP / ZeRO / FSDP 的直觉流程](figures/ch19.8-summary.svg)
+如果还希望继续减少 gradient memory，可以进一步进入 ZeRO-2 风格。在 PyTorch FSDP 中，可以把 FSDP1 的 `SHARD_GRAD_OP`，或者 FSDP2 的：
+
+```python
+reshard_after_forward = False
+```
+
+放在这一类直觉下面理解。
+
+如果连完整 parameters 都不希望长期留在每个 rank 上，就进入 fully sharded，也就是 ZeRO-3 风格。对应到 PyTorch，就是 FSDP1 的 `FULL_SHARD`，或者 FSDP2 的 `reshard_after_forward=True`。
+
+我们可以把选择流程画成：
+
+![图 19.8.12 选择 DDP / ZeRO / FSDP 的直觉流程](figures/ch19.8-summary.svg)
 
 当然，真实系统不会永远严格按照这个流程选择。例如：
 
@@ -743,9 +843,11 @@ micro-batch 4 → backward → all-reduce → optimizer.step()
 
 从这个视角看：
 
-- DDP 是 replicated model states + shard data + synchronize gradients；
-- ZeRO / FSDP 是 shard data + shard model states + materialize state only when computation needs it。
+- DDP：replicated model states + shard data + synchronize gradients；
+- ZeRO-1：先去掉 optimizer-state redundancy；
+- ZeRO-2 style：继续 shard gradients，并用更多 parameter memory 减少部分通信；
+- ZeRO-3 / full sharding：parameters、gradients 和 optimizer states 都长期以 shard 为主，需要计算时再 materialize 完整参数。
 
 这就是从普通 data parallel 走向 large-model distributed training 最核心的一步。同时，这也解释了为什么上一节里的 distributed checkpoint 会比单卡 checkpoint 更复杂：当 parameters、gradients 和 optimizer states 不再完整存在于任何一个 rank 上时，保存和恢复也必须理解这些 shard 的布局。
 
-到这里，我们已经把大模型训练里的 memory、profiling、mixed precision、gradient accumulation、activation checkpointing 和 distributed training 串了起来。下一节会从训练系统回到更底层的执行效率：什么时候 PyTorch 已有 operator 还不够，我们需要自己用 Triton 写一个 kernel。
+到这里，我们已经把大模型训练里的 memory、profiling、mixed precision、gradient accumulation、activation checkpointing 和 distributed training 串了起来。下一节会从训练系统回到更底层的执行效率：如何在 GPU 上高效执行 attention，以及 PyTorch 和 Transformers 常见的 attention 算子。

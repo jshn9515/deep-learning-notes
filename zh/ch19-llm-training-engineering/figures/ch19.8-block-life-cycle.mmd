@@ -29,13 +29,12 @@ config:
 ---
 
 flowchart TD
-    S["Parameter Shards"] --> AG["All-Gather"]
-    AG --> P["Temporary Full Parameters"]
+    S["Parameter Shards"] --> AG1["All-Gather"]
+    AG1 --> P["Temporary Full Parameters"]
     P --> F["Forward"]
     F --> R["Release / Reshard"]
 
-    R --> AG2["All-Gather for Backward"]
-    AG2 --> B["Backward"]
+    AG2["All-Gather for Backward"] --> B["Backward"]
     B --> RS["Reduce-Scatter Gradients"]
     RS --> GS["Gradient Shards"]
     GS --> O["Local Optimizer Update"]
