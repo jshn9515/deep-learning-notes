@@ -185,7 +185,7 @@ def load_checkpoint(
 
     # TODO: torch.accelerator.random.set_rng_state()
     device = accl.current_accelerator(check_available=True)
-    if device is not None:
+    if device is not None and rng_states['torch.accl'] is not None:
         backend = torch.get_device_module(device)
         backend.set_rng_state(rng_states['torch.accl'])
 
@@ -347,7 +347,7 @@ def load_ddp_checkpoint_v1(
 
     # TODO: torch.accelerator.random.set_rng_state()
     device = accl.current_accelerator()
-    if device is not None:
+    if device is not None and local_rng_state['torch.accl'] is not None:
         backend = torch.get_device_module(device)
         backend.set_rng_state(local_rng_state['torch.accl'])
 
@@ -398,7 +398,7 @@ def load_ddp_checkpoint_v2(
 
     # TODO: torch.accelerator.random.set_rng_state()
     device = accl.current_accelerator()
-    if device is not None:
+    if device is not None and local_rng_state['torch.accl'] is not None:
         backend = torch.get_device_module(device)
         backend.set_rng_state(local_rng_state['torch.accl'])
 
