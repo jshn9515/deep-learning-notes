@@ -316,7 +316,7 @@ def save_ddp_checkpoint(
 
 DDP 的恢复流程通常是：
 
-![图 19.10.3 DDP checkpoint 恢复流程](figures/ch19.10-ddp-resume.svg){height=530px}
+![图 19.10.3 DDP checkpoint 恢复流程](figures/ch19.10-ddp-resume.svg){height=550px}
 
 一种常见方式是在每个 rank 都读取同一个 checkpoint：
 
