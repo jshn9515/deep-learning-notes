@@ -17,7 +17,7 @@ order: 2
 
 一个常见的误区是：看到一个 operator 的计算量很大，就直接认为它一定很慢。但 GPU 执行一个算子时，不只是做加法和乘法。数据还要在 HBM、cache、shared memory 和 registers 之间移动：
 
-![图 19.2.0 数据搬运过程](figures/ch19.2-data-movement.svg){height=300px}
+![图 19.2.0 数据搬运过程](figures/ch19.2-data-movement.svg){height=320px}
 
 如果一个算子需要做大量计算，并且同一份数据可以被反复利用，那么它可能主要受 GPU 计算能力限制；反过来，如果一个算子只做很少的计算，却需要不断从 HBM 读取数据、再把结果写回 HBM，那么真正限制它的往往不是 FLOPs，而是 memory bandwidth。
 
