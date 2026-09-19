@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.8-normalization-unified-view
-  description: "7.8 A Unified View of Normalization: Which Dimensions Are Normalized?"
-title: "7.8 A Unified View of Normalization: Which Dimensions Are Normalized?"
+  title: ch6.8-normalization-unified-view
+  description: "6.8 A Unified View of Normalization: Which Dimensions Are Normalized?"
+title: "6.8 A Unified View of Normalization: Which Dimensions Are Normalized?"
 order: 7
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch7-regularization-and-normalization/ch7.8-normalization-unified-view.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch6-regularization-and-normalization/ch6.8-normalization-unified-view.ipynb){fig-align="left"}
 
 In the previous sections, we introduced Batch Normalization, Layer Normalization, Instance Normalization, Group Normalization, and RMS Normalization separately. The first four methods all compute the mean and variance before standardizing; RMSNorm omits mean centering and adjusts feature scale using only the root mean square.
 
@@ -45,7 +45,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.8.1 All Normalization Layers Do the Same Thing
+## 6.8.1 All Normalization Layers Do the Same Thing
 
 Let a normalization set be $S$, containing several input elements. A normalization layer first computes the mean of this set:
 
@@ -92,7 +92,7 @@ In other words, when learning normalization methods, the most important question
 
 > **For a given element in the current input, which other elements share the same mean and variance with it?**
 
-## 7.8.2 Statistical Dimensions and Retained Dimensions
+## 6.8.2 Statistical Dimensions and Retained Dimensions
 
 Consider a four-dimensional input:
 
@@ -125,7 +125,7 @@ The two types of dimensions can be understood as follows:
 - Statistical dimensions: which elements are placed into the same statistical set;
 - Retained dimensions: how many separate sets of means and variances need to be maintained.
 
-## 7.8.3 BatchNorm: Fix the Channel and Compute Statistics across Samples and Space
+## 6.8.3 BatchNorm: Fix the Channel and Compute Statistics across Samples and Space
 
 For an input `(N, C, H, W)`, the statistical dimensions of BatchNorm are:
 
@@ -158,7 +158,7 @@ print('Output variances by channel:', x_bn.var(dim, correction=0))
 
 BatchNorm's statistical set contains different samples, so the output of the current sample is affected by the other samples in the batch. This is the most fundamental difference between BatchNorm and the other methods.
 
-## 7.8.4 LayerNorm: Fix the Sample and Normalize the Last Several Dimensions
+## 6.8.4 LayerNorm: Fix the Sample and Normalize the Last Several Dimensions
 
 If we use the following for an image input:
 
@@ -214,7 +214,7 @@ print(y.mean(dim=-1))
 
 Therefore, when discussing LayerNorm, it is not enough to say that it normalizes within a sample. We must also specify exactly which trailing dimensions of the input `normalized_shape` covers.
 
-## 7.8.5 InstanceNorm: Fix the Sample and Channel, and Compute Statistics Only over Space
+## 6.8.5 InstanceNorm: Fix the Sample and Channel, and Compute Statistics Only over Space
 
 For an input `(N, C, H, W)`, the statistical dimensions of InstanceNorm are:
 
@@ -247,7 +247,7 @@ print(x_in.mean(dim=(2, 3)))
 
 Every `(sample, channel)` pair has independent statistics, so InstanceNorm computes neither across samples nor across channels. It uses a smaller statistical set than LayerNorm and more strongly removes each channel's own spatial mean and variance.
 
-## 7.8.6 GroupNorm: Group First, Then Reduce Together
+## 6.8.6 GroupNorm: Group First, Then Reduce Together
 
 GroupNorm cannot be fully expressed directly by one set of `dim` values on the original `(N, C, H, W)`, because the channel dimension must first be divided into groups.
 
@@ -295,7 +295,7 @@ This also shows that many normalization operations can be unified into three imp
 2. Compute the mean and variance over the specified dimensions;
 3. Reshape back to the original shape and apply the affine transformation.
 
-## 7.8.7 RMSNorm: Normalize Only Scale over the Trailing Dimensions
+## 6.8.7 RMSNorm: Normalize Only Scale over the Trailing Dimensions
 
 Like LayerNorm, RMSNorm uses `normalized_shape` to determine the statistical set.
 
@@ -336,12 +336,12 @@ Therefore, when incorporating RMSNorm into a unified perspective, we need to con
 1. Which dimensions form the statistical set;
 2. Whether the statistical set is used to compute the mean and variance or the root mean square.
 
-## 7.8.8 Comparing Statistical Dimensions in One Table
+## 6.8.8 Comparing Statistical Dimensions in One Table
 
 For an image input `(N, C, H, W)`, the five normalization methods can be summarized as follows:
 
 ::: {.list-table}
-Table 7.8.8 Comparison of Five Normalization Methods
+Table 6.8.8 Comparison of Five Normalization Methods
 
 - - Method
   - Retained dimensions
@@ -382,7 +382,7 @@ Table 7.8.8 Comparison of Five Normalization Methods
 
 This table is the most important summary for understanding normalization methods. The standardization step in the formulas barely changes; what truly changes is **which elements share the same set of statistics**.
 
-## 7.8.9 The Two Boundary Cases of GroupNorm
+## 6.8.9 The Two Boundary Cases of GroupNorm
 
 GroupNorm controls the size of the statistical set through `num_groups`, so it connects LayerNorm and InstanceNorm.
 
@@ -433,7 +433,7 @@ Runtime behavior still deserves attention:
 - GroupNorm never maintains running statistics;
 - If InstanceNorm enables `track_running_stats=True`, it is no longer equivalent to GroupNorm during inference.
 
-## 7.8.10 Which Methods Depend on the Batch?
+## 6.8.10 Which Methods Depend on the Batch?
 
 Whether the batch dimension $N$ is included in the statistical set is the key to determining whether a normalization method depends on the batch.
 
@@ -471,7 +471,7 @@ print('Maximum difference for target sample:', max_diff.item())
 
 If we replace this with BatchNorm in training mode, the two outputs will usually differ.
 
-## 7.8.11 How Should We Choose a Normalization Method?
+## 6.8.11 How Should We Choose a Normalization Method?
 
 There is no absolute ranking among normalization methods. The choice depends on the network architecture, batch size, and task characteristics.
 
@@ -527,7 +527,7 @@ nn.InstanceNorm2d(num_features, affine=True)
 
 Of course, these are only common heuristics. Modern networks may also use entirely different normalization designs.
 
-## 7.8.12 More Normalization Is Not Always Better
+## 6.8.12 More Normalization Is Not Always Better
 
 Normalization layers can improve optimization, but they also change how the model represents information and introduce additional constraints.
 
@@ -548,7 +548,7 @@ Therefore, normalization should not be understood as a fixed operation that must
 
 The essence of normalization is not memorizing four class names, but designing the statistical set.
 
-## 7.8.13 Summary
+## 6.8.13 Summary
 
 This section compared BatchNorm, LayerNorm, InstanceNorm, GroupNorm, and RMSNorm from the perspective of statistical dimensions.
 

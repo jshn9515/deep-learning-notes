@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-29
 date-modified: 2026-06-29
 open-graph:
-  title: ch7.7-rms-normalization
-  description: "7.7 RMS Normalization: Normalizing Feature Magnitudes Without Mean Centering"
-title: "7.7 RMSNorm: Normalizing Feature Magnitudes Without Mean Centering"
+  title: ch6.7-rms-normalization
+  description: "6.7 RMS Normalization: Normalizing Feature Magnitudes Without Mean Centering"
+title: "6.7 RMSNorm: Normalizing Feature Magnitudes Without Mean Centering"
 order: 7
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch7-regularization-and-normalization/ch7.7-rms-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch6-regularization-and-normalization/ch6.7-rms-normalization.ipynb){fig-align="left"}
 
 In the previous section, we introduced Group Normalization. So far, we have seen that although BatchNorm, LayerNorm, InstanceNorm, and GroupNorm are used in different settings, they all contain two basic steps:
 
@@ -42,7 +42,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.7.1 Starting with the Root Mean Square
+## 6.7.1 Starting with the Root Mean Square
 
 For a vector of length $D$:
 
@@ -94,7 +94,7 @@ print('Difference:', (left - right).abs().item())
 
 This shows that RMS contains both the vector's variation and its overall offset, while the standard deviation describes only the variation around the mean.
 
-## 7.7.2 The RMSNorm Formula
+## 6.7.2 The RMSNorm Formula
 
 RMSNorm first computes the root mean square over the last one or several feature dimensions:
 
@@ -141,7 +141,7 @@ After normalization, the RMS of the vector is close to 1, but its mean is not ne
 - LayerNorm performs both mean centering and scale normalization;
 - RMSNorm performs only scale normalization.
 
-## 7.7.3 The Difference between RMSNorm and LayerNorm
+## 6.7.3 The Difference between RMSNorm and LayerNorm
 
 For the same vector, LayerNorm computes:
 
@@ -185,7 +185,7 @@ Note that we should not simply understand RMSNorm as LayerNorm with one subtract
 - LayerNorm removes the overall shift and scale of the vector;
 - RMSNorm removes only the overall scale.
 
-## 7.7.4 What Happens under Shifting and Scaling?
+## 6.7.4 What Happens under Shifting and Scaling?
 
 RMSNorm is approximately invariant to positive scaling. Suppose:
 
@@ -231,7 +231,7 @@ max_diff = (ln_original - ln_shifted).abs().max()
 print('LayerNorm difference after shifting:', max_diff.item())
 ```
 
-## 7.7.5 The Meaning of `normalized_shape`
+## 6.7.5 The Meaning of `normalized_shape`
 
 `nn.RMSNorm` and `nn.LayerNorm` use the same `normalized_shape` convention:
 
@@ -280,7 +280,7 @@ rms_per_token = y.square().mean(dim=-1).sqrt()
 print('RMS of every normalized token:', rms_per_token, sep='\n')
 ```
 
-## 7.7.6 RMSNorm Has Only the Learnable `weight` Parameter
+## 6.7.6 RMSNorm Has Only the Learnable `weight` Parameter
 
 PyTorch's `nn.RMSNorm` contains one learnable scaling parameter, `weight`, by default:
 
@@ -304,7 +304,7 @@ If learnable scaling is not needed, we can set:
 nn.RMSNorm(6, elementwise_affine=False)
 ```
 
-## 7.7.7 RMSNorm Has No Running Statistics
+## 6.7.7 RMSNorm Has No Running Statistics
 
 The statistics of RMSNorm come from the features of the current token or current sample itself and do not depend on other samples in the batch. Therefore, unlike BatchNorm, it does not need to maintain:
 
@@ -338,7 +338,7 @@ print('Maximum difference:', max_diff.item())
 
 `train()` and `eval()` still recursively modify the module's `training` attribute, but this attribute does not change RMSNorm's forward computation.
 
-## 7.7.8 A PyTorch Implementation of RMSNorm
+## 6.7.8 A PyTorch Implementation of RMSNorm
 
 A minimal function-form RMSNorm only needs the following steps:
 
@@ -468,7 +468,7 @@ print('Maximum difference:', max_diff.item())
 
 This implementation retains the core behavior of RMSNorm, while the actual PyTorch implementation also handles additional device and dtype details as well as performance optimizations.
 
-## 7.7.9 Why Do Modern Large Language Models Commonly Use RMSNorm?
+## 6.7.9 Why Do Modern Large Language Models Commonly Use RMSNorm?
 
 RMSNorm has become a very common normalization method in modern large language models. Early Transformers more commonly used LayerNorm, but as model scale, sequence length, and training cost continued to increase, researchers began paying more attention to the computational complexity and numerical stability of the normalization layer itself, as well as its relationship with efficient implementations.
 
@@ -488,7 +488,7 @@ However, this does not imply that RMSNorm is always better than LayerNorm. The c
 - A normalization layer should not be replaced casually in a pretrained model;
 - The choice should usually follow the original architecture and experimental results.
 
-## 7.7.10 Summary
+## 6.7.10 Summary
 
 The core formula of RMSNorm is:
 
@@ -505,7 +505,7 @@ The most important conclusions of this section are:
 4. `normalized_shape` represents the last several dimensions being normalized and is also the shape of `weight`;
 5. RMSNorm does not depend on the batch and does not maintain running statistics;
 6. Its computation is the same in `train()` and `eval()` modes;
-7. RMSNorm has become a very common choice in modern large language models;
+6. RMSNorm has become a very common choice in modern large language models;
 8. RMSNorm and LayerNorm behave differently and should not be swapped casually in a pretrained model.
 
 In the next section, we place BatchNorm, LayerNorm, InstanceNorm, GroupNorm, and RMSNorm into the same framework and compare their statistical dimensions, parameterizations, and use cases in a unified way.

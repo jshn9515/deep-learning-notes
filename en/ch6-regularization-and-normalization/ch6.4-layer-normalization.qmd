@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.4-layer-normalization
-  description: "7.4 LayerNorm: Normalizing Features Within Each Sample"
-title: "7.4 LayerNorm: Normalizing Features Within Each Sample"
+  title: ch6.4-layer-normalization
+  description: "6.4 LayerNorm: Normalizing Features Within Each Sample"
+title: "6.4 LayerNorm: Normalizing Features Within Each Sample"
 order: 4
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch7-regularization-and-normalization/ch7.4-layer-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch6-regularization-and-normalization/ch6.4-layer-normalization.ipynb){fig-align="left"}
 
 In the previous section, we introduced Batch Normalization. BatchNorm collects statistics for each feature or channel from the current mini-batch, so the output for one sample is affected by the other samples in the batch.
 
@@ -36,7 +36,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.4.1 Over Which Dimensions Does LayerNorm Normalize?
+## 6.4.1 Over Which Dimensions Does LayerNorm Normalize?
 
 When introducing BatchNorm in the previous section, we focused on the dimensions along which it computes the mean and variance in the input tensor. We can understand LayerNorm in the same way: instead of immediately memorizing the formula, first determine **which elements are grouped together to compute the statistics**.
 
@@ -158,7 +158,7 @@ This also shows that the normalization direction of LayerNorm is not fixed, but 
 
 Compared with BatchNorm, the standardization formula is still the same; the only difference is the statistical direction. BatchNorm usually fixes a channel and computes statistics over the batch and spatial dimensions, whereas LayerNorm fixes a sample and computes statistics over the feature dimensions specified by `normalized_shape`.
 
-## 7.4.2 LayerNorm Also Performs a Learnable Affine Transformation
+## 6.4.2 LayerNorm Also Performs a Learnable Affine Transformation
 
 Like BatchNorm, LayerNorm also performs a learnable affine transformation after standardization:
 
@@ -188,7 +188,7 @@ $$
 
 During training, however, the model can learn scaling and shifting suitable for the task. LayerNorm is therefore not simply forcing all intermediate representations to always maintain mean 0 and variance 1. Instead, it first establishes a stable standardized coordinate system and then lets the model learn how to adjust each feature.
 
-## 7.4.3 `normalized_shape`: Determining the Normalization Dimensions and Parameter Shape
+## 6.4.3 `normalized_shape`: Determining the Normalization Dimensions and Parameter Shape
 
 The most important parameter of `nn.LayerNorm` is `normalized_shape`:
 
@@ -286,7 +286,7 @@ print('Output shape:', y.shape)
 
 This type of channels-last LayerNorm appears in some modern vision models. For ordinary CNNs, however, BatchNorm or GroupNorm is usually more consistent with the default `(N, C, H, W)` layout.
 
-## 7.4.4 LayerNorm in Transformers
+## 6.4.4 LayerNorm in Transformers
 
 The hidden states of a Transformer are usually written as:
 
@@ -340,7 +340,7 @@ $$
 
 Here, LayerNorm stabilizes the feature scale of each token representation, while the residual connection provides a direct information and gradient path. The structural difference between Pre-LN and Post-LN was discussed in the Transformer chapter and will not be expanded on again here.
 
-## 7.4.5 LayerNorm Does Not Depend on Batch Statistics
+## 6.4.5 LayerNorm Does Not Depend on Batch Statistics
 
 As we know, BatchNorm uses the mean and variance of the current batch during training and the accumulated running statistics during inference. Therefore, the same sample may produce different results in different batches. LayerNorm, on the other hand, obtains all its statistics from the current sample itself, so its output does not change when the same sample is placed together with other samples.
 
@@ -369,7 +369,7 @@ This also means that LayerNorm:
 - Does not need to adjust its statistical procedure according to batch size;
 - Does not lose the meaning of its statistics when the batch size is 1.
 
-## 7.4.6 Training and Inference Behave the Same
+## 6.4.6 Training and Inference Behave the Same
 
 As discussed earlier, dropout behaves differently in `train()` and `eval()` modes, and BatchNorm also switches between batch statistics and running statistics in the two modes. LayerNorm in this section, however, uses exactly the same formula during training and inference.
 
@@ -390,7 +390,7 @@ print('State dict keys:', dict(layer_norm.state_dict()))
 
 As we can see, `state_dict` contains only the learnable `weight` and `bias`, not BatchNorm's `running_mean`, `running_var`, and `num_batches_tracked`. `eval()` still recursively sets the `training` attribute of the LayerNorm module, but LayerNorm's forward formula itself does not switch behavior based on this attribute.
 
-## 7.4.7 A PyTorch Implementation of LayerNorm
+## 6.4.7 A PyTorch Implementation of LayerNorm
 
 Based on the discussion above, a simplified LayerNorm can be divided into four steps:
 
@@ -535,7 +535,7 @@ As we can see, the difference between them is within the range of floating-point
 
 Note that BatchNorm's learnable parameters consist of one set per channel, whereas LayerNorm's learnable parameters consist of one set per position within the normalized range. PyTorch also provides the `elementwise_affine` and `bias` parameters, which can be used to choose whether to use a learnable affine transformation and whether to use a bias.
 
-## 7.4.8 Why Does LayerNorm Use the Population Variance?
+## 6.4.8 Why Does LayerNorm Use the Population Variance?
 
 PyTorch's LayerNorm uses the population variance, namely:
 
@@ -568,7 +568,7 @@ print('Unbiased variance:', unbiased_var.item())
 print('Maximum difference:', max_diff.item())
 ```
 
-## 7.4.9 Limitations of LayerNorm
+## 6.4.9 Limitations of LayerNorm
 
 LayerNorm does not depend on batch size, and its training and inference behavior is consistent, so it is highly suitable for sequence models and small-batch settings. This does not mean, however, that it is better than BatchNorm for every task.
 
@@ -585,7 +585,7 @@ Therefore, the choice of normalization method is usually related to the data lay
 - CNNs with small batches: GroupNorm is usually considered;
 - Image-generation tasks such as style transfer: InstanceNorm may be used.
 
-## 7.4.10 Summary
+## 6.4.10 Summary
 
 This section introduced Layer Normalization.
 

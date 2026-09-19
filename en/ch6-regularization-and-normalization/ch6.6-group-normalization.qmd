@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.6-group-normalization
-  description: "7.6 Group Normalization: Normalizing Features Within Channel Groups"
-title: "7.6 GroupNorm: Normalizing Features Within Channel Groups"
+  title: ch6.6-group-normalization
+  description: "6.6 Group Normalization: Normalizing Features Within Channel Groups"
+title: "6.6 GroupNorm: Normalizing Features Within Channel Groups"
 order: 6
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch7-regularization-and-normalization/ch7.6-group-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch6-regularization-and-normalization/ch6.6-group-normalization.ipynb){fig-align="left"}
 
 In the previous section, we introduced Instance Normalization. For image features with shape `(N, C, H, W)`, InstanceNorm fixes the sample and channel and computes the mean and variance only over the spatial dimensions `H` and `W`. It does not depend on other samples in the batch, so even when the batch size is small it does not suffer from the statistical instability of BatchNorm.
 
@@ -37,7 +37,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.6.1 Why Do We Still Need GroupNorm?
+## 6.6.1 Why Do We Still Need GroupNorm?
 
 For an input `(N, C, H, W)`, BatchNorm fixes the channel `C` and computes statistics over the batch and spatial dimensions `N, H, W`. It usually works well when the batch is large enough, but when memory constraints allow only a small number of samples per device, the batch statistics become unstable. This is especially common in object detection and semantic segmentation. High-resolution images consume a large amount of memory, so the batch size on a single GPU is often small, sometimes only 1 or 2. InstanceNorm avoids this problem because it never computes statistics across samples. But it handles every channel separately, which may remove too much channel-level information.
 
@@ -56,7 +56,7 @@ Group 4: channel 6, channel 7
 
 Each sample independently performs this grouping and normalization, so other samples in the batch do not affect the output of the current sample.
 
-## 7.6.2 How Are `(N, C, H, W)` Inputs Grouped?
+## 6.6.2 How Are `(N, C, H, W)` Inputs Grouped?
 
 Let the input be:
 
@@ -111,7 +111,7 @@ The rule of GroupNorm can be summarized in one sentence:
 
 > **For an `(N, C, H, W)` input, GroupNorm fixes the sample and group, and normalizes over the channels within the group and the spatial dimensions.**
 
-## 7.6.3 The Mathematical Form of GroupNorm
+## 6.6.3 The Mathematical Form of GroupNorm
 
 For the $n$-th sample and the $g$-th group, let the set of elements in the group be $S_{n,g}$, with cardinality:
 
@@ -158,7 +158,7 @@ print('Bias shape:', group_norm.bias.shape)
 
 Thus, channels within the same group share a mean and variance, but they can still learn different scaling and shifting through different `weight` and `bias` values.
 
-## 7.6.4 Manually Computing GroupNorm Once
+## 6.6.4 Manually Computing GroupNorm Once
 
 Below, we first omit the learnable affine transformation and manually perform grouping, standardization, and reshaping.
 
@@ -181,7 +181,7 @@ print(x_hat_grouped.var(dim, correction=0))
 
 Each sample and group obtains a mean close to 0 and a variance close to 1. To avoid division by 0, we add an $\epsilon$ to the variance.
 
-## 7.6.5 GroupNorm Does Not Depend on Other Samples in the Batch
+## 6.6.5 GroupNorm Does Not Depend on Other Samples in the Batch
 
 GroupNorm does not compute statistics along the batch dimension, so changing the other samples in a batch does not change the output of the current sample.
 
@@ -211,7 +211,7 @@ This property of GroupNorm means that:
 - There is no need to synchronize batch statistics across devices;
 - Training results are usually less sensitive to batch size than with BatchNorm.
 
-## 7.6.6 `num_groups=1`: All Channels Belong to One Group
+## 6.6.6 `num_groups=1`: All Channels Belong to One Group
 
 When $G=1$, all channels are placed in one group. For an `(N, C, H, W)` input, statistics are computed jointly over `C`, `H`, and `W`. In terms of statistical dimensions, this is similar to `nn.LayerNorm((C, H, W))`. Both compute the mean and variance over the entire `(C, H, W)` for each sample.
 
@@ -237,7 +237,7 @@ Therefore, the more precise statement is:
 
 > **When `num_groups=1`, GroupNorm's statistical procedure is equivalent to applying LayerNorm to `(C, H, W)`, but the default affine parameterization is different.**
 
-## 7.6.7 `num_groups=C`: Each Channel Forms Its Own Group
+## 6.6.7 `num_groups=C`: Each Channel Forms Its Own Group
 
 When $G=C$, each group contains only one channel. GroupNorm then fixes the sample and channel and computes statistics over the spatial dimensions `H` and `W`. This is exactly the statistical procedure of InstanceNorm.
 
@@ -264,7 +264,7 @@ Therefore, GroupNorm can be viewed as a bridge between LayerNorm and InstanceNor
 
 This is also the origin of the name GroupNorm: the number of groups determines the granularity at which channels share statistical information.
 
-## 7.6.8 A PyTorch Implementation of GroupNorm
+## 6.6.8 A PyTorch Implementation of GroupNorm
 
 Below, we implement a function-form GroupNorm. This implementation supports arbitrary spatial dimensions, not only two-dimensional images.
 
@@ -447,7 +447,7 @@ For these inputs, GroupNorm always:
 
 Therefore, there is no classification into `GroupNorm1d`, `GroupNorm2d`, and `GroupNorm3d`.
 
-## 7.6.9 The Behavior Is the Same under `train()` and `eval()`
+## 6.6.9 The Behavior Is the Same under `train()` and `eval()`
 
 GroupNorm does not maintain `running_mean` or `running_var`. During both training and inference, it uses the group statistics of the current sample. Therefore, `train()` and `eval()` do not change how GroupNorm computes its output.
 
@@ -474,7 +474,7 @@ The `state_dict` contains only the learnable `weight` and `bias`, and does not c
 
 This also means that, unlike BatchNorm, GroupNorm does not require running statistics to have been correctly estimated before inference.
 
-## 7.6.10 How Should `num_groups` Be Chosen?
+## 6.6.10 How Should `num_groups` Be Chosen?
 
 The most important hyperparameter of GroupNorm is `num_groups`. It must satisfy:
 
@@ -498,7 +498,7 @@ Each of these gives 8 channels per group.
 
 Therefore, when choosing `num_groups`, it is more important to consider how many channels each group contains and whether the channel counts of different layers are divisible by the number of groups.
 
-## 7.6.11 Common Placement of GroupNorm in a Network
+## 6.6.11 Common Placement of GroupNorm in a Network
 
 In CNNs, GroupNorm is usually placed after the convolutional layer and before the activation function:
 
@@ -520,7 +520,7 @@ The reason is similar to the Conv-BN structure: the constant bias produced by th
 
 However, GroupNorm usually cannot be fused into a convolution as simply as BatchNorm during inference. BatchNorm uses fixed running statistics in `eval()` mode, so the overall operation is a fixed affine transformation. GroupNorm still needs to dynamically compute the mean and variance from the current input during inference, so it cannot be absorbed into the convolution weights in advance.
 
-## 7.6.12 Use Cases and Limitations of GroupNorm
+## 6.6.12 Use Cases and Limitations of GroupNorm
 
 The most typical use cases for GroupNorm are small-batch vision tasks, such as:
 
@@ -542,7 +542,7 @@ However, GroupNorm is not the universally optimal default for every task.
 
 When the batch is sufficiently large and the training and inference data distributions are similar, BatchNorm is still a highly effective choice for CNNs. Moreover, BatchNorm's cross-sample statistics introduce some random perturbation, which may provide an additional regularization effect. GroupNorm also requires manually choosing `num_groups`. The number of channels may differ across layers, so we must ensure that the channel count of every layer is divisible by the number of groups. Finally, GroupNorm still needs to compute the mean and variance of the current input during inference, so it cannot perform a simple Conv-BN Fusion like BatchNorm.
 
-## 7.6.13 Summary
+## 6.6.13 Summary
 
 This section introduced Group Normalization.
 

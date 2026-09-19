@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-26
 date-modified: 2026-06-26
 open-graph:
-  title: ch7.3-batch-normalization
-  description: "7.3 BatchNorm: Stabilizing Training with Batch Statistics"
-title: "7.3 BatchNorm: Stabilizing Training with Batch Statistics"
+  title: ch6.3-batch-normalization
+  description: "6.3 BatchNorm: Stabilizing Training with Batch Statistics"
+title: "6.3 BatchNorm: Stabilizing Training with Batch Statistics"
 order: 3
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch7-regularization-and-normalization/ch7.3-batch-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch6-regularization-and-normalization/ch6.3-batch-normalization.ipynb){fig-align="left"}
 
 In the previous section, we introduced dropout. By randomly dropping intermediate activations, it prevents the network from becoming overly dependent on a few fixed features and is mainly used to mitigate overfitting.
 
@@ -36,7 +36,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.3.1 Why Do We Need to Control the Scale of Intermediate Activations?
+## 6.3.1 Why Do We Need to Control the Scale of Intermediate Activations?
 
 A neural network is composed of many layers in sequence. When the parameters of one layer change, the distribution of the activations it outputs to the next layer changes as well. The next layer must not only learn the current task, but also continually adapt to changes in the numerical scale of its input.
 
@@ -94,7 +94,7 @@ print('Variance after normalization:', x_hat_var.item())
 
 However, BatchNorm does not merely turn all activations into values with mean 0 and variance 1. Actual BatchNorm also includes learnable scaling and shifting parameters. As we will see later, this step allows the model to restore or even change the original scale when necessary.
 
-## 7.3.2 Over Which Dimensions Does BatchNorm Normalize?
+## 6.3.2 Over Which Dimensions Does BatchNorm Normalize?
 
 The most important question for understanding BatchNorm is: **over which dimensions are the mean and variance computed?**
 
@@ -197,7 +197,7 @@ print(batch_norm)
 
 For an input `(N, 3, H, W)`, this layer maintains 3 independent sets of parameters and statistics, one for each channel.
 
-## 7.3.3 Why Are Gamma and Beta Still Needed after Standardization?
+## 6.3.3 Why Are Gamma and Beta Still Needed after Standardization?
 
 If BatchNorm always forced the output to have mean 0 and variance 1, it could limit the expressive power of the network. For example, suppose the preceding layer has already learned a particularly suitable scale, but standardization directly removes that scale. To solve this problem, BatchNorm adds two learnable parameters after standardization:
 
@@ -235,7 +235,7 @@ print('bias:', batch_norm.bias)
 
 However, most models retain the default `affine=True`.
 
-## 7.3.4 Training-Stage Statistics and Batch Dependence
+## 6.3.4 Training-Stage Statistics and Batch Dependence
 
 During training, BatchNorm uses the mean and variance of the current mini-batch:
 
@@ -271,7 +271,7 @@ This batch dependence has two consequences. On the one hand, BatchNorm can dynam
 
 Therefore, BatchNorm is usually better suited to settings where batch statistics are relatively reliable. For vision tasks with very small batch sizes, GroupNorm, introduced later, is often more stable.
 
-## 7.3.5 Why Can Inference No Longer Depend on the Current Batch?
+## 6.3.5 Why Can Inference No Longer Depend on the Current Batch?
 
 During inference, the input may contain only one sample, or the batch size may differ from request to request. Continuing to use the statistics of the current batch would create two problems:
 
@@ -326,7 +326,7 @@ Pay special attention to this:
 
 Therefore, remember to add `model.eval()` during inference. Otherwise, BatchNorm will continue to use the statistics of the current batch.
 
-## 7.3.6 Running Statistics and Momentum
+## 6.3.6 Running Statistics and Momentum
 
 PyTorch updates running statistics using `momentum`. For the running mean, the update can be written as:
 
@@ -376,7 +376,7 @@ For understanding BatchNorm, the most important point is not to memorize this im
 - Batch statistics: used immediately during the training forward pass;
 - Running statistics: accumulated during training and used during the inference forward pass.
 
-## 7.3.7 A PyTorch Implementation of BatchNorm
+## 6.3.7 A PyTorch Implementation of BatchNorm
 
 Below, we implement a simplified BatchNorm that supports four-dimensional `(N, C, H, W)` inputs. This implementation includes:
 
@@ -584,7 +584,7 @@ print('Running variance difference:', diff_var.item())
 
 This implementation omits some options from the complete PyTorch module, such as `track_running_stats=False` and `momentum=None`, but it already includes the core computation of BatchNorm. The complete implementation is in the `dnnlpy` source code.
 
-## 7.3.8 BatchNorm1d, BatchNorm2d, and BatchNorm3d
+## 6.3.8 BatchNorm1d, BatchNorm2d, and BatchNorm3d
 
 PyTorch provides three commonly used BatchNorm modules:
 
@@ -636,7 +636,7 @@ print('BatchNorm3d output:', batch_norm_3d(x_3d).shape)
 
 Note that `1d`, `2d`, and `3d` describe the additional sequence or spatial structure in the data, while `num_features` always corresponds to the channel dimension.
 
-## 7.3.9 Conv-BN Fusion: Why Can They Be Merged during Inference?
+## 6.3.9 Conv-BN Fusion: Why Can They Be Merged during Inference?
 
 In evaluation mode, BatchNorm uses fixed running statistics:
 
@@ -703,7 +703,7 @@ and then multiplied by the entire convolution kernel corresponding to each outpu
 Note that Conv-BN Fusion applies only to inference semantics. During training, BatchNorm uses the dynamic statistics of the current batch, so it cannot be absorbed into fixed convolution parameters in advance.
 :::
 
-## 7.3.10 A PyTorch Implementation of Conv-BN Fusion
+## 6.3.10 A PyTorch Implementation of Conv-BN Fusion
 
 Below, we implement a simplified `fuse_conv_bn_eval`. It requires both the convolutional layer and BatchNorm to already be in `eval` mode and BatchNorm to have maintained its running statistics.
 
@@ -810,7 +810,7 @@ print('Difference from PyTorch fusion:', max_diff.item())
 
 Conv-BN Fusion does not change the function learned by the model. It simply uses the fact that BatchNorm becomes a fixed affine transformation during inference and rewrites two consecutive operators as a single convolution operator.
 
-## 7.3.11 Where Is BatchNorm Usually Placed in a Network?
+## 6.3.11 Where Is BatchNorm Usually Placed in a Network?
 
 In a classic CNN, a common structure is:
 
@@ -855,7 +855,7 @@ Therefore, the convolutional bias is usually redundant in a convolutional layer 
 
 However, the module order is not a mathematical law. Different architectures may use different placements, and modern networks also include designs such as pre-activation. When reading model code, follow the specific architecture instead of assuming that every BatchNorm must be placed before the activation function.
 
-## 7.3.12 Limitations of BatchNorm
+## 6.3.12 Limitations of BatchNorm
 
 BatchNorm is effective, but it is not suitable for every setting.
 
@@ -869,7 +869,7 @@ Finally, in distributed training, each device may see only its local mini-batch.
 
 These limitations explain why Layer Normalization, Instance Normalization, and Group Normalization appear later. Their formulas are all very similar; what actually changes is the dimension over which statistics are computed and whether they depend on the batch.
 
-## 7.3.13 Summary
+## 6.3.13 Summary
 
 This section introduced the core idea of batch normalization.
 

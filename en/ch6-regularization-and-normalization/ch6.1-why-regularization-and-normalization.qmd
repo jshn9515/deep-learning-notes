@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-26
 date-modified: 2026-06-26
 open-graph:
-  title: ch7.1-why-regularization-and-normalization
-  description: "7.1 Why Deep Networks Need Regularization and Normalization"
-title: "7.1 Why Deep Networks Need Regularization and Normalization"
+  title: ch6.1-why-regularization-and-normalization
+  description: "6.1 Why Deep Networks Need Regularization and Normalization"
+title: "6.1 Why Deep Networks Need Regularization and Normalization"
 order: 1
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch7-regularization-and-normalization/ch7.1-why-regularization-and-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch6-regularization-and-normalization/ch6.1-why-regularization-and-normalization.ipynb){fig-align="left"}
 
 As neural networks become deeper and contain more parameters, models usually gain stronger expressive power. They can fit more complex functions, learn richer features, and are more likely to achieve very low error on the training data. But once a model becomes more powerful, training does not automatically become easier. Instead, we often encounter two different kinds of problems.
 
@@ -32,7 +32,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.1.1 Why Does a More Powerful Model Overfit More Easily?
+## 6.1.1 Why Does a More Powerful Model Overfit More Easily?
 
 The parameters of a neural network determine which functions it can represent. In general, the deeper the network, the wider its hidden layers, and the more parameters it has, the more complex the functions it can represent. This expressive power is an important reason for the success of deep learning, but it also creates a direct problem: the model can learn not only the true patterns in the training data, but also memorize accidental details in the training examples.
 
@@ -55,7 +55,7 @@ Regularization serves this goal. It does not simply make the training loss lower
 
 Common regularization methods include weight decay, data augmentation, early stopping, and dropout. This chapter focuses on dropout because it acts directly on the intermediate activations of neural networks and, like the normalization layers introduced later, usually appears as part of the network architecture.
 
-## 7.1.2 The Core Problem Dropout Solves
+## 6.1.2 The Core Problem Dropout Solves
 
 The core idea of dropout is simple: randomly set some intermediate activations to 0 during training.
 
@@ -91,7 +91,7 @@ Therefore, the main keywords for dropout are:
 
 Dropout may indirectly affect training stability, but its primary purpose is not to unify the scale of activations or fix exploding gradients. It is first and foremost a regularization method.
 
-## 7.1.3 Why Are Deep Networks Difficult to Optimize?
+## 6.1.3 Why Are Deep Networks Difficult to Optimize?
 
 Overfitting is not the only problem faced by deep networks. Even when the training set is sufficiently large and the model is not obviously overfitting, the network may still be difficult to optimize.
 
@@ -134,7 +134,7 @@ Inappropriate activation scales can cause many problems. For example, some activ
 
 Therefore, a deep network must not only learn the correct function, but also keep the entire optimization process within a relatively reasonable numerical range.
 
-## 7.1.4 What Does Normalization Do?
+## 6.1.4 What Does Normalization Do?
 
 The common idea behind normalization methods is to compute statistics for a group of activations and then use those statistics to adjust the activations.
 
@@ -197,7 +197,7 @@ Therefore, the most effective way to understand normalization methods is not to 
 
 The following sections will all revolve around these four questions.
 
-## 7.1.5 Dropout and Normalization Are Not the Same Thing
+## 6.1.5 Dropout and Normalization Are Not the Same Thing
 
 Dropout and normalization often appear together in model architectures, so it is easy to put them into the same vague category: both can make models train better. Mechanistically, however, the difference between them is clear.
 
@@ -208,7 +208,7 @@ Normalization usually rescales features according to the statistics of a group o
 The two can be roughly summarized as follows:
 
 ::: {.list-table}
-Table 7.1.5: Core Differences Between Dropout and Normalization
+Table 6.1.5: Core Differences Between Dropout and Normalization
 
 - - Method
   - Main objective
@@ -230,7 +230,7 @@ The last column deserves special attention. Dropout is usually disabled during i
 
 Therefore, dropout and normalization may both appear in a network architecture, but they cannot replace each other. A model may use only one of them or both at the same time; they affect training and generalization from different perspectives.
 
-## 7.1.6 Normalization Is Not the Same as Input Standardization
+## 6.1.6 Normalization Is Not the Same as Input Standardization
 
 When preparing tabular or image data, we also often standardize it, for example:
 
@@ -252,7 +252,7 @@ Therefore, a more accurate understanding is:
 
 This distinction may seem subtle, but it is important. When analyzing different normalization layers later, we focus on how they choose the statistical range, how they scale activations, and what inductive biases this choice introduces, rather than assuming that all intermediate features must follow a fixed probability distribution.
 
-## 7.1.7 How Will This Chapter Organize These Methods?
+## 6.1.7 How Will This Chapter Organize These Methods?
 
 This chapter introduces dropout and the various normalization methods in the following order.
 
@@ -280,7 +280,7 @@ Starting with this chapter, keep one important framework in mind:
 
 > **When you see dropout, first ask how it introduces stochastic regularization; when you see normalization, first ask over which dimensions it computes statistics.**
 
-## 7.1.8 Summary
+## 6.1.8 Summary
 
 This section did not directly implement a particular normalization layer. Instead, it first distinguished several problems in deep-network training that are easy to confuse.
 

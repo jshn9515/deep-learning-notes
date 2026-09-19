@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.5-instance-normalization
-  description: "7.5 Instance Normalization: Normalizing Each Channel Within Each Sample"
-title: "7.5 InstanceNorm: Normalizing Each Channel Within Each Sample"
+  title: ch6.5-instance-normalization
+  description: "6.5 Instance Normalization: Normalizing Each Channel Within Each Sample"
+title: "6.5 InstanceNorm: Normalizing Each Channel Within Each Sample"
 order: 5
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch7-regularization-and-normalization/ch7.5-instance-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch6-regularization-and-normalization/ch6.5-instance-normalization.ipynb){fig-align="left"}
 
 In the previous section, we introduced Layer Normalization. LayerNorm does not depend on other samples in the batch, but computes the mean and variance within each sample's own features. For Transformer inputs shaped `(batch_size, sequence_length, hidden_size)`, it usually normalizes the `hidden_size` features of each token independently.
 
@@ -37,7 +37,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.5.1 Over Which Dimensions Does InstanceNorm Normalize?
+## 6.5.1 Over Which Dimensions Does InstanceNorm Normalize?
 
 Consider a batch of two-dimensional image features:
 
@@ -77,7 +77,7 @@ var = x.var(dim=(2, 3), correction=0, keepdim=True)
 
 Here, `dim=(2, 3)` means that statistics are computed only over $H$ and $W$, while the $N$ and $C$ dimensions are retained. In other words, different samples do not share statistics, and different channels within the same sample do not share statistics either.
 
-## 7.5.2 The Statistical Directions of BatchNorm, LayerNorm, and InstanceNorm
+## 6.5.2 The Statistical Directions of BatchNorm, LayerNorm, and InstanceNorm
 
 BatchNorm, LayerNorm, and InstanceNorm actually use the same standardization formula:
 
@@ -164,7 +164,7 @@ Here, note that:
 
 Therefore, BatchNorm's output is affected by other samples in the batch, while LayerNorm and InstanceNorm depend only on statistics from the current sample and are not affected by other samples in the batch.
 
-## 7.5.3 Why Is InstanceNorm Commonly Used for Style Transfer?
+## 6.5.3 Why Is InstanceNorm Commonly Used for Style Transfer?
 
 One of the classic applications of InstanceNorm is image style transfer.
 
@@ -192,7 +192,7 @@ $$
 
 ```{python}
 x = torch.randn(1, 3, 8, 8)
-x_transformed = x * 7.0 + 20.0
+x_transformed = x * 6.0 + 20.0
 
 instance_norm = nn.InstanceNorm2d(3, affine=False)
 
@@ -205,7 +205,7 @@ print('Maximum difference:', max_diff.item())
 
 This does not mean that every image style can be simply represented as an affine transformation of each channel. More precisely, InstanceNorm removes some information related to instance-level channel statistics, so it is especially suitable for networks that need to control or re-model image style. For classification tasks, however, the image's own contrast, color, and intensity statistics may contain useful class information. Removing too much of this information may instead reduce model performance.
 
-## 7.5.4 InstanceNorm Also Performs a Learnable Affine Transformation
+## 6.5.4 InstanceNorm Also Performs a Learnable Affine Transformation
 
 Like BatchNorm and LayerNorm, InstanceNorm can also perform a learnable affine transformation after standardization:
 
@@ -301,7 +301,7 @@ print('Updated running variance:', instance_norm.running_var)
 
 However, considering the most common use of InstanceNorm, its core characteristic is precisely computing statistics from the current instance, so not maintaining running statistics by default better matches its original design goal.
 
-## 7.5.5 A PyTorch Implementation of InstanceNorm
+## 6.5.5 A PyTorch Implementation of InstanceNorm
 
 Below, we implement a simplified InstanceNorm.
 
@@ -447,7 +447,7 @@ print('Maximum difference:', max_err.item())
 
 This implementation omits engineering details such as running statistics, boundary cases for empty inputs, and checks for different devices and data types, but retains the core computation of InstanceNorm.
 
-## 7.5.6 InstanceNorm1d, InstanceNorm2d, and InstanceNorm3d
+## 6.5.6 InstanceNorm1d, InstanceNorm2d, and InstanceNorm3d
 
 PyTorch provides three commonly used InstanceNorm modules:
 
@@ -495,7 +495,7 @@ print('InstanceNorm3d output:', in_3d(x_3d).shape)
 
 Note that 1d, 2d, and 3d describe the additional sequence or spatial structure in the data, while `num_features` always corresponds to the channel dimension. Unlike BatchNorm, InstanceNorm computes statistics only within one sample and one channel; it does not include the batch dimension $N$ or the channel dimension $C$.
 
-## 7.5.7 Limitations of InstanceNorm
+## 6.5.7 Limitations of InstanceNorm
 
 The advantages of InstanceNorm are that it is completely independent of the batch and can effectively remove the mean and variance of each channel within an individual sample. But this property also introduces some limitations.
 
@@ -505,7 +505,7 @@ Second, the statistics of InstanceNorm become unstable when the spatial size is 
 
 Finally, InstanceNorm does not solve every training-stability problem. It only adjusts activation statistics; it cannot replace appropriate parameter initialization, learning-rate settings, residual connections, optimizer selection, or gradient handling.
 
-## 7.5.8 Summary
+## 6.5.8 Summary
 
 This section introduced Instance Normalization. It uses the same standardization formula as the two normalization methods discussed previously, but its statistical dimensions are different.
 
