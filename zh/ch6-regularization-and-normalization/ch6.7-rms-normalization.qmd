@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-29
 date-modified: 2026-06-29
 open-graph:
-  title: ch7.7-rms-normalization
-  description: "7.7 RMS Normalization: Normalizing Feature Magnitudes Without Mean Centering"
-title: "7.7 RMSNorm：不做均值中心化的特征尺度归一化"
+  title: ch6.7-rms-normalization
+  description: "6.7 RMS Normalization: Normalizing Feature Magnitudes Without Mean Centering"
+title: "6.7 RMSNorm：不做均值中心化的特征尺度归一化"
 order: 7
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch7-regularization-and-normalization/ch7.7-rms-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch6-regularization-and-normalization/ch6.7-rms-normalization.ipynb){fig-align="left"}
 
 上一节介绍了 Group Normalization。到目前为止，我们已经看到，BatchNorm、LayerNorm、InstanceNorm 和 GroupNorm 虽然使用场景不同，但都包含两个基本步骤：
 
@@ -42,7 +42,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.7.1 从均方根开始
+## 6.7.1 从均方根开始
 
 对于一个长度为 $D$ 的向量：
 
@@ -94,7 +94,7 @@ print('Difference:', (left - right).abs().item())
 
 这说明，RMS 同时包含了向量的波动和整体偏移信息，而标准差只描述围绕均值的波动。
 
-## 7.7.2 RMSNorm 的公式
+## 6.7.2 RMSNorm 的公式
 
 RMSNorm 首先根据最后一个或最后若干个特征维度计算均方根：
 
@@ -141,7 +141,7 @@ print('Mean after normalization:', x_hat.mean().item())
 - LayerNorm 同时进行均值中心化和尺度归一化；
 - RMSNorm 只进行尺度归一化。
 
-## 7.7.3 RMSNorm 与 LayerNorm 的差异
+## 6.7.3 RMSNorm 与 LayerNorm 的差异
 
 对于同一个向量，LayerNorm 计算：
 
@@ -185,7 +185,7 @@ LayerNorm 输出的均值接近 0，方差接近 1；RMSNorm 输出的 RMS 接�
 - LayerNorm 消除了向量的整体平移和尺度；
 - RMSNorm 只消除了整体尺度。
 
-## 7.7.4 平移与缩放会发生什么
+## 6.7.4 平移与缩放会发生什么
 
 RMSNorm 对正比例缩放具有近似不变性。假设：
 
@@ -231,7 +231,7 @@ max_diff = (ln_original - ln_shifted).abs().max()
 print('LayerNorm difference after shifting:', max_diff.item())
 ```
 
-## 7.7.5 `normalized_shape` 的含义
+## 6.7.5 `normalized_shape` 的含义
 
 `nn.RMSNorm` 和 `nn.LayerNorm` 使用相同的 `normalized_shape` 约定：
 
@@ -280,7 +280,7 @@ rms_per_token = y.square().mean(dim=-1).sqrt()
 print('RMS of every normalized token:', rms_per_token, sep='\n')
 ```
 
-## 7.7.6 RMSNorm 的可学习参数只有 weight
+## 6.7.6 RMSNorm 的可学习参数只有 weight
 
 PyTorch 的 `nn.RMSNorm` 默认包含一个可学习的缩放参数 `weight`：
 
@@ -304,7 +304,7 @@ $$
 nn.RMSNorm(6, elementwise_affine=False)
 ```
 
-## 7.7.7 RMSNorm 没有运行时统计量
+## 6.7.7 RMSNorm 没有运行时统计量
 
 RMSNorm 的统计量来自当前 token 或当前样本自身的特征，不依赖 batch 中其他样本。因此它不需要像 BatchNorm 一样维护：
 
@@ -338,7 +338,7 @@ print('Maximum difference:', max_diff.item())
 
 `train()` 和 `eval()` 仍然会递归修改模块的 `training` 属性，但这个属性不会改变 RMSNorm 的前向计算。
 
-## 7.7.8 RMSNorm 的 PyTorch 实现
+## 6.7.8 RMSNorm 的 PyTorch 实现
 
 一个最小的函数版 RMSNorm 只需要以下步骤：
 
@@ -468,7 +468,7 @@ print('Maximum difference:', max_diff.item())
 
 这个实现保留了 RMSNorm 最核心的行为，但实际 PyTorch 实现还会处理更多设备、dtype 和性能优化细节。
 
-## 7.7.9 为什么现代大语言模型常用 RMSNorm
+## 6.7.9 为什么现代大语言模型常用 RMSNorm
 
 在现代大语言模型中，RMSNorm 已经成为非常常见的归一化方法。早期 Transformer 更普遍地使用 LayerNorm，而随着模型规模、序列长度和训练成本不断增加，研究者开始更加关注归一化层本身的计算复杂度、数值稳定性以及它与高效实现之间的关系。
 
@@ -488,7 +488,7 @@ RMSNorm 保留了 LayerNorm 中最关键的尺度归一化作用，但省略了�
 - 不能在预训练模型中随意替换归一化层；
 - 选择哪一种方法通常应遵循原始架构和实验结果。
 
-## 7.7.10 本章小结
+## 6.7.10 本章小结
 
 RMSNorm 的核心公式是：
 
@@ -505,7 +505,7 @@ $$
 4. `normalized_shape` 表示被归一化的最后若干个维度，也是 `weight` 的形状；
 5. RMSNorm 不依赖 batch，也不维护 running statistics；
 6. `train()` 和 `eval()` 模式下的计算相同；
-7. RMSNorm 已经成为现代大语言模型中非常常见的选择；
+6. RMSNorm 已经成为现代大语言模型中非常常见的选择；
 8. RMSNorm 与 LayerNorm 的行为不同，不能在预训练模型中随意互换。
 
 下一节，我们将把 BatchNorm、LayerNorm、InstanceNorm、GroupNorm 和 RMSNorm 放进同一个框架，统一比较它们的统计维度、参数化方式和适用场景。

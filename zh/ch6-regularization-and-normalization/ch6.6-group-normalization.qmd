@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.6-group-normalization
-  description: "7.6 Group Normalization: Normalizing Features Within Channel Groups"
-title: "7.6 GroupNorm：在通道组内归一化特征"
+  title: ch6.6-group-normalization
+  description: "6.6 Group Normalization: Normalizing Features Within Channel Groups"
+title: "6.6 GroupNorm：在通道组内归一化特征"
 order: 6
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch7-regularization-and-normalization/ch7.6-group-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch6-regularization-and-normalization/ch6.6-group-normalization.ipynb){fig-align="left"}
 
 上一节我们介绍了 Instance Normalization。对于形状为 `(N, C, H, W)` 的图像特征，InstanceNorm 会固定样本和通道，只沿空间维度 `H`、`W` 计算均值和方差。它不依赖 batch 中的其他样本，因此即使 batch size 很小，也不会出现 BatchNorm 那样的统计量不稳定问题。
 
@@ -37,7 +37,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.6.1 为什么还需要 GroupNorm
+## 6.6.1 为什么还需要 GroupNorm
 
 BatchNorm 对输入 `(N, C, H, W)` 固定通道 `C`，沿 batch 和空间维度 `N, H, W` 计算统计量。它在 batch 足够大时通常工作的很好，但当显存限制使得每个设备只能容纳很少的样本时，batch statistics 会变得不稳定。这在目标检测和语义分割中尤其常见。高分辨率图像会消耗大量显存，因此单张 GPU 上的 batch size 往往很小，有时甚至只有 1 或 2。InstanceNorm 可以避免这个问题，因为它完全不跨样本统计。但它把每个通道都单独处理，可能会移除过多的通道级信息。
 
@@ -56,7 +56,7 @@ Group 4: channel 6, channel 7
 
 每个样本都会独立完成这次分组和归一化，因此 batch 中的其他样本不会影响当前样本的输出。
 
-## 7.6.2 对 (N, C, H, W) 输入如何分组
+## 6.6.2 对 (N, C, H, W) 输入如何分组
 
 设输入为：
 
@@ -111,7 +111,7 @@ print('Variance shape:', var.shape)
 
 > **对于 `(N, C, H, W)` 输入，GroupNorm 固定样本和 group，沿组内通道以及空间维度进行归一化。**
 
-## 7.6.3 GroupNorm 的数学形式
+## 6.6.3 GroupNorm 的数学形式
 
 对于第 $n$ 个样本和第 $g$ 个 group，设该组包含的元素集合为 $S_{n,g}$，其元素个数为：
 
@@ -158,7 +158,7 @@ print('Bias shape:', group_norm.bias.shape)
 
 因此，同一个 group 内的通道共享均值和方差，但仍然可以通过不同的 `weight` 和 `bias` 学习不同的缩放和平移。
 
-## 7.6.4 手动计算一次 GroupNorm
+## 6.6.4 手动计算一次 GroupNorm
 
 下面我们先不使用可学习仿射变换，只手动完成分组、标准化和 reshape。
 
@@ -181,7 +181,7 @@ print(x_hat_grouped.var(dim, correction=0))
 
 每个样本的每个 group 都会得到接近 0 的均值和接近 1 的方差。为了避免除 0，我们在方差上加了一个 $\epsilon$。
 
-## 7.6.5 GroupNorm 不依赖 batch 中的其他样本
+## 6.6.5 GroupNorm 不依赖 batch 中的其他样本
 
 GroupNorm 的统计过程不会沿 batch 维度进行，因此改变 batch 中的其他样本，不会改变当前样本的输出。
 
@@ -211,7 +211,7 @@ GroupNorm 的这一性质意味着：
 - 不需要跨设备同步 batch statistics；
 - 训练结果对 batch size 的敏感程度通常低于 BatchNorm。
 
-## 7.6.6 `num_groups=1`：所有通道属于同一组
+## 6.6.6 `num_groups=1`：所有通道属于同一组
 
 当 $G=1$ 时，所有通道都被放进同一个 group。对于 `(N, C, H, W)` 输入，统计量会沿 `C`、`H`、`W` 一起计算。这在统计维度上和 `nn.LayerNorm((C, H, W))` 很相似。两者都会为每个样本在整个 `(C, H, W)` 上计算均值和方差。
 
@@ -237,7 +237,7 @@ print('Maximum difference:', max_diff.item())
 
 > **`num_groups=1` 时，GroupNorm 的统计方式等价于对 `(C, H, W)` 做 LayerNorm，但默认仿射参数化方式不同。**
 
-## 7.6.7 `num_groups=C`：每个通道单独成组
+## 6.6.7 `num_groups=C`：每个通道单独成组
 
 当 $G=C$ 时，每个 group 中只有一个通道。此时 GroupNorm 会固定样本和通道，沿空间维度 `H`、`W` 计算统计量。这正是 InstanceNorm 的统计方式。
 
@@ -264,7 +264,7 @@ print('Maximum difference:', max_diff.item())
 
 这也是 GroupNorm 名字的来源：组数决定了通道之间共享统计信息的粒度。
 
-## 7.6.8 GroupNorm 的 PyTorch 实现
+## 6.6.8 GroupNorm 的 PyTorch 实现
 
 下面实现一个函数版 GroupNorm。这里我们支持任意空间维度，而不仅限于二维图像。
 
@@ -447,7 +447,7 @@ print('3D output shape:', group_norm(x_3d).shape)
 
 因此，不存在 `GroupNorm1d`、`GroupNorm2d` 和 `GroupNorm3d` 的分类方式。
 
-## 7.6.9 train() 和 eval() 下行为相同
+## 6.6.9 train() 和 eval() 下行为相同
 
 GroupNorm 不维护 `running_mean` 和 `running_var`。无论训练还是推理，它都会使用当前样本自己的 group statistics。因此，`train()` 和 `eval()` 不会改变 GroupNorm 的计算方式。
 
@@ -474,7 +474,7 @@ print('State dict keys:', dict(group_norm.state_dict()))
 
 这也意味着 GroupNorm 不需要像 BatchNorm 那样在推理前确保 running statistics 已经正确估计。
 
-## 7.6.10 `num_groups` 应该如何选择
+## 6.6.10 `num_groups` 应该如何选择
 
 GroupNorm 最重要的超参数是 `num_groups`。它必须满足：
 
@@ -498,7 +498,7 @@ nn.GroupNorm(8, 64)
 
 因此，选择 num_groups 时，更值得关注的是每组包含多少通道，以及不同层的通道数是否能被组数整除。
 
-## 7.6.11 GroupNorm 在网络中的常见位置
+## 6.6.11 GroupNorm 在网络中的常见位置
 
 在 CNN 中，GroupNorm 通常放在卷积层之后、激活函数之前：
 
@@ -520,7 +520,7 @@ bias = False
 
 但是，GroupNorm 通常不能像推理阶段的 BatchNorm 那样简单融合进卷积层。BatchNorm 在 `eval()` 模式下使用固定的 running statistics，因此整体是固定仿射变换；GroupNorm 在推理时仍然需要根据当前输入动态计算均值和方差，所以不能预先吸收到卷积权重中。
 
-## 7.6.12 GroupNorm 的适用场景与局限
+## 6.6.12 GroupNorm 的适用场景与局限
 
 GroupNorm 最典型的使用场景是小 batch 的视觉任务，例如：
 
@@ -542,7 +542,7 @@ GroupNorm 最典型的使用场景是小 batch 的视觉任务，例如：
 
 当 batch 足够大，并且训练和推理数据分布接近时，BatchNorm 往往仍然是 CNN 中非常有效的选择。而且 BatchNorm 使用跨样本统计，还会引入一定的随机扰动，这可能带来额外的正则化效果。此外，GroupNorm 需要人为选择 `num_groups`。不同层的通道数可能不同，因此必须保证每一层的通道数都能被组数整除。最后，GroupNorm 在推理时仍然需要计算当前输入的均值和方差，不能像 BatchNorm 那样进行简单的 Conv-BN Fusion。
 
-## 7.6.13 本章小结
+## 6.6.13 本章小结
 
 这一节我们介绍了 Group Normalization。
 

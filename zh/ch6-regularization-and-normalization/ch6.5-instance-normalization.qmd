@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.5-instance-normalization
-  description: "7.5 Instance Normalization: Normalizing Each Channel Within Each Sample"
-title: "7.5 InstanceNorm：对样本的每个通道进行归一化"
+  title: ch6.5-instance-normalization
+  description: "6.5 Instance Normalization: Normalizing Each Channel Within Each Sample"
+title: "6.5 InstanceNorm：对样本的每个通道进行归一化"
 order: 5
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch7-regularization-and-normalization/ch7.5-instance-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch6-regularization-and-normalization/ch6.5-instance-normalization.ipynb){fig-align="left"}
 
 上一节我们介绍了 Layer Normalization。LayerNorm 不依赖 batch 中的其他样本，而是在每个样本自己的特征内部计算均值和方差。对于 Transformer 输入 `(batch_size, sequence_length, hidden_size)`，它通常会对每个 token 的 `hidden_size` 维特征单独归一化。
 
@@ -37,7 +37,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.5.1 InstanceNorm 对哪些维度归一化
+## 6.5.1 InstanceNorm 对哪些维度归一化
 
 考虑一批二维图像特征：
 
@@ -77,7 +77,7 @@ var = x.var(dim=(2, 3), correction=0, keepdim=True)
 
 这里的 `dim=(2, 3)` 表示只沿 $H$ 和 $W$ 计算统计量，而 $N$ 和 $C$ 两个维度被保留下来。也就是说，不同样本之间不会共享统计量，同一样本的不同通道之间也不会共享统计量。
 
-## 7.5.2 BatchNorm、LayerNorm 和 InstanceNorm 的统计方向
+## 6.5.2 BatchNorm、LayerNorm 和 InstanceNorm 的统计方向
 
 BatchNorm、LayerNorm 和 InstanceNorm 使用的标准化公式其实是一样的：
 
@@ -164,7 +164,7 @@ print(in_output.mean(dim=(2, 3)))
 
 所以，BatchNorm 的输出会受到 batch 中其他样本的影响，而 LayerNorm 和 InstanceNorm 的输出只依赖当前样本自己的统计量，不会受到 batch 中其他样本的影响。
 
-## 7.5.3 为什么 InstanceNorm 常用于风格迁移
+## 6.5.3 为什么 InstanceNorm 常用于风格迁移
 
 InstanceNorm 最经典的应用之一是图像风格迁移。
 
@@ -192,7 +192,7 @@ $$
 
 ```{python}
 x = torch.randn(1, 3, 8, 8)
-x_transformed = x * 7.0 + 20.0
+x_transformed = x * 6.0 + 20.0
 
 instance_norm = nn.InstanceNorm2d(3, affine=False)
 
@@ -205,7 +205,7 @@ print('Maximum difference:', max_diff.item())
 
 这里并不是说所有图像风格都可以简单地表示为每个通道的仿射变换。更准确地说，InstanceNorm 移除了部分与实例级通道统计量相关的信息，因此特别适合需要控制或重新建模图像风格的网络。而对于分类任务，图像自身的对比度、颜色和强度统计可能包含有用的类别信息。过度去除这些信息，可能反而降低模型表现。
 
-## 7.5.4 InstanceNorm 也会进行可学习的仿射变换
+## 6.5.4 InstanceNorm 也会进行可学习的仿射变换
 
 和 BatchNorm、LayerNorm 一样，InstanceNorm 也可以在标准化之后进行可学习的仿射变换：
 
@@ -301,7 +301,7 @@ print('Updated running variance:', instance_norm.running_var)
 
 但从 InstanceNorm 最常见的使用方式来看，它的核心特点正是按当前实例计算统计量，因此默认不维护 running statistics 更符合它的原始设计目标。
 
-## 7.5.5 InstanceNorm 的 PyTorch 实现
+## 6.5.5 InstanceNorm 的 PyTorch 实现
 
 下面我们实现一个简化版 InstanceNorm。
 
@@ -447,7 +447,7 @@ print('Maximum difference:', max_err.item())
 
 这个实现省略了 running statistics、输入为空时的边界情况、不同设备与数据类型检查等工程细节，但保留了 InstanceNorm 的核心计算过程。
 
-## 7.5.6 InstanceNorm1d、InstanceNorm2d 和 InstanceNorm3d
+## 6.5.6 InstanceNorm1d、InstanceNorm2d 和 InstanceNorm3d
 
 PyTorch 提供了三个常用 InstanceNorm 模块：
 
@@ -495,7 +495,7 @@ print('InstanceNorm3d output:', in_3d(x_3d).shape)
 
 需要注意，1d、2d 和 3d 描述的是数据中额外的序列或空间结构，而 num_features 始终对应通道维度。与 BatchNorm 不同，InstanceNorm 的统计量只在单个样本的单个通道内部计算，不包含批次维度 $N$ 和通道维度 $C$。
 
-## 7.5.7 InstanceNorm 的局限
+## 6.5.7 InstanceNorm 的局限
 
 InstanceNorm 的优势是完全不依赖 batch，并且可以有效移除单个样本内部每个通道的均值和方差。但这种性质也带来一些局限。
 
@@ -505,7 +505,7 @@ InstanceNorm 的优势是完全不依赖 batch，并且可以有效移除单个�
 
 最后，InstanceNorm 不解决所有训练稳定性问题。InstanceNorm 只调整激活的统计量，它不能替代合理的参数初始化、学习率设置、残差连接、优化器选择和梯度处理。
 
-## 7.5.8 本章小结
+## 6.5.8 本章小结
 
 这一节介绍了 Instance Normalization。它与前面两种归一化方法使用相同的标准化公式，但统计维度不同。
 

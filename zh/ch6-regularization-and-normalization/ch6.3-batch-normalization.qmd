@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-26
 date-modified: 2026-06-26
 open-graph:
-  title: ch7.3-batch-normalization
-  description: "7.3 BatchNorm: Stabilizing Training with Batch Statistics"
-title: "7.3 BatchNorm：利用 batch 统计量稳定训练"
+  title: ch6.3-batch-normalization
+  description: "6.3 BatchNorm: Stabilizing Training with Batch Statistics"
+title: "6.3 BatchNorm：利用 batch 统计量稳定训练"
 order: 3
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch7-regularization-and-normalization/ch7.3-batch-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch6-regularization-and-normalization/ch6.3-batch-normalization.ipynb){fig-align="left"}
 
 
 上一节我们介绍了 dropout。它通过随机丢弃中间激活，迫使网络不能过度依赖少数固定特征，主要用于缓解过拟合。
@@ -37,7 +37,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.3.1 为什么需要控制中间激活的尺度
+## 6.3.1 为什么需要控制中间激活的尺度
 
 神经网络由许多层连续组成。前一层参数发生变化后，它输出给后一层的激活分布也会随之变化。后一层不仅要学习当前任务，还要不断适应输入数值尺度的变化。
 
@@ -95,7 +95,7 @@ print('Variance after normalization:', x_hat_var.item())
 
 不过，BatchNorm 并不只是把所有激活统一变成均值 0、方差 1。真正的 BatchNorm 还包含可学习的缩放和平移参数。我们稍后会看到，这一步允许模型在需要时恢复甚至改变原来的尺度。
 
-## 7.3.2 BatchNorm 在对哪些维度归一化
+## 6.3.2 BatchNorm 在对哪些维度归一化
 
 理解 BatchNorm 最重要的问题是：**均值和方差在哪些维度上计算？**
 
@@ -198,7 +198,7 @@ print(batch_norm)
 
 对于输入 `(N, 3, H, W)`，这个层会维护 3 组独立参数和统计量，每个通道一组。
 
-## 7.3.3 为什么标准化以后还需要 gamma 和 beta
+## 6.3.3 为什么标准化以后还需要 gamma 和 beta
 
 如果 BatchNorm 总是强制输出均值为 0、方差为 1，它可能会限制网络的表达能力。例如，假设前一层已经学到了某个非常合适的尺度，但标准化会把这个尺度直接移除。为了解决这个问题，BatchNorm 在标准化之后加入两个可学习参数：
 
@@ -236,7 +236,7 @@ print('bias:', batch_norm.bias)
 
 不过，大多数模型会保留默认的 `affine=True`。
 
-## 7.3.4 训练阶段的统计量计算与 batch 依赖
+## 6.3.4 训练阶段的统计量计算与 batch 依赖
 
 训练阶段，BatchNorm 使用当前 mini-batch 的均值和方差：
 
@@ -272,7 +272,7 @@ print('Same sample in batch B:', output2)
 
 因此，BatchNorm 通常更适合 batch 统计量相对可靠的场景。对于 batch size 很小的视觉任务，后面介绍的 GroupNorm 往往更加稳定。
 
-## 7.3.5 推理阶段为什么不能继续依赖当前 batch
+## 6.3.5 推理阶段为什么不能继续依赖当前 batch
 
 推理时，输入可能只有一个样本，也可能每次请求的 batch size 都不同。如果继续使用当前 batch 的统计量，会产生两个问题：
 
@@ -327,7 +327,7 @@ print('Evaluation output mean:', y_eval.mean(dim=0))
 
 因此，推理时一定要记得加上 `model.eval()`，否则 BatchNorm 仍然会使用当前 batch 的统计量。
 
-## 7.3.6 Running Statistics 和 Momentum
+## 6.3.6 Running Statistics 和 Momentum
 
 PyTorch 使用 `momentum` 更新 running statistics。对于 running mean，更新形式可以写成：
 
@@ -377,7 +377,7 @@ print('Number of tracked batches:', batch_norm.num_batches_tracked)
 - Batch statistics：训练前向传播时立即使用；
 - Running statistics：训练期间积累，推理前向传播时使用。
 
-## 7.3.7 BatchNorm 的 PyTorch 实现
+## 6.3.7 BatchNorm 的 PyTorch 实现
 
 下面实现一个支持四维 `(N, C, H, W)` 输入的简化版 BatchNorm。这个实现包含：
 
@@ -585,7 +585,7 @@ print('Running variance difference:', diff_var.item())
 
 这个实现省略了一些完整 PyTorch 模块中的选项，例如 `track_running_stats=False` 和 `momentum=None`，但它已经包含了 BatchNorm 最核心的计算流程。完整实现在 `dnnlpy` 源码中。
 
-## 7.3.8 BatchNorm1d、BatchNorm2d 和 BatchNorm3d
+## 6.3.8 BatchNorm1d、BatchNorm2d 和 BatchNorm3d
 
 PyTorch 提供了三个常用 BatchNorm 模块：
 
@@ -637,7 +637,7 @@ print('BatchNorm3d output:', batch_norm_3d(x_3d).shape)
 
 需要注意，`1d`、`2d` 和 `3d` 描述的是数据中额外的序列或空间结构，而 `num_features` 始终对应通道维度。
 
-## 7.3.9 Conv-BN Fusion：为什么推理时可以合并
+## 6.3.9 Conv-BN Fusion：为什么推理时可以合并
 
 在推理模式下，BatchNorm 使用固定的 running statistics：
 
@@ -704,7 +704,7 @@ $$
 注意，Conv-BN Fusion 只适用于推理语义。训练阶段 BatchNorm 使用当前 batch 的动态统计量，不能提前吸收到固定卷积参数中。
 :::
 
-## 7.3.10 Conv-BN Fusion 的 PyTorch 实现
+## 6.3.10 Conv-BN Fusion 的 PyTorch 实现
 
 下面实现一个简化版 `fuse_conv_bn_eval`。它要求卷积层和 BatchNorm 都已经处于 `eval` 模式，并且 BatchNorm 已经维护好 running statistics。
 
@@ -811,7 +811,7 @@ print('Difference from PyTorch fusion:', max_diff.item())
 
 Conv-BN Fusion 并不会改变模型学到的函数，它只是利用推理阶段 BatchNorm 已经变成固定仿射变换这一事实，把两个连续算子重新写成一个卷积算子。
 
-## 7.3.11 BatchNorm 通常放在网络的什么位置
+## 6.3.11 BatchNorm 通常放在网络的什么位置
 
 在经典 CNN 中，一个常见结构是：
 
@@ -856,7 +856,7 @@ $$
 
 不过，模块顺序并不是数学定律。不同架构可能采用不同位置，现代网络中也存在 pre-activation 等设计。阅读模型代码时，应该以具体架构为准，而不是认为所有 BatchNorm 都必须放在激活函数之前。
 
-## 7.3.12 BatchNorm 的局限
+## 6.3.12 BatchNorm 的局限
 
 BatchNorm 很有效，但它并不适合所有场景。
 
@@ -870,7 +870,7 @@ BatchNorm 很有效，但它并不适合所有场景。
 
 这些限制解释了为什么后面还会出现 layer normalization、instance normalization 和 group normalization。它们的公式都很相似，真正变化的是统计量计算维度，以及是否依赖 batch。
 
-## 7.3.13 本章小结
+## 6.3.13 本章小结
 
 这一节介绍了 batch normalization 的核心思想。
 

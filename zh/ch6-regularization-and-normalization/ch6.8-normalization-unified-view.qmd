@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.8-normalization-unified-view
-  description: "7.8 A Unified View of Normalization: Which Dimensions Are Normalized?"
-title: "7.8 归一化方法的统一视角：统计量到底在哪些维度上计算"
+  title: ch6.8-normalization-unified-view
+  description: "6.8 A Unified View of Normalization: Which Dimensions Are Normalized?"
+title: "6.8 归一化方法的统一视角：统计量到底在哪些维度上计算"
 order: 7
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch7-regularization-and-normalization/ch7.8-normalization-unified-view.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch6-regularization-and-normalization/ch6.8-normalization-unified-view.ipynb){fig-align="left"}
 
 前面几节，我们分别介绍了 Batch Normalization、Layer Normalization、Instance Normalization、Group Normalization 和 RMS Normalization。前四种方法都会先计算均值和方差，再进行标准化；RMSNorm 则省略均值中心化，只根据均方根调整特征尺度。
 
@@ -45,7 +45,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.8.1 所有归一化层都在做同一件事
+## 6.8.1 所有归一化层都在做同一件事
 
 设某个归一化集合为 $S$，其中包含若干个输入元素。归一化层首先计算这个集合的均值：
 
@@ -92,7 +92,7 @@ $$
 
 > **对当前输入中的某个元素，哪些其他元素会和它共享同一组均值和方差？**
 
-## 7.8.2 统计维度与保留维度
+## 6.8.2 统计维度与保留维度
 
 考虑一个四维输入：
 
@@ -125,7 +125,7 @@ print('Variance shape:', var.shape)
 - 统计维度：哪些元素被放进同一个统计集合；
 - 保留维度：需要分别维护多少组均值和方差。
 
-## 7.8.3 BatchNorm：固定通道，跨样本和空间统计
+## 6.8.3 BatchNorm：固定通道，跨样本和空间统计
 
 对于输入 `(N, C, H, W)`，BatchNorm 的统计维度为：
 
@@ -158,7 +158,7 @@ print('Output variances by channel:', x_bn.var(dim, correction=0))
 
 BatchNorm 的统计集合中包含不同样本，因此当前样本的输出会受到 batch 中其他样本影响。这也是 BatchNorm 与其他几种方法最根本的区别。
 
-## 7.8.4 LayerNorm：固定样本，归一化最后若干维
+## 6.8.4 LayerNorm：固定样本，归一化最后若干维
 
 如果对图像输入使用：
 
@@ -214,7 +214,7 @@ print(y.mean(dim=-1))
 
 所以，讨论 LayerNorm 时不能只说在样本内部归一化，还需要明确 `normalized_shape` 到底覆盖输入的哪些尾部维度。
 
-## 7.8.5 InstanceNorm：固定样本和通道，只统计空间位置
+## 6.8.5 InstanceNorm：固定样本和通道，只统计空间位置
 
 对于输入 `(N, C, H, W)`，InstanceNorm 的统计维度为：
 
@@ -247,7 +247,7 @@ print(x_in.mean(dim=(2, 3)))
 
 每个 `(sample, channel)` 组合都有独立统计量，因此 InstanceNorm 既不跨样本，也不跨通道。它比 LayerNorm 使用更小的统计集合，也更强地消除了每个通道自己的空间均值和方差。
 
-## 7.8.6 GroupNorm：先分组，再统一归约
+## 6.8.6 GroupNorm：先分组，再统一归约
 
 GroupNorm 不能直接通过原始 `(N, C, H, W)` 中的一组 `dim` 完整表达，因为通道维度需要先划分为 group。
 
@@ -295,7 +295,7 @@ print(y_grouped.mean(dim))
 2. 沿指定维度计算均值和方差；
 3. Reshape 回原始形状并应用仿射变换。
 
-## 7.8.7 RMSNorm：沿尾部维度只归一化尺度
+## 6.8.7 RMSNorm：沿尾部维度只归一化尺度
 
 RMSNorm 与 LayerNorm 一样，由 `normalized_shape` 决定统计集合。
 
@@ -336,12 +336,12 @@ RMSNorm 的统计维度与 `LayerNorm(D)` 相同，都是最后一个隐藏维�
 1. 哪些维度构成统计集合；
 2. 在统计集合上计算的是均值与方差，还是均方根。
 
-## 7.8.8 用一张表比较统计维度
+## 6.8.8 用一张表比较统计维度
 
 对于图像输入 `(N, C, H, W)`，五种归一化方法可以总结为：
 
 ::: {.list-table}
-表 7.8.8 五种归一化方法对比
+表 6.8.8 五种归一化方法对比
 
 - - 方法
   - 保留维度
@@ -382,7 +382,7 @@ RMSNorm 的统计维度与 `LayerNorm(D)` 相同，都是最后一个隐藏维�
 
 这张表是理解归一化方法最重要的总结。公式中的标准化步骤几乎不变，真正变化的是**哪些元素共享同一组统计量**。
 
-## 7.8.9 GroupNorm 的两个边界情况
+## 6.8.9 GroupNorm 的两个边界情况
 
 GroupNorm 通过 `num_groups` 控制统计集合的大小，因此它可以连接 LayerNorm 和 InstanceNorm。
 
@@ -435,7 +435,7 @@ print('Maximum difference:', max_diff.item())
 - GroupNorm 从不维护 running statistics；
 - 如果 InstanceNorm 开启 `track_running_stats=True`，推理阶段就不再与 GroupNorm 等价。
 
-## 7.8.10 哪些方法依赖 batch
+## 6.8.10 哪些方法依赖 batch
 
 是否把 batch 维度 $N$ 放进统计集合，是判断一个归一化方法是否依赖 batch 的关键。
 
@@ -473,7 +473,7 @@ print('Maximum difference for target sample:', max_diff.item())
 
 如果把这里换成训练模式下的 BatchNorm，两个输出通常就会不同。
 
-## 7.8.11 应该如何选择归一化方法
+## 6.8.11 应该如何选择归一化方法
 
 归一化方法没有绝对的优劣，选择取决于网络结构、batch size 和任务特点。
 
@@ -529,7 +529,7 @@ nn.InstanceNorm2d(num_features, affine=True)
 
 当然，这些只是常见经验。现代网络也可能使用完全不同的归一化设计。
 
-## 7.8.12 归一化不是越多越好
+## 6.8.12 归一化不是越多越好
 
 归一化层能够改善优化，但也会改变模型的表示方式，并带来额外约束。
 
@@ -550,7 +550,7 @@ nn.InstanceNorm2d(num_features, affine=True)
 
 归一化方法的本质不是记住四个类名，而是设计统计集合。
 
-## 7.8.13 本章小结
+## 6.8.13 本章小结
 
 这一节从统计维度出发，统一比较了 BatchNorm、LayerNorm、InstanceNorm、GroupNorm 和 RMSNorm。
 

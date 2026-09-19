@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-27
 date-modified: 2026-06-27
 open-graph:
-  title: ch7.4-layer-normalization
-  description: "7.4 LayerNorm: Normalizing Features Within Each Sample"
-title: "7.4 LayerNorm：在单个样本内部归一化特征"
+  title: ch6.4-layer-normalization
+  description: "6.4 LayerNorm: Normalizing Features Within Each Sample"
+title: "6.4 LayerNorm：在单个样本内部归一化特征"
 order: 4
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch7-regularization-and-normalization/ch7.4-layer-normalization.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch6-regularization-and-normalization/ch6.4-layer-normalization.ipynb){fig-align="left"}
 
 上一节我们介绍了 Batch Normalization。BatchNorm 会为每个特征或通道收集当前 mini-batch 的统计量，因此同一个样本的输出会受到 batch 中其他样本的影响。
 
@@ -36,7 +36,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 7.4.1 LayerNorm 在对哪些维度归一化
+## 6.4.1 LayerNorm 在对哪些维度归一化
 
 上一节介绍 BatchNorm 时，我们重点讨论了它在输入张量中沿哪些维度计算均值和方差。理解 LayerNorm 也可以采用同样的思路：先不急着记公式，而是先确定**哪些元素会被放在一起计算统计量**。
 
@@ -158,7 +158,7 @@ print('Variance shape:', var.shape)
 
 和 BatchNorm 相比，两者的标准化公式仍然相同，区别只在统计方向：BatchNorm 通常固定通道，在 batch 和空间维度上计算统计量；LayerNorm 则固定样本，在 `normalized_shape` 指定的特征维度上计算统计量。
 
-## 7.4.2 LayerNorm 也会进行可学习的仿射变换
+## 6.4.2 LayerNorm 也会进行可学习的仿射变换
 
 和 BatchNorm 一样，LayerNorm 在标准化之后也会进行可学习的仿射变换：
 
@@ -188,7 +188,7 @@ $$
 
 不过在训练过程中，模型可以学习适合任务的缩放和平移。LayerNorm 因此不是简单地强迫所有中间表示永远保持均值 0、方差 1，而是先建立稳定的标准化坐标，再让模型学习如何调整每个特征。
 
-## 7.4.3 normalized_shape：决定归一化维度和参数形状
+## 6.4.3 normalized_shape：决定归一化维度和参数形状
 
 `nn.LayerNorm` 最重要的参数是 `normalized_shape`：
 
@@ -286,7 +286,7 @@ print('Output shape:', y.shape)
 
 这类 channels-last 布局的 LayerNorm 会出现在一些现代视觉模型中。不过对于普通 CNN，BatchNorm 或 GroupNorm 通常更符合默认的 `(N, C, H, W)` 布局。
 
-## 7.4.4 Transformer 中的 LayerNorm
+## 6.4.4 Transformer 中的 LayerNorm
 
 Transformer 的隐藏状态通常写成：
 
@@ -340,7 +340,7 @@ $$
 
 LayerNorm 在这里负责稳定每个 token 表示的特征尺度，而残差连接负责提供直接的信息和梯度通路。Pre-LN 与 Post-LN 的结构差异已经在 Transformer 章节讨论过，这里不再重复展开。
 
-## 7.4.5 LayerNorm 不依赖 batch statistics
+## 6.4.5 LayerNorm 不依赖 batch statistics
 
 我们知道，BatchNorm 在训练阶段使用当前 batch 的均值和方差，在推理阶段使用累积得到的 running statistics。因此，同一个样本在不同 batch 中可能得到不同结果。而 LayerNorm 的统计量完全来自当前样本自身，所以同一个样本和其他样本放在一起时，输出不会改变。
 
@@ -369,7 +369,7 @@ print('Maximum difference:', max_diff.item())
 - 不需要根据 batch size 调整统计方式；
 - 不会因为 batch size 为 1 而失去统计意义。
 
-## 7.4.6 训练模式和推理模式行为相同
+## 6.4.6 训练模式和推理模式行为相同
 
 前面我们讲过，dropout 在 `train()` 和 `eval()` 模式下行为不同，BatchNorm 也会在两种模式下切换 batch statistics 和 running statistics。而这一节的 LayerNorm 则在训练和推理阶段使用完全相同的公式。
 
@@ -390,7 +390,7 @@ print('State dict keys:', dict(layer_norm.state_dict()))
 
 可以看到，`state_dict` 中只有可学习的 `weight` 和 `bias`，没有 BatchNorm 中的 `running_mean`、`running_var` 和 `num_batches_tracked`。`eval()` 仍然会递归设置 LayerNorm 模块的 `training` 属性，但 LayerNorm 的前向公式本身不会根据这个属性切换行为。
 
-## 7.4.7 LayerNorm 的 PyTorch 实现
+## 6.4.7 LayerNorm 的 PyTorch 实现
 
 根据前面的讨论，一个简化版 LayerNorm 可以分成四步：
 
@@ -535,7 +535,7 @@ print('Maximum difference:', max_diff.item())
 
 需要注意的是，BatchNorm 的可学习参数是每个通道一组，而 LayerNorm 的可学习参数是归一化范围内每个位置一组。同时，PyTorch 提供了 `elementwise_affine` 和 `bias` 两个参数，可以选择是否使用可学习的仿射变换，以及是否使用偏置。
 
-## 7.4.8 LayerNorm 的方差为什么使用总体方差
+## 6.4.8 LayerNorm 的方差为什么使用总体方差
 
 PyTorch 的 LayerNorm 使用总体方差，也就是：
 
@@ -568,7 +568,7 @@ print('Unbiased variance:', unbiased_var.item())
 print('Maximum difference:', max_diff.item())
 ```
 
-## 7.4.9 LayerNorm 的局限
+## 6.4.9 LayerNorm 的局限
 
 LayerNorm 不依赖 batch size，训练和推理行为一致，因此非常适合序列模型和小 batch 场景。但这并不意味着它在所有任务中都优于 BatchNorm。
 
@@ -585,7 +585,7 @@ LayerNorm 不依赖 batch size，训练和推理行为一致，因此非常适�
 - CNN、小 batch：通常考虑 GroupNorm；
 - 风格迁移等图像生成任务：可能使用 InstanceNorm。
 
-## 7.4.10 本章小结
+## 6.4.10 本章小结
 
 这一节介绍了 Layer Normalization。
 
