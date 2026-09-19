@@ -3,19 +3,19 @@ author: jshn9515
 date: 2026-06-18
 date-modified: 2026-06-18
 open-graph:
-  title: ch18.4-weight-tying
-  description: "18.4 Embedding, LM Head, and Weight Tying"
-title: "18.4 Embedding, LM Head, and Weight Tying"
+  title: ch11.4-weight-tying
+  description: "11.4 Embedding, LM Head, and Weight Tying"
+title: "11.4 Embedding, LM Head, and Weight Tying"
 order: 4
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch18-gpt2-from-scratch/ch18.4-weight-tying.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch11-gpt2-from-scratch/ch11.4-weight-tying.ipynb){fig-align="left"}
 
 In the previous sections, we completed three things:
 
-- 18.1 clarified the objective of a language model: given a prefix, predict the next token;
-- 18.2 assembled GPT blocks into MiniGPT;
-- 18.3 explained how a tokenizer turns text into token ids and where `vocab_size` comes from.
+- 11.1 clarified the objective of a language model: given a prefix, predict the next token;
+- 11.2 assembled GPT blocks into MiniGPT;
+- 11.3 explained how a tokenizer turns text into token ids and where `vocab_size` comes from.
 
 Looking back at the structure of MiniGPT, we can see an important symmetry at its two ends:
 
@@ -40,7 +40,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 18.4.1 One Vocabulary, Two Directions
+## 11.4.1 One Vocabulary, Two Directions
 
 Suppose the tokenizer's vocabulary size is $V$ and the model's hidden size is $D$.
 
@@ -128,7 +128,7 @@ $$
 
 This is the basic path from token ids to vocabulary predictions in a language model.
 
-## 18.4.2 Token Embedding: Do Not Feed the Numerical Magnitude into the Model
+## 11.4.2 Token Embedding: Do Not Feed the Numerical Magnitude into the Model
 
 An easy point to misunderstand is that although token ids are integers, they do not have numerical meaning themselves.
 
@@ -182,9 +182,9 @@ Thus, the essence of embedding is:
 
 At the beginning of training, these vectors are usually initialized randomly. During training, backpropagation continually adjusts them so that they are useful for next-token prediction.
 
-## 18.4.3 Positional Embedding: Position Is Not Part of the Vocabulary
+## 11.4.3 Positional Embedding: Position Is Not Part of the Vocabulary
 
-In Section 18.2, we added token embedding and positional embedding together:
+In Section 11.2, we added token embedding and positional embedding together:
 
 $$
 X = E_{\text{token}}[\text{input\_ids}] + E_{\text{pos}}[\text{positions}]
@@ -234,7 +234,7 @@ print('x.shape:', x.shape)
 
 Note that positional embedding does not participate in the vocabulary prediction produced by the LM head. The LM head only cares which token in the vocabulary is next, not what the next position number is. Therefore, weight tying usually occurs only between token embedding and the LM head, not between positional embedding and the LM head.
 
-## 18.4.4 LM Head: Turning Hidden States into Vocabulary Scores
+## 11.4.4 LM Head: Turning Hidden States into Vocabulary Scores
 
 After passing through the GPT blocks, each position has a hidden state:
 
@@ -298,7 +298,7 @@ print('Loss:', loss.item())
 
 Here, `labels[b, t]` is the true next-token id that sample `b` at position `t` should predict.
 
-## 18.4.5 Weight Tying: Sharing the Same Vocabulary Vector Table at the Input and Output
+## 11.4.5 Weight Tying: Sharing the Same Vocabulary Vector Table at the Input and Output
 
 Now consider a key question.
 
@@ -373,7 +373,7 @@ print('Do they share the same data pointer?', flag2)
 
 As we can see, the `weight` attributes of the two modules point to the same parameter.
 
-## 18.4.6 How Many Parameters Does Weight Tying Save?
+## 11.4.6 How Many Parameters Does Weight Tying Save?
 
 Without weight tying, embedding and the LM head each have a separate set of $V \times D$ parameters:
 
@@ -409,7 +409,7 @@ This only accounts for the parameters at the embedding and LM head. For a larger
 
 However, weight tying is not only about saving parameters. More importantly, it imposes a constraint on the input and output token representations: they must share the same vector space. This is usually reasonable because the input and output sides of a language model face the same set of tokens.
 
-## 18.4.7 How Are Shared Weights Updated During Backpropagation?
+## 11.4.7 How Are Shared Weights Updated During Backpropagation?
 
 After weight tying, the same parameter is used twice during the forward pass:
 
@@ -449,7 +449,7 @@ $$
 
 Thus, these are not two parameters updated separately, nor is the gradient simply multiplied by 2. The two paths jointly determine the update to the same parameter. Weight tying does not copy one set of weights to another; it makes the two locations genuinely share the same learnable parameter.
 
-## 18.4.8 Adding Weight Tying to MiniGPT
+## 11.4.8 Adding Weight Tying to MiniGPT
 
 Returning to MiniGPT, weight tying usually requires changing only the definition and initialization of the LM head.
 
@@ -530,7 +530,7 @@ print('Is embedding weight the same object as LM head weight?', flag)
 
 As we can see, the input and output sides do indeed share the same weights.
 
-## 18.4.9 Several Easily Confused Points
+## 11.4.9 Several Easily Confused Points
 
 First, `vocab_size` affects both the embedding and the LM head.
 
@@ -581,7 +581,7 @@ print('Next token:', next_token)
 
 There is one more point to note: weight tying occurs only between token embedding and the LM head; it **does not include positional embedding**. Positional embedding learns vectors for position indices and has shape `(block_size, D)`, while the LM head outputs vocabulary logits with shape `(B, T, V)`. Therefore, there is no meaningful weight sharing between positional embedding and the LM head.
 
-## 18.4.10 Summary
+## 11.4.10 Summary
 
 This section took a closer look at the two parts of MiniGPT that are easiest to overlook: embedding and the LM head.
 

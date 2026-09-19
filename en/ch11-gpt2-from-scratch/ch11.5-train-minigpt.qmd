@@ -3,14 +3,14 @@ author: jshn9515
 date: 2026-06-22
 date-modified: 2026-06-22
 open-graph:
-  title: ch18.5-train-minigpt
-  description: "18.5 Training MiniGPT on TinyStories"
-title: "18.5 Training MiniGPT on TinyStories"
+  title: ch11.5-train-minigpt
+  description: "11.5 Training MiniGPT on TinyStories"
+title: "11.5 Training MiniGPT on TinyStories"
 order: 5
 eval: false
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch18-gpt2-from-scratch/ch18.5-training-minigpt.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch11-gpt2-from-scratch/ch11.5-training-minigpt.ipynb){fig-align="left"}
 
 In the previous sections, we completed a decoder-only `MiniGPT`: it receives token ids, passes them through token embedding, positional embedding, and a series of causal GPT blocks, and finally outputs logits over the entire vocabulary.
 
@@ -18,7 +18,7 @@ In this section, we will actually train it on a small text dataset. We choose [T
 
 The complete workflow is:
 
-![Figure 18.5.0 MiniGPT Training Pipeline](figures/ch18.5-training-pipeline.svg){height=650px}
+![Figure 11.5.0 MiniGPT Training Pipeline](figures/ch11.5-training-pipeline.svg){height=650px}
 
 The goal here is to complete a MiniGPT pretraining experiment that is small enough to control and real enough to run.
 
@@ -53,7 +53,7 @@ device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
-## 18.5.1 Why Choose TinyStories?
+## 11.5.1 Why Choose TinyStories?
 
 Using text from the web directly is not a good fit for training this small model. Web HTML contains many rare words, code, formulas, templates, and multiple languages. A model with very few parameters and a limited number of training steps would have difficulty producing an intuitive result in a short time.
 
@@ -102,15 +102,15 @@ print(train_texts[idx][:500])
 
 The training and validation sets here are splits from the original dataset, rather than random samples from a token stream. This makes it easier to observe whether the model is memorizing the training corpus or learning more general language patterns.
 
-## 18.5.2 Introduction to the Hugging Face Tokenizers Library
+## 11.5.2 Introduction to the Hugging Face Tokenizers Library
 
 Before training the model, we need to convert text into token ids. The Hugging Face Tokenizers [@Tokenizers] library provides high-performance tokenizer implementations, supports several pretrained tokenizer architectures, and also allows us to train a small tokenizer from scratch that suits the current corpus.
 
-![Figure 18.5.2 Hugging Face Tokenizers Components](figures/ch18.5-tokenizer-components.svg){height=550px}
+![Figure 11.5.2 Hugging Face Tokenizers Components](figures/ch11.5-tokenizer-components.svg){height=550px}
 
 Let us look at what each component is responsible for.
 
-### 18.5.2.1 Normalizer: Unifying Different Forms of the Same Text
+### 11.5.2.1 Normalizer: Unifying Different Forms of the Same Text
 
 The `normalizer` normalizes the raw string before it is actually split. For example, it can perform:
 
@@ -137,7 +137,7 @@ tokenizer = tk.Tokenizer(tkm.BPE(unk_token='[UNK]'))
 tokenizer.normalizer = tkn.NFKC()
 ```
 
-### 18.5.2.2 Pre-tokenizer: Defining Which Boundaries BPE Cannot Cross
+### 11.5.2.2 Pre-tokenizer: Defining Which Boundaries BPE Cannot Cross
 
 The `pre_tokenizer` first splits the normalized string into several pre-tokens. BPE can then continue splitting or merging only within each pre-token; it cannot cross a pre-token boundary.
 
@@ -172,7 +172,7 @@ print(pre_tokenizer.pre_tokenize_str('Once upon a time!'))
 
 The `Ġ` characters in the result are not actually present in the original text. They are special symbols used by `ByteLevel` to visualize space bytes.
 
-### 18.5.2.3 Model: Actually Learning the Vocabulary and Splitting Rules
+### 11.5.2.3 Model: Actually Learning the Vocabulary and Splitting Rules
 
 The `model` is the component that implements what we usually call the BPE, WordPiece, or Unigram algorithm. Here:
 
@@ -187,7 +187,7 @@ During BPE training, the model counts the frequencies of adjacent symbols within
 
 Therefore, the pre-tokenizer and BPE model have different responsibilities. The pre-tokenizer first defines boundaries and determines which positions may never be crossed; the BPE model then learns how to merge within those boundaries.
 
-### 18.5.2.4 Post-processor: Organizing the Encoding After Tokenization
+### 11.5.2.4 Post-processor: Organizing the Encoding After Tokenization
 
 The `post_processor` runs after the model has generated tokens. Its main responsibilities include:
 
@@ -218,7 +218,7 @@ tokenizer.post_processor = tkp.ByteLevel(trim_offsets=True)
 
 It usually does not change token ids; it only affects alignment information such as `Encoding.offsets`. The current language-model training uses only ids, so the most important post-processing operation is appending `[EOS]`.
 
-### 18.5.2.5 Decoder: Restoring Internal Token Representations to Readable Strings
+### 11.5.2.5 Decoder: Restoring Internal Token Representations to Readable Strings
 
 The `decoder` is used by `tokenizer.decode(...)`. Because the ByteLevel pre-tokenizer maps original bytes to special visible characters, the corresponding ByteLevel decoder is needed to perform the inverse mapping:
 
@@ -245,7 +245,7 @@ It is important to note:
 
 They solve different problems in the two directions.
 
-## 18.5.3 Training a Small BPE on the Training Corpus
+## 11.5.3 Training a Small BPE on the Training Corpus
 
 MiniGPT cannot read strings directly; it can only receive integer token ids. Therefore, before training the language model, we first train a small byte-level BPE tokenizer on a subset of the TinyStories training data.
 
@@ -303,7 +303,7 @@ print(tokenizer.decode(encoding.ids))
 
 This section places tokenizer training and language-model training in the same notebook so that the complete data flow is visible. In a larger project, the tokenizer is usually trained once and then saved for reuse by all subsequent model training and inference.
 
-## 18.5.4 From Documents to a Token Stream
+## 11.5.4 From Documents to a Token Stream
 
 Each TinyStories sample is a document. Language-model training first requires encoding every story into token ids and appending `[EOS]` at the end of each story:
 
@@ -339,7 +339,7 @@ print('First token ids:', train_tokens[:30].tolist())
 
 Here we use the easiest-to-understand pretraining data format: concatenate multiple documents into one long token stream and sample fixed-length windows from it. A more complete data system would also need to consider packing, document-boundary masks, data deduplication, shuffling, and distributed sampling. These belong to later chapters on LLM data and training engineering. For the current experiment, a continuous token stream is enough to observe how the model learns language patterns.
 
-## 18.5.5 Training MiniGPT
+## 11.5.5 Training MiniGPT
 
 Next, we train the `MiniGPT` implemented earlier.
 
@@ -476,7 +476,7 @@ Here we add gradient clipping to limit the global gradient norm to around 1.0. T
 
 The current notebook does not yet include learning-rate warmup, cosine decay, gradient accumulation, checkpoints, or distributed training. These topics will be developed separately in Chapter 17.
 
-## 18.5.6 Generating Stories from the Trained Model
+## 11.5.6 Generating Stories from the Trained Model
 
 During training, the model predicts the next token at every position for efficiency. During generation, we take only the logits from the last position, sample a new token, and append it to the end of the input.
 
@@ -532,7 +532,7 @@ $$
 \text{trained tokens} = \text{steps} \times B \times T
 $$
 
-## 18.5.7 How to Gradually Scale Up the Experiment
+## 11.5.7 How to Gradually Scale Up the Experiment
 
 Once you have confirmed that the default configuration runs correctly, change only one factor at a time:
 
@@ -546,7 +546,7 @@ The recommended order is to first confirm that the train and validation losses d
 
 This chapter first builds experimental intuition. Later chapters on scaling laws, LLM data, and training engineering will discuss these trade-offs more systematically.
 
-## 18.5.8 Summary
+## 11.5.8 Summary
 
 In this section, we turned MiniGPT from a structural example into a genuinely trainable language model:
 

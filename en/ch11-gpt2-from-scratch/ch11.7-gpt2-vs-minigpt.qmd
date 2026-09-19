@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-23
 date-modified: 2026-06-23
 open-graph:
-  title: ch18.7-gpt2-vs-minigpt
-  description: "18.7 GPT-2: From MiniGPT to a Pretrained Language Model"
-title: "18.7 GPT-2: From MiniGPT to a Pretrained Language Model"
+  title: ch11.7-gpt2-vs-minigpt
+  description: "11.7 GPT-2: From MiniGPT to a Pretrained Language Model"
+title: "11.7 GPT-2: From MiniGPT to a Pretrained Language Model"
 order: 7
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch18-gpt2-from-scratch/ch18.7-gpt2-vs-minigpt.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch11-gpt2-from-scratch/ch11.7-gpt2-vs-minigpt.ipynb){fig-align="left"}
 
 In the previous sections, we implemented MiniGPT from scratch and successfully trained it on a small corpus.
 
@@ -39,11 +39,11 @@ device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
-## 18.7.1 MiniGPT and GPT-2 Are the Same Kind of Model
+## 11.7.1 MiniGPT and GPT-2 Are the Same Kind of Model
 
 The goal of MiniGPT is not to invent a model different from GPT-2, but to reproduce the core structure of a GPT-style language model using smaller, clearer code.
 
-![Figure 18.7.1 GPT-2 Architecture](figures/ch18.7-gpt2-architecture.png){width=70%}
+![Figure 11.7.1 GPT-2 Architecture](figures/ch11.7-gpt2-architecture.png){width=70%}
 
 From the perspective of the computation flow, both can be written as:
 
@@ -80,12 +80,12 @@ Going from MiniGPT to GPT-2 does not fundamentally change the structure. More pr
 
 Of course, simply increasing the number of layers and the hidden dimension of MiniGPT does not automatically give it GPT-2's capabilities. Model capabilities result from the combined effects of architecture, data, compute, and training.
 
-## 18.7.2 Different Configurations in the GPT-2 Family
+## 11.7.2 Different Configurations in the GPT-2 Family
 
 GPT-2 is not a single model, but a family of models with the same architecture and different scale configurations. They all have a vocabulary size of 50257 and a maximum context length of 1024. The main changes are in the number of layers, hidden dimension, and number of attention heads.
 
 ::: {.list-table}
-Table 18.7.2 GPT-2 Family Configurations
+Table 11.7.2 GPT-2 Family Configurations
 
 - - Model
   - Parameters
@@ -151,7 +151,7 @@ $$
 
 Therefore, increasing the hidden dimension is very expensive because the parameter count grows approximately as $D^2$.
 
-## 18.7.3 Parameter Initialization and Residual Scaling
+## 11.7.3 Parameter Initialization and Residual Scaling
 
 For very small models, the default PyTorch initialization can usually train successfully. But as more Transformer layers are stacked, parameter initialization has a significant effect on training stability.
 
@@ -241,7 +241,7 @@ Therefore, an important engineering detail in GPT-2 compared with the educationa
 
 > **It is not enough to decide which layers a model has; we must also decide what numerical scale those layers have at the start of training.**
 
-## 18.7.4 Generating Text with a Hugging Face GPT-2
+## 11.7.4 Generating Text with a Hugging Face GPT-2
 
 Since training a complete GPT-2 from scratch requires substantial computational resources, we usually use a model that has already been trained. Hugging Face provides converted GPT-2 configurations, tokenizers, and pretrained weights. We can load `openai-community/gpt2` directly:
 
@@ -315,7 +315,7 @@ print('n_head:', model.config.n_head)
 
 These parameters correspond to the values in the configuration table above.
 
-## 18.7.5 Summary
+## 11.7.5 Summary
 
 This section did not reimplement GPT-2 because the MiniGPT from the previous sections already implements its core structure.
 

@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-20
 date-modified: 2026-06-20
 open-graph:
-  title: ch18.2-minigpt
-  description: "18.2 MiniGPT: From a Causal GPT Block to a Decoder-only Language Model"
-title: "18.2 MiniGPT: From a Causal GPT Block to a Decoder-only Language Model"
+  title: ch11.2-minigpt
+  description: "11.2 MiniGPT: From a Causal GPT Block to a Decoder-only Language Model"
+title: "11.2 MiniGPT: From a Causal GPT Block to a Decoder-only Language Model"
 order: 2
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch18-gpt2-from-scratch/ch18.2-minigpt.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch11-gpt2-from-scratch/ch11.2-minigpt.ipynb){fig-align="left"}
 
 In the previous section, we started from next-token prediction and clarified the training objective of a language model: given the previous tokens, predict the next token.
 
@@ -28,7 +28,7 @@ This section will not re-derive self-attention, Pre-LN, or residual connections;
 
 In this section, we will first implement a scaled-down version of GPT-2, MiniGPT [@nanoGPT]. The overall data flow of MiniGPT is as follows:
 
-![Figure 18.2.0 MiniGPT Data Flow](figures/ch18.2-minigpt-data-flow.svg){height=500px}
+![Figure 11.2.0 MiniGPT Data Flow](figures/ch11.2-minigpt-data-flow.svg){height=500px}
 
 ```{python}
 from typing import cast
@@ -43,7 +43,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 18.2.1 From the Transformer Decoder to MiniGPT
+## 11.2.1 From the Transformer Decoder to MiniGPT
 
 The original Transformer decoder block mainly contains three sublayers:
 
@@ -86,7 +86,7 @@ $$
 h_t = f(x_1,x_2,\dots,x_t)
 $$
 
-## 18.2.2 Causal Self-Attention: Parallel During Training, but Unable to See the Future
+## 11.2.2 Causal Self-Attention: Parallel During Training, but Unable to See the Future
 
 When training a language model, we usually send the entire sequence into the model at once rather than computing one token at a time. For example, given the input:
 
@@ -157,7 +157,7 @@ $$
 
 What it changes is the information contained in the hidden state at each position.
 
-## 18.2.3 Implementing the MiniGPT Block
+## 11.2.3 Implementing the MiniGPT Block
 
 Once we have causal self-attention, we can construct a MiniGPT block.
 
@@ -250,7 +250,7 @@ $$
 
 That is, it must convert token ids into prediction logits over the entire vocabulary at every position.
 
-## 18.2.4 From Token IDs to Hidden States
+## 11.2.4 From Token IDs to Hidden States
 
 What a language model actually receives is token ids:
 
@@ -320,7 +320,7 @@ Here, the shape of `x_tok` is `(B, T, D)`, and the shape of `x_pos` is `(T, D)`.
 
 The positional encoding used here is the easiest to understand: learned absolute positional embedding. Other positional encoding methods were introduced in Chapter 8; we will see this design again when reproducing GPT-2 later.
 
-## 18.2.5 From Hidden States to Vocabulary Logits
+## 11.2.5 From Hidden States to Vocabulary Logits
 
 Multiple MiniGPT blocks output:
 
@@ -359,7 +359,7 @@ $$
 
 Strictly speaking, these logits are not yet probabilities. During training, we do not need to apply softmax manually; we pass the logits directly to cross entropy. During generation, we use the logits for greedy decoding or sampling.
 
-## 18.2.6 Combining All Components into MiniGPT
+## 11.2.6 Combining All Components into MiniGPT
 
 Now assemble the complete data flow:
 
@@ -553,7 +553,7 @@ print('Target token id:', labels[b, t].item())
 print('Logits vector shape:', logits[b, t].shape)
 ```
 
-## 18.2.7 Why All Positions Are Computed in Parallel During Training
+## 11.2.7 Why All Positions Are Computed in Parallel During Training
 
 The causal mask ensures that each position can see only the context to its left. Therefore, an input of length $T$ can produce $T$ training examples simultaneously:
 
@@ -601,7 +601,7 @@ This is exactly where causal language modeling becomes efficient:
 
 > **One forward pass trains not only the final position, but all positions in the sequence in parallel.**
 
-## 18.2.8 Why Only the Last Position Is Used During Generation
+## 11.2.8 Why Only the Last Position Is Used During Generation
 
 During training, we need logits for every position because each position provides a supervision signal. Generation is different. Given an existing prefix, we only need to predict one new token after it, so we take the logits from the last position:
 
@@ -620,11 +620,11 @@ print('Next token:', next_token)
 
 At this point, we have completed the full data flow from token ids to logits:
 
-![Figure 18.2.8 MiniGPT Data Flow](figures/ch18.2-generation-loop.svg){height=500px}
+![Figure 11.2.8 MiniGPT Data Flow](figures/ch11.2-generation-loop.svg){height=500px}
 
 When we discuss generation later, we will add temperature, top-k, and top-p sampling on this basis.
 
-## 18.2.9 Where Are MiniGPT's Parameters?
+## 11.2.9 Where Are MiniGPT's Parameters?
 
 We can simply count the model parameters:
 
@@ -650,7 +650,7 @@ The parameters of MiniGPT mainly come from:
 
 For language models with a large vocabulary, token embedding and the LM head may both consume a large number of parameters. When we discuss embedding, the LM head, and weight tying separately later, we will further analyze why the input embedding and output projection can share weights.
 
-## 18.2.10 Summary
+## 11.2.10 Summary
 
 In this section, we combined the causal GPT block and the complete MiniGPT into one continuous data flow.
 

@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-18
 date-modified: 2026-06-21
 open-graph:
-  title: ch18.1-next-token-prediction
-  description: "18.1 What Language Models Predict: Next-Token Prediction"
-title: "18.1 What Language Models Predict: Next-Token Prediction"
+  title: ch11.1-next-token-prediction
+  description: "11.1 What Language Models Predict: Next-Token Prediction"
+title: "11.1 What Language Models Predict: Next-Token Prediction"
 order: 1
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch18-gpt2-from-scratch/ch18.1-next-token-prediction.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch11-gpt2-from-scratch/ch11.1-next-token-prediction.ipynb){fig-align="left"}
 
 In Chapter 8, we went from attention all the way to the Transformer decoder. We know that masked self-attention in the decoder has a crucial limitation:
 
@@ -37,7 +37,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 18.1.1 From a Text Sequence to Next-Token Prediction
+## 11.1.1 From a Text Sequence to Next-Token Prediction
 
 Suppose we have a very short piece of text:
 
@@ -126,7 +126,7 @@ Some training pipelines instead extract segments directly from continuous text w
 
 > **Use previous tokens to predict later tokens.**
 
-## 18.1.2 Inputs and Labels: Shift the Same Sequence by One Position
+## 11.1.2 Inputs and Labels: Shift the Same Sequence by One Position
 
 The most direct expression of next-token prediction in code is that the inputs and labels come from the same token sequence, but are shifted by one position overall.
 
@@ -182,7 +182,7 @@ $$
 
 This also explains why the causal mask is indispensable. Without a causal mask, the position $t$ could directly see the future $x_{t+1}$. The training loss might be very low, but the model would actually just be peeking at the answer rather than learning genuine autoregressive generation.
 
-## 18.1.3 From Logits to Cross Entropy
+## 11.1.3 From Logits to Cross Entropy
 
 At each position, a language model does not directly output a token id. Instead, it assigns a set of scores to every token in the vocabulary.
 
@@ -273,7 +273,7 @@ input_ids -> logits
 
 with multiple layers of a decoder-only Transformer. The way labels are shifted and cross entropy is computed remains essentially unchanged.
 
-## 18.1.4 How a Token Stream Becomes a Training Batch
+## 11.1.4 How a Token Stream Becomes a Training Batch
 
 During actual training, we usually do not input only one natural-language sentence with clear boundaries at a time. A more common approach is to encode many documents into tokens, organize them into a longer token stream, and finally cut fixed-length training segments from it.
 
@@ -364,7 +364,7 @@ x: 当前 token 窗口
 y: 同一窗口在原始 token stream 中向右移动一位
 ```
 
-## 18.1.5 Using the True Answer During Training and Model Output During Generation
+## 11.1.5 Using the True Answer During Training and Model Output During Generation
 
 During training, we already know the true next token, so we can directly compute cross entropy:
 
@@ -428,7 +428,7 @@ Therefore, the local objective of next-token prediction forces the model to comp
 
 However, we should also note that a pretrained language model first learns how to continue text; it does not directly learn how to become an AI with the ability to think. Post-training methods such as instruction tuning, RLHF, and DPO further change the model's interaction style and behavioral preferences.
 
-## 18.1.6 Summary
+## 11.1.6 Summary
 
 This section connected the training objective, data representation, and loss function of a language model.
 

@@ -3,14 +3,14 @@ author: jshn9515
 date: 2026-06-18
 date-modified: 2026-06-18
 open-graph:
-  title: ch18.6-generation
-  description: "18.6 From Training to Generation: Temperature, Top-k, and Top-p"
-title: "18.6 From Training to Generation: Temperature, Top-k, and Top-p"
+  title: ch11.6-generation
+  description: "11.6 From Training to Generation: Temperature, Top-k, and Top-p"
+title: "11.6 From Training to Generation: Temperature, Top-k, and Top-p"
 order: 6
 eval: false
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch18-gpt2-from-scratch/ch18.6-generation.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch11-gpt2-from-scratch/ch11.6-generation.ipynb){fig-align="left"}
 
 In the previous section, we trained MiniGPT.
 
@@ -71,7 +71,7 @@ device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
-## 18.6.1 From Logits to a Probability Distribution
+## 11.6.1 From Logits to a Probability Distribution
 
 We know that the model's final output is logits, not probabilities.
 
@@ -128,7 +128,7 @@ print('Sampled token:', sampled_token.item())
 
 `torch.multinomial` randomly samples according to the probability distribution. A token with a higher probability is more likely to be selected, but it is not guaranteed to be selected every time.
 
-## 18.6.2 Temperature: Controlling How Sharp the Distribution Is
+## 11.6.2 Temperature: Controlling How Sharp the Distribution Is
 
 Temperature is one of the most common generation parameters.
 
@@ -168,7 +168,7 @@ One intuitive way to think about it is:
 
 A low temperature is more stable, while a high temperature is more diverse.
 
-## 18.6.3 Top-k: Sampling Only from the k Highest-Probability Tokens
+## 11.6.3 Top-k: Sampling Only from the k Highest-Probability Tokens
 
 Temperature adjusts the distribution, but it does not completely eliminate low-probability tokens. If the vocabulary is large, some tokens may have very small probabilities but still have a chance of being sampled. During long-text generation, occasionally selecting one of these low-probability tokens may cause the text to suddenly go off track.
 
@@ -202,7 +202,7 @@ Positions set to `-inf` have probability 0 after softmax.
 
 Thus, top-k reduces the sampling range from $V$ tokens to $k$ tokens, reducing the chance of sampling an extremely implausible token. However, top-k also has a problem: `k` is fixed. Some positions may have only 2 reasonable tokens, while others may have 100 reasonable tokens. A fixed `k` is not always appropriate.
 
-## 18.6.4 Top-p: Keeping the Smallest Set Whose Cumulative Probability Reaches p
+## 11.6.4 Top-p: Keeping the Smallest Set Whose Cumulative Probability Reaches p
 
 Top-p is also called nucleus sampling. Instead of keeping a fixed number of `k` tokens, it sorts tokens from highest to lowest probability and keeps the smallest set whose cumulative probability reaches `p`.
 
@@ -251,7 +251,7 @@ The intuition behind top-p is:
 
 This is why top-p is often used in open-ended text-generation tasks.
 
-## 18.6.5 Combining Temperature, Top-k, and Top-p
+## 11.6.5 Combining Temperature, Top-k, and Top-p
 
 In actual generation, these operations are usually combined. A common order is:
 
@@ -305,7 +305,7 @@ for i in range(5):
 
 This function returns a tensor with shape `(B, 1)`, meaning that it generates one new token for every batch sample.
 
-## 18.6.6 A Complete `generate` Function
+## 11.6.6 A Complete `generate` Function
 
 We can now write the complete `generate` function. It does the following:
 
@@ -356,7 +356,7 @@ model_input = input_ids[:, -block_size:]
 
 If a long text has already been generated and exceeds the model's context length, MiniGPT cannot see the entire history at once; it can only see the final segment of context. This is not a tokenizer limitation, but a maximum-context-length limitation of the model architecture.
 
-## 18.6.7 Generating Text with MiniGPT
+## 11.6.7 Generating Text with MiniGPT
 
 Here we directly load the MiniGPT model trained in the previous section and see what text it can generate.
 
@@ -408,7 +408,7 @@ print(tokenizer.decode(sample[0].tolist()))
 
 As we can see, greedy decoding produces a more conservative output, while sampling produces more diversity.
 
-## 18.6.8 Choosing Generation Parameters
+## 11.6.8 Choosing Generation Parameters
 
 There is no single correct choice of generation parameters; it depends on the task.
 
@@ -437,7 +437,7 @@ Thus, you can think of them as three different control knobs:
 
 In practice, you do not necessarily need all three. In many cases, `temperature + top_p` is sufficient.
 
-## 18.6.9 Summary
+## 11.6.9 Summary
 
 In this section, we moved from training to generation.
 

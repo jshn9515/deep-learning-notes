@@ -3,17 +3,17 @@ author: jshn9515
 date: 2026-06-18
 date-modified: 2026-06-18
 open-graph:
-  title: ch18.3-tokenizer
-  description: "18.3 Tokenizer: Characters, BPE, and Vocabulary"
-title: "18.3 Tokenizer: Characters, BPE, and Vocabulary"
+  title: ch11.3-tokenizer
+  description: "11.3 Tokenizer: Characters, BPE, and Vocabulary"
+title: "11.3 Tokenizer: Characters, BPE, and Vocabulary"
 order: 4
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch18-gpt2-from-scratch/ch18.3-tokenizer.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/en/ch11-gpt2-from-scratch/ch11.3-tokenizer.ipynb){fig-align="left"}
 
 In the previous sections, we built the main body of MiniGPT:
 
-![Figure 18.3.0 MiniGPT Data Flow](figures/ch18.3-token-generation-loop.svg){height=450px}
+![Figure 11.3.0 MiniGPT Data Flow](figures/ch11.3-token-generation-loop.svg){height=450px}
 
 But an important question is hidden here:
 
@@ -65,7 +65,7 @@ type Pair = tuple[str, str]
 print('PyTorch version:', torch.__version__)
 ```
 
-## 18.3.1 What Does a Tokenizer Do?
+## 11.3.1 What Does a Tokenizer Do?
 
 A tokenizer must perform at least two operations:
 
@@ -97,7 +97,7 @@ Thus, the tokenizer sits at the boundary between the world of text and the world
 
 Let us begin with the simplest tokenizer: a character-level tokenizer.
 
-## 18.3.2 Character-level Tokenizer: The Easiest Version to Understand
+## 11.3.2 Character-level Tokenizer: The Easiest Version to Understand
 
 The idea behind a character-level tokenizer is very direct:
 
@@ -183,7 +183,7 @@ l e a r n i n g
 
 The computational cost of a language model is closely related to context length. The longer the sequence, the more expensive both training and inference become. This is why modern large language models generally do not use only character-level tokenizers.
 
-## 18.3.3 Word-level Tokenizer: Natural-looking, but with More Problems
+## 11.3.3 Word-level Tokenizer: Natural-looking, but with More Problems
 
 Another intuitive approach is to treat every word as a token:
 
@@ -270,7 +270,7 @@ print('Encode unknown word:', tokenizer.encode('MiniGPT is fun'))
 
 This leads to the **subword tokenizer**, which is common in modern language models.
 
-## 18.3.4 Subword Tokenizer: Between Characters and Words
+## 11.3.4 Subword Tokenizer: Between Characters and Words
 
 The core idea of a subword tokenizer is:
 
@@ -286,7 +286,7 @@ unhappy  -> un happy
 
 In this way, common pieces can be reused, and unknown words can still be represented by splitting them. A word does not need to appear in its entirety in the vocabulary; it only needs to be decomposable into subwords already in the vocabulary. This is the shared goal of tokenizers such as BPE, WordPiece, and Unigram. GPT models commonly use a BPE-style tokenizer.
 
-### 18.3.4.1 BPE: A Simple Greedy Merging Algorithm
+### 11.3.4.1 BPE: A Simple Greedy Merging Algorithm
 
 BPE stands for Byte Pair Encoding. In a tokenizer, it can be understood as a simple greedy merging algorithm:
 
@@ -435,7 +435,7 @@ for i, pair in enumerate(merges, start=1):
 
 Note that this is only an educational BPE implementation, intended to demonstrate the core idea of frequent pair merging. A real GPT tokenizer handles many more details, including bytes, Unicode, spaces, special tokens, and regular-expression pre-tokenization.
 
-### 18.3.4.2 Encoding New Words with Learned Merges
+### 11.3.4.2 Encoding New Words with Learned Merges
 
 After BPE training, we obtain a sequence of merge rules. When encoding a new word, we start from its characters and repeatedly merge them according to the order of the merges learned during training.
 
@@ -459,7 +459,7 @@ for word in words:
 
 As we can see, BPE does not require a word to appear in its entirety in the vocabulary. As long as it can be split into existing pieces, it can be encoded. This is the biggest difference from a word-level tokenizer: when a word-level tokenizer encounters an unknown word, it can only fall back to `<unk>`, while BPE can split it into smaller known pieces. Therefore, BPE is better suited to open-vocabulary natural-language modeling.
 
-### 18.3.4.3 What Is a Vocabulary?
+### 11.3.4.3 What Is a Vocabulary?
 
 The result of training a tokenizer is not only a set of merge rules, but also a **vocabulary**.
 
@@ -532,7 +532,7 @@ Here we add several common special tokens:
 
 However, note that different GPT tokenizers do not have exactly the same special-token design. Some decoder-only LMs use `<eos>` as the padding token as well, while others define a separate pad token. For now, it is enough to understand the concept.
 
-### 18.3.4.4 A Minimal BPE Tokenizer
+### 11.3.4.4 A Minimal BPE Tokenizer
 
 Now wrap the preceding functions into a minimal usable BPE tokenizer.
 
@@ -635,7 +635,7 @@ text -> tokenizer.encode -> token ids -> MiniGPT
 
 However, because it is an educational implementation, it is not suitable for complex real-world text. Real GPT tokenizers generally use byte-level BPE to avoid many Unicode and unknown-character problems.
 
-## 18.3.5 Byte-level BPE: Why GPT Does Not Split Only by Character
+## 11.3.5 Byte-level BPE: Why GPT Does Not Split Only by Character
 
 Real text contains many troublesome elements:
 
@@ -667,7 +667,7 @@ However, a complete byte-level BPE implementation is rather cumbersome and is no
 - Word tokenizer: starts from words
 - Byte-level BPE: starts from bytes and gradually merges common byte/subword pairs
 
-## 18.3.6 How Tokenization Affects Language Models
+## 11.3.6 How Tokenization Affects Language Models
 
 Tokenization is a very important preprocessing step. It directly affects language-model training and inference.
 
@@ -728,9 +728,9 @@ Thus, tokenization is essentially a trade-off:
 - Larger vocab -> shorter sequences, larger output layer
 - Smaller vocab -> longer sequences, smaller output layer
 
-## 18.3.7 From Tokenizer to Training Examples
+## 11.3.7 From Tokenizer to Training Examples
 
-We can now connect the next-token prediction from Section 18.1 with the tokenizer from this section.
+We can now connect the next-token prediction from Section 11.1 with the tokenizer from this section.
 
 Given a piece of raw text:
 
@@ -798,7 +798,7 @@ print('Logits shape:', logits.shape)
 print('Loss:', loss.item())
 ```
 
-## 18.3.8 Summary
+## 11.3.8 Summary
 
 This section introduced the basic concepts of tokenizers and three common approaches: character-level, word-level, and subword tokenization.
 
