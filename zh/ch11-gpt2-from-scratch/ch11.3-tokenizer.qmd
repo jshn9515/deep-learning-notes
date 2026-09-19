@@ -3,17 +3,17 @@ author: jshn9515
 date: 2026-06-18
 date-modified: 2026-06-18
 open-graph:
-  title: ch18.3-tokenizer
-  description: "18.3 Tokenizer: Characters, BPE, and Vocabulary"
-title: "18.3 Tokenizer：字符、BPE 与词表"
+  title: ch11.3-tokenizer
+  description: "11.3 Tokenizer: Characters, BPE, and Vocabulary"
+title: "11.3 Tokenizer：字符、BPE 与词表"
 order: 4
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch18-gpt2-from-scratch/ch18.3-tokenizer.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-gpt2-from-scratch/ch11.3-tokenizer.ipynb){fig-align="left"}
 
 前面几节里，我们已经把 MiniGPT 的主体搭起来了：
 
-![图 18.3.0 MiniGPT 的数据流](figures/ch18.3-token-generation-loop.svg){height=450px}
+![图 11.3.0 MiniGPT 的数据流](figures/ch11.3-token-generation-loop.svg){height=450px}
 
 但是这里其实藏着一个很重要的问题：
 
@@ -65,7 +65,7 @@ type Pair = tuple[str, str]
 print('PyTorch version:', torch.__version__)
 ```
 
-## 18.3.1 Tokenizer 做了什么
+## 11.3.1 Tokenizer 做了什么
 
 一个 tokenizer 至少要做两件事：
 
@@ -97,7 +97,7 @@ MiniGPT -> generated token ids -> tokenizer.decode -> text
 
 下面先写一个最简单的 tokenizer：字符级 tokenizer。
 
-## 18.3.2 字符级 Tokenizer：最容易理解的版本
+## 11.3.2 字符级 Tokenizer：最容易理解的版本
 
 字符级 tokenizer 的想法非常直接：
 
@@ -183,7 +183,7 @@ l e a r n i n g
 
 而语言模型的计算量和 context length 密切相关。序列越长，训练和推理都越贵。这也是为什么现代大语言模型通常不会只用字符级 tokenizer。
 
-## 18.3.3 词级 Tokenizer：看起来自然，但问题更多
+## 11.3.3 词级 Tokenizer：看起来自然，但问题更多
 
 另一个直觉做法是把每个单词当成 token：
 
@@ -270,7 +270,7 @@ print('Encode unknown word:', tokenizer.encode('MiniGPT is fun'))
 
 这就引出了现代语言模型里常见的 **subword tokenizer**。
 
-## 18.3.4 子词级 Tokenizer：介于字符和单词之间
+## 11.3.4 子词级 Tokenizer：介于字符和单词之间
 
 子词级 tokenizer 的核心思想是：
 
@@ -286,7 +286,7 @@ unhappy  -> un happy
 
 这样一来，常见片段可以复用，未知词也可以被拆开表示。一个词不一定非要整体在词表里，只要它能被拆成词表里已有的 subword，就可以被编码。这就是 BPE、WordPiece、Unigram 等 tokenizer 的共同目标。GPT 系列常见的是 BPE 风格的 tokenizer。
 
-### 18.3.4.1 BPE：一种简单的贪心合并算法
+### 11.3.4.1 BPE：一种简单的贪心合并算法
 
 BPE 的全称是 Byte Pair Encoding。放在 tokenizer 里，可以把它理解成一种简单的贪心合并算法：
 
@@ -435,7 +435,7 @@ for i, pair in enumerate(merges, start=1):
 
 注意，这只是一个教学版 BPE，用来展示“频繁 pair 合并”的核心思想。真实 GPT tokenizer 会处理 byte、unicode、空格、特殊 token、正则预切分等更多细节。
 
-### 18.3.4.2 用学到的 merges 编码新单词
+### 11.3.4.2 用学到的 merges 编码新单词
 
 BPE 训练结束后，得到的是一串 merge rules。编码一个新词时，可以从字符开始，按照训练时学到的 merge 顺序不断合并。
 
@@ -459,7 +459,7 @@ for word in words:
 
 可以看到，BPE 不要求一个词必须完整出现在词表里。只要它能拆成已有片段，就可以编码。这和词级 tokenizer 最大的区别是，词级 tokenizer 遇到未知词就只能退回 `<unk>`，而 BPE 可以把它拆成更小的已知片段。所以 BPE 更适合开放词表的自然语言建模。
 
-### 18.3.4.3 词表是什么
+### 11.3.4.3 词表是什么
 
 训练 tokenizer 的结果不只是 merge rules，还包括一个**词表（vocabulary）**。
 
@@ -532,7 +532,7 @@ print('Vocab size:', len(vocab))
 
 不过需要注意，不同 GPT tokenizer 对 special tokens 的设计不完全一样。有些 decoder-only LM 会把 `<eos>` 同时用作 padding token，有些则会单独定义 pad token。这里先理解概念即可。
 
-### 18.3.4.4 一个最小 BPE Tokenizer
+### 11.3.4.4 一个最小 BPE Tokenizer
 
 现在我们把前面的函数包装成一个最小可用的 BPE tokenizer。
 
@@ -635,7 +635,7 @@ text -> tokenizer.encode -> token ids -> MiniGPT
 
 只是因为它是教学版，所以不适合处理复杂真实文本。真正的 GPT tokenizer 通常使用 byte-level BPE，这样可以避免大量 unicode 和未知字符问题。
 
-## 18.3.5 Byte-level BPE：为什么 GPT 不只是按字符切
+## 11.3.5 Byte-level BPE：为什么 GPT 不只是按字符切
 
 真实文本里有很多麻烦的东西：
 
@@ -667,7 +667,7 @@ byte-level tokenizer 的好处是：
 - Word tokenizer：从单词开始
 - Byte-level BPE：从 byte 开始，逐步合并常见 byte/subword pair
 
-## 18.3.6 Tokenizer 如何影响语言模型
+## 11.3.6 Tokenizer 如何影响语言模型
 
 Tokenizer 是一个十分重要的预处理步骤。它会直接影响语言模型的训练和推理。
 
@@ -728,9 +728,9 @@ $$
 - Larger vocab -> shorter sequences, larger output layer
 - Smaller vocab -> longer sequences, smaller output layer
 
-## 18.3.7 从 Tokenizer 到训练样本
+## 11.3.7 从 Tokenizer 到训练样本
 
-现在我们可以把 18.1 的 next-token prediction 和这一节的 tokenizer 接起来。
+现在我们可以把 11.1 的 next-token prediction 和这一节的 tokenizer 接起来。
 
 给定一段原始文本：
 
@@ -798,7 +798,7 @@ print('Logits shape:', logits.shape)
 print('Loss:', loss.item())
 ```
 
-## 18.3.8 本章小结
+## 11.3.8 本章小结
 
 这一节介绍了 tokenizer 的基本概念，以及字符级、词级和子词级三种常见方案。
 

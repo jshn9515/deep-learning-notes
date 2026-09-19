@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-18
 date-modified: 2026-06-21
 open-graph:
-  title: ch18.1-next-token-prediction
-  description: "18.1 What Language Models Predict: Next-Token Prediction"
-title: "18.1 语言模型在预测什么：Next-Token Prediction"
+  title: ch11.1-next-token-prediction
+  description: "11.1 What Language Models Predict: Next-Token Prediction"
+title: "11.1 语言模型在预测什么：Next-Token Prediction"
 order: 1
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch18-gpt2-from-scratch/ch18.1-next-token-prediction.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-gpt2-from-scratch/ch11.1-next-token-prediction.ipynb){fig-align="left"}
 
 在第 8 章里，我们已经从 attention 一路讲到了 Transformer decoder。我们知道，decoder 中的 masked self-attention 有一个非常关键的限制：
 
@@ -37,7 +37,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 18.1.1 从一段文本到 Next-Token Prediction
+## 11.1.1 从一段文本到 Next-Token Prediction
 
 假设我们有一句很短的文本：
 
@@ -126,7 +126,7 @@ $$
 
 > **用前面的 token 预测后面的 token。**
 
-## 18.1.2 输入与标签：把同一条序列错开一位
+## 11.1.2 输入与标签：把同一条序列错开一位
 
 Next-token prediction 在代码中最直接的体现，就是输入和标签来自同一条 token 序列，但整体错开一位。
 
@@ -182,7 +182,7 @@ $$
 
 这也解释了 causal mask 为什么不可缺少。没有 causal mask，第 $t$ 个位置可能直接看到未来的 $x_{t+1}$。训练 loss 也许会很低，但模型实际上只是偷看了答案，并没有学会真正的自回归生成。
 
-## 18.1.3 从 Logits 到 Cross Entropy
+## 11.1.3 从 Logits 到 Cross Entropy
 
 语言模型在每个位置并不会直接输出一个 token id，而是会对词表中的所有 token 给出一组分数。
 
@@ -273,7 +273,7 @@ input_ids -> logits
 
 这一部分替换成多层 decoder-only Transformer。标签右移和 cross entropy 的计算方式并没有发生实质性变化。
 
-## 18.1.4 一条 Token Stream 如何变成训练 batch
+## 11.1.4 一条 Token Stream 如何变成训练 batch
 
 真实训练时，我们通常不会每次只输入一句边界清晰的自然语言句子。更常见的做法是先把大量文档编码成 token，再将它们组织成较长的 token stream，最后从中切出固定长度的训练片段。
 
@@ -364,7 +364,7 @@ x: 当前 token 窗口
 y: 同一窗口在原始 token stream 中向右移动一位
 ```
 
-## 18.1.5 训练时使用真实答案，生成时使用模型输出
+## 11.1.5 训练时使用真实答案，生成时使用模型输出
 
 训练阶段，我们已经知道真实的下一个 token，因此可以直接计算 cross entropy：
 
@@ -428,7 +428,7 @@ Next-token prediction 看起来只是一个局部目标，但为了把下一个 
 
 但也要注意，预训练语言模型首先学到的是如何续写文本，而不是直接学会如何成为一个有思考能力的 AI。Instruction tuning、RLHF、DPO 等 post-training 方法，才会进一步改变模型的交互方式和行为偏好。
 
-## 18.1.6 本章小结
+## 11.1.6 本章小结
 
 这一节把语言模型的训练目标、数据表示和损失函数连接了起来。
 

@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-20
 date-modified: 2026-06-20
 open-graph:
-  title: ch18.2-minigpt
-  description: "18.2 MiniGPT: From a Causal GPT Block to a Decoder-only Language Model"
-title: "18.2 MiniGPT：从 Causal GPT Block 到语言模型"
+  title: ch11.2-minigpt
+  description: "11.2 MiniGPT: From a Causal GPT Block to a Decoder-only Language Model"
+title: "11.2 MiniGPT：从 Causal GPT Block 到语言模型"
 order: 2
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch18-gpt2-from-scratch/ch18.2-minigpt.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-gpt2-from-scratch/ch11.2-minigpt.ipynb){fig-align="left"}
 
 上一节我们从 next-token prediction 出发，明确了语言模型的训练目标：给定前面的 token，预测下一个 token。
 
@@ -28,7 +28,7 @@ order: 2
 
 这一节，我们先来实现一个 GPT-2 的缩小版，MiniGPT [@nanoGPT]。MiniGPT 的整体数据流如下：
 
-![图 18.2.0 MiniGPT 的数据流](figures/ch18.2-minigpt-data-flow.svg){height=500px}
+![图 11.2.0 MiniGPT 的数据流](figures/ch11.2-minigpt-data-flow.svg){height=500px}
 
 ```{python}
 from typing import cast
@@ -43,7 +43,7 @@ from torch import Tensor
 print('PyTorch version:', torch.__version__)
 ```
 
-## 18.2.1 从 Transformer Decoder 到 MiniGPT
+## 11.2.1 从 Transformer Decoder 到 MiniGPT
 
 原始 Transformer decoder block 主要包含三个子层：
 
@@ -86,7 +86,7 @@ $$
 h_t = f(x_1,x_2,\dots,x_t)
 $$
 
-## 18.2.2 Causal Self-Attention：训练时并行，但不能看到未来
+## 11.2.2 Causal Self-Attention：训练时并行，但不能看到未来
 
 训练语言模型时，我们通常会把整段序列一次送进模型，而不是一个 token 一个 token 地计算。例如输入：
 
@@ -157,7 +157,7 @@ $$
 
 它改变的是每个位置 hidden state 中包含的信息。
 
-## 18.2.3 实现 MiniGPT Block
+## 11.2.3 实现 MiniGPT Block
 
 有了 causal self-attention 后，就可以构造 MiniGPT block。
 
@@ -250,7 +250,7 @@ $$
 
 也就是把 token ids 变成每个位置对整个词表的预测 logits。
 
-## 18.2.4 从 Token IDs 到 Hidden States
+## 11.2.4 从 Token IDs 到 Hidden States
 
 语言模型真正接收的是 token ids：
 
@@ -320,7 +320,7 @@ print('x.shape:', x.shape)
 
 这里的位置编码使用的最容易理解的 learned absolute positional embedding。其他位置编码方法已经在第 8 章介绍过，后面复现 GPT-2 时还会再次看到这种设计。
 
-## 18.2.5 从 Hidden States 到词表 Logits
+## 11.2.5 从 Hidden States 到词表 Logits
 
 多个 MiniGPT blocks 输出：
 
@@ -359,7 +359,7 @@ $$
 
 严格来说，这里的 logits 还不是概率。训练时不需要手动做 softmax，而是直接把 logits 交给 cross entropy。生成时才会根据 logits 进行 greedy decoding 或采样。
 
-## 18.2.6 把所有组件合成 MiniGPT
+## 11.2.6 把所有组件合成 MiniGPT
 
 现在把完整的数据流组装起来：
 
@@ -553,7 +553,7 @@ print('Target token id:', labels[b, t].item())
 print('Logits vector shape:', logits[b, t].shape)
 ```
 
-## 18.2.7 训练时为什么并行计算所有位置
+## 11.2.7 训练时为什么并行计算所有位置
 
 Causal mask 保证每个位置只能看到左侧上下文，因此一段长度为 $T$ 的输入可以同时产生 $T$ 个训练样本：
 
@@ -601,7 +601,7 @@ $$
 
 > **一次 forward 不只训练最后一个位置，而是并行训练序列中的所有位置。**
 
-## 18.2.8 生成时为什么只取最后一个位置
+## 11.2.8 生成时为什么只取最后一个位置
 
 训练时我们需要所有位置的 logits，因为每个位置都提供监督信号。但生成时情况不同。给定一个已有前缀，我们只需要预测它后面的一个新 token，因此只取最后一个位置的 logits：
 
@@ -620,11 +620,11 @@ print('Next token:', next_token)
 
 到此，我们已经完成了从 token ids 到 logits 的完整数据流：
 
-![图 18.2.8 MiniGPT 的数据流](figures/ch18.2-generation-loop.svg){height=500px}
+![图 11.2.8 MiniGPT 的数据流](figures/ch11.2-generation-loop.svg){height=500px}
 
 后面讲 generation 时，我们会在这个基础上加入 temperature、top-k 和 top-p sampling。
 
-## 18.2.9 MiniGPT 的参数在哪里
+## 11.2.9 MiniGPT 的参数在哪里
 
 我们可以简单统计模型参数量：
 
@@ -650,7 +650,7 @@ MiniGPT 的参数主要来自：
 
 对于词表很大的语言模型，token embedding 和 LM head 都可能占用大量参数。后面专门讨论 embedding、LM head 和 weight tying 时，我们会进一步分析为什么输入 embedding 与输出 projection 可以共享权重。
 
-## 18.2.10 本章小结
+## 11.2.10 本章小结
 
 这一节我们把 causal GPT block 和完整 MiniGPT 合并到了一条连续的数据流中。
 

@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-06-23
 date-modified: 2026-06-23
 open-graph:
-  title: ch18.7-gpt2-vs-minigpt
-  description: "18.7 GPT-2：从 MiniGPT 到预训练语言模型"
-title: "18.7 GPT-2：从 MiniGPT 到预训练语言模型"
+  title: ch11.7-gpt2-vs-minigpt
+  description: "11.7 GPT-2：从 MiniGPT 到预训练语言模型"
+title: "11.7 GPT-2：从 MiniGPT 到预训练语言模型"
 order: 7
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch18-gpt2-from-scratch/ch18.7-gpt2-vs-minigpt.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-gpt2-from-scratch/ch11.7-gpt2-vs-minigpt.ipynb){fig-align="left"}
 
 前面几节里，我们已经从零实现了一个 MiniGPT，并成功在一个小型语料上训练了它。
 
@@ -39,11 +39,11 @@ device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
-## 18.7.1 MiniGPT 和 GPT-2 是同一种模型
+## 11.7.1 MiniGPT 和 GPT-2 是同一种模型
 
 MiniGPT 的目标不是发明一个与 GPT-2 不同的模型，而是用较小、较清晰的代码复现 GPT 类语言模型的核心结构。
 
-![图 18.7.1 GPT-2 模型结构](figures/ch18.7-gpt2-architecture.png){width=70%}
+![图 11.7.1 GPT-2 模型结构](figures/ch11.7-gpt2-architecture.png){width=70%}
 
 从计算流程看，两者都可以写成：
 
@@ -80,12 +80,12 @@ $$
 
 当然，仅仅把 MiniGPT 的层数和 hidden dimension 调大，并不会自动获得 GPT-2 的能力。模型能力来自结构、数据、计算量和训练结果的共同作用。
 
-## 18.7.2 GPT-2 系列的不同配置
+## 11.7.2 GPT-2 系列的不同配置
 
 GPT-2 不是单个模型，而是一组使用相同架构、不同规模配置的模型。它们的词表大小都是 50257，最大上下文长度都是 1024。主要变化来自层数、hidden dimension 和 attention head 数量。
 
 ::: {.list-table}
-表 18.7.2 GPT-2 系列配置
+表 11.7.2 GPT-2 系列配置
 
 - - 模型
   - 参数量
@@ -151,7 +151,7 @@ $$
 
 因此，增加 hidden dimension 的代价非常大，因为参数量会近似按照 $D^2$ 增长。
 
-## 18.7.3 参数初始化与残差缩放
+## 11.7.3 参数初始化与残差缩放
 
 在很小的模型里，直接使用 PyTorch 的默认初始化通常也能训练。但当 Transformer 堆叠得越来越深时，参数初始化会明显影响训练稳定性。
 
@@ -241,7 +241,7 @@ for name, parameter in model.named_parameters():
 
 > **不仅要决定模型有哪些层，还要决定这些层在训练开始时处于什么数值尺度。**
 
-## 18.7.4 使用 Hugging Face GPT-2 生成文本
+## 11.7.4 使用 Hugging Face GPT-2 生成文本
 
 由于从头训练一个完整的 GPT-2 需要大量计算资源，通常我们会直接使用已经训练好的模型。Hugging Face 已经提供了转换好的 GPT-2 配置、tokenizer 和预训练权重。我们可以直接加载 `openai-community/gpt2`：
 
@@ -315,7 +315,7 @@ print('n_head:', model.config.n_head)
 
 这些参数与前面配置表中的内容一致。
 
-## 18.7.5 本章小结
+## 11.7.5 本章小结
 
 这一节没有重新实现 GPT-2，因为前面的 MiniGPT 已经实现了它的核心结构。
 

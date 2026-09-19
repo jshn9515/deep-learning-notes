@@ -3,14 +3,14 @@ author: jshn9515
 date: 2026-06-22
 date-modified: 2026-06-22
 open-graph:
-  title: ch18.5-train-minigpt
-  description: "18.5 Training MiniGPT on TinyStories"
-title: "18.5 在 TinyStories 上训练 MiniGPT"
+  title: ch11.5-train-minigpt
+  description: "11.5 Training MiniGPT on TinyStories"
+title: "11.5 在 TinyStories 上训练 MiniGPT"
 order: 5
 eval: false
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch18-gpt2-from-scratch/ch18.5-training-minigpt.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch11-gpt2-from-scratch/ch11.5-training-minigpt.ipynb){fig-align="left"}
 
 前面几节里，我们已经完成了一个 decoder-only 的 `MiniGPT`：输入 token ids，经过 token embedding、positional embedding 和一组 causal GPT blocks，最后输出整个词表上的 logits。
 
@@ -18,7 +18,7 @@ eval: false
 
 完整流程是：
 
-![图 18.5.0 MiniGPT 训练流程](figures/ch18.5-training-pipeline.svg){height=650px}
+![图 11.5.0 MiniGPT 训练流程](figures/ch11.5-training-pipeline.svg){height=650px}
 
 这里的目标是完成一次规模可控、能够真实运行的 MiniGPT 预训练实验。
 
@@ -53,7 +53,7 @@ device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
-## 18.5.1 为什么选择 TinyStories
+## 11.5.1 为什么选择 TinyStories
 
 如果直接使用网页上的文本，对我们训练这个小模型并不合适。网页 HTML 里包含大量罕见词、代码、公式、模板和多种语言，一个参数量很小、训练步数有限的模型很难在短时间内学出直观结果。
 
@@ -102,15 +102,15 @@ print(train_texts[idx][:500])
 
 这里的 training set 和 validation set 是基于原数据集的 split，而不是在 token stream 上随机采样。这样可以更清晰地观察模型是否在记忆训练语料，还是学会了某种更一般的语言规律。
 
-## 18.5.2 Hugging Face Tokenizers 库简介
+## 11.5.2 Hugging Face Tokenizers 库简介
 
 在实际进行模型训练之前，我们需要先把文本转换成 token ids。Hugging Face 的 Tokenizers [@Tokenizers] 库提供了高性能的 tokenizer 实现，支持多种预训练 tokenizer 结构，也允许我们从头训练一个适合当前语料的小型 tokenizer。
 
-![图 18.5.2 Hugging Face Tokenizers 组件](figures/ch18.5-tokenizer-components.svg){height=550px}
+![图 11.5.2 Hugging Face Tokenizers 组件](figures/ch11.5-tokenizer-components.svg){height=550px}
 
 下面分别看这些组件负责什么。
 
-### 18.5.2.1 Normalizer：统一同一种文本的不同写法
+### 11.5.2.1 Normalizer：统一同一种文本的不同写法
 
 `normalizer` 的作用是在真正切分文本之前，对原始字符串进行规范化，例如：
 
@@ -137,7 +137,7 @@ tokenizer = tk.Tokenizer(tkm.BPE(unk_token='[UNK]'))
 tokenizer.normalizer = tkn.NFKC()
 ```
 
-### 18.5.2.2 Pre-tokenizer：先规定 BPE 不能跨过哪些边界
+### 11.5.2.2 Pre-tokenizer：先规定 BPE 不能跨过哪些边界
 
 `pre_tokenizer` 会先把规范化后的字符串切成若干 pre-token。随后，BPE 只能在每个 pre-token 内部继续拆分或合并，不能跨越 pre-token 的边界。
 
@@ -172,7 +172,7 @@ print(pre_tokenizer.pre_tokenize_str('Once upon a time!'))
 
 结果里的 `Ġ` 字符并不是原文真的包含这些字符，而是 `ByteLevel` 用来可视化表示空格字节的一个特殊符号。
 
-### 18.5.2.3 Model：真正学习词表和切分规则
+### 11.5.2.3 Model：真正学习词表和切分规则
 
 `model` 才是通常所说的 BPE、WordPiece 或 Unigram 算法。在这里：
 
@@ -187,7 +187,7 @@ BPE 训练时会统计 pre-token 内部相邻符号的频率，并反复合并�
 
 所以 pre-tokenizer 和 BPE model 的职责并不相同。Pre-tokenizer 先划定边界，决定哪些位置绝对不能跨越；BPE model 再在这些边界内部学习应该怎样合并。
 
-### 18.5.2.4 Post-processor：在 tokenization 之后整理 Encoding
+### 11.5.2.4 Post-processor：在 tokenization 之后整理 Encoding
 
 `post_processor` 在 model 已经生成 token 后运行，主要负责：
 
@@ -220,7 +220,7 @@ tokenizer.post_processor = tkp.ByteLevel(trim_offsets=True)
 
 它通常不会改变 token ids，只影响 `Encoding.offsets` 等对齐信息。当前语言模型训练只使用 ids，因此最重要的 post-processing 是追加 `[EOS]`。
 
-### 18.5.2.5 Decoder：把内部 token 表示还原成可读字符串
+### 11.5.2.5 Decoder：把内部 token 表示还原成可读字符串
 
 `decoder` 用在 `tokenizer.decode(...)` 中。ByteLevel pre-tokenizer 把原始字节映射成了特殊的可见字符，因此需要对应的 ByteLevel decoder 执行逆映射：
 
@@ -247,7 +247,7 @@ ByteLevel decoder 会把 `Ġ` 对应的空格恢复，最终得到：
 
 它们解决的是两个方向上的不同问题。
 
-## 18.5.3 在训练语料上训练一个小 BPE
+## 11.5.3 在训练语料上训练一个小 BPE
 
 MiniGPT 不能直接读取字符串，它只能接收整数 token ids。因此，在训练语言模型之前，我们先在 TinyStories 的训练子集上训练一个小型 byte-level BPE tokenizer。
 
@@ -305,7 +305,7 @@ print(tokenizer.decode(encoding.ids))
 
 这一节把 tokenizer 训练和语言模型训练放在同一个 notebook 中，是为了让数据流完整可见。在更大的项目中，tokenizer 通常只训练一次，然后保存下来，供后续所有模型训练和推理复用。
 
-## 18.5.4 从 Document 变成 Token Stream
+## 11.5.4 从 Document 变成 Token Stream
 
 TinyStories 中的一条样本是一篇 document。语言模型训练需要先把每篇故事编码成 token ids，并在故事末尾追加 `[EOS]`：
 
@@ -341,7 +341,7 @@ print('First token ids:', train_tokens[:30].tolist())
 
 这里采用了最容易理解的预训练数据形式：把多个文档连接成一条长 token stream，然后从中采样定长窗口。更完整的数据系统还需要考虑 packing、文档边界 mask、数据去重、shuffle 和分布式采样等问题。这些属于后面的 LLM 数据与训练工程章节。在当前实验中，连续 token stream 已经足够我们观察模型学习语言规律的过程。
 
-## 18.5.5 训练 MiniGPT
+## 11.5.5 训练 MiniGPT
 
 下面我们沿用前面实现的 `MiniGPT`，进行模型训练。
 
@@ -478,7 +478,7 @@ torch.save(model.state_dict(), 'models/minigpt.pt')
 
 当前 notebook 还没有加入 learning-rate warmup、cosine decay、gradient accumulation、checkpoint 和分布式训练。它们会在第 17 章分别展开。
 
-## 18.5.6 从训练好的模型生成故事
+## 11.5.6 从训练好的模型生成故事
 
 训练时，模型在每个位置预测下一个 token，以提高训练效率；生成时，我们只取最后一个位置的 logits，采样出一个新 token，再把它追加到输入末尾。
 
@@ -534,7 +534,7 @@ $$
 \text{trained tokens} = \text{steps} \times B \times T
 $$
 
-## 18.5.7 怎样把实验逐渐放大
+## 11.5.7 怎样把实验逐渐放大
 
 确认默认配置能够正确运行后，可以一次只修改一个因素：
 
@@ -548,7 +548,7 @@ $$
 
 本章先建立实验直觉。后面的 scaling laws、LLM 数据和训练工程章节会更系统地讨论这些权衡。
 
-## 18.5.8 本章小结
+## 11.5.8 本章小结
 
 这一节，我们把 MiniGPT 从一个结构示例变成了真正可以训练的语言模型：
 
