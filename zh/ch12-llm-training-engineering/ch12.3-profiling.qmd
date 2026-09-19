@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-09-10
 date-modified: 2026-09-10
 open-graph:
-  title: ch19.3-profiling
-  description: "19.3 Profiling: How to Find Where Your Code Is Slow"
-title: "19.3 Profiling：怎么知道代码慢在哪里"
+  title: ch12.3-profiling
+  description: "12.3 Profiling: How to Find Where Your Code Is Slow"
+title: "12.3 Profiling：怎么知道代码慢在哪里"
 order: 3
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch19-llm-training-engineering/ch19.3-profiling.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch12-llm-training-engineering/ch12.3-profiling.ipynb){fig-align="left"}
 
 前面我们已经从 FLOPs、memory 和 Arithmetic Intensity 的角度分析过一个算子为什么可能变慢。但这些分析更多是在回答：
 
@@ -44,7 +44,7 @@ from torch.profiler import ProfilerActivity
 print('PyTorch version:', torch.__version__)
 ```
 
-## 19.3.1 Profiling 先回答什么问题
+## 12.3.1 Profiling 先回答什么问题
 
 当我们说“训练很慢”时，这句话本身其实还不够具体。可能是：
 
@@ -65,7 +65,7 @@ print('PyTorch version:', torch.__version__)
 
 这个顺序很重要。Profiling 工具通常会产生大量信息，如果一开始就直接看几百个 CUDA kernel，很容易陷入细节，却不知道真正应该优化什么。
 
-## 19.3.2 Step Time：最简单的 Benchmark
+## 12.3.2 Step Time：最简单的 Benchmark
 
 最简单的性能指标，是一次 training step 花多长时间。
 
@@ -117,7 +117,7 @@ $$
 
 不过，这一步只能告诉我们整体有多慢，还不能告诉我们慢在哪里。下一步我们需要先处理 GPU benchmark 中一个非常容易踩到的问题：CUDA 的异步执行。
 
-## 19.3.3 CUDA 是异步的：错误计时可能只测到 Kernel Launch
+## 12.3.3 CUDA 是异步的：错误计时可能只测到 Kernel Launch
 
 PyTorch 在 CUDA（或其他 GPU，这里以 CUDA 为例）上执行操作时，CPU 通常不会等待 GPU 把当前操作真正执行完，而是把 CUDA work 提交到 stream 后继续向下运行。
 
@@ -133,7 +133,7 @@ elapsed = time.perf_counter() - start
 
 可以把过程粗略理解成：
 
-![图 19.3.3 GPU 异步执行示意图](figures/ch19.3-gpu-execution.svg){width=80%}
+![图 12.3.3 GPU 异步执行示意图](figures/ch12.3-gpu-execution.svg){width=80%}
 
 因此，如果要用 CPU timer 测 CUDA workload，需要在计时边界进行同步：
 
@@ -149,7 +149,7 @@ elapsed = time.perf_counter() - start
 
 `accl.synchronize()` 会等待当前 device 上已经提交的 CUDA work 完成。这样，CPU timer 才真正覆盖了这段 GPU 工作。需要注意的是，这种同步本身会阻塞 CPU，造成执行效率下降。所以它适合用来做 benchmark，不应该为了测时间而随意插进正常训练循环，否则我们可能为了 profiling 改变了原本程序的执行方式。
 
-## 19.3.4 torch.Event：单独测 GPU 执行时间
+## 12.3.4 torch.Event：单独测 GPU 执行时间
 
 如果我们关心的是某段 CUDA workload 在 GPU 上执行了多久，可以使用 `torch.Event`。
 
@@ -198,7 +198,7 @@ def benchmark_cuda(step_fn: Callable, warmup: int = 5, steps: int = 20) -> float
 
 所以，单独计时只是 profiling 的第一层。要继续定位训练 step 内部到底是哪一个 operator 最慢，就需要真正的 profiler。
 
-## 19.3.5 torch.profiler：把一个 Step 拆成 Operator
+## 12.3.5 torch.profiler：把一个 Step 拆成 Operator
 
 PyTorch 提供了 `torch.profiler`，可以同时收集 CPU operator 和 CUDA activity。
 
@@ -252,11 +252,11 @@ with prof.profile(activities=activities, schedule=schedule) as profiler:
 event_list = profiler.key_averages()
 event_table = event_list.table(sort_by=sort_by, row_limit=15)
 
-df = pd.read_csv('results/ch19.3.5_cpu_result.csv')
+df = pd.read_csv('results/ch12.3.5_cpu_result.csv')
 df.index = list(range(1, len(df) + 1))
 ipy.display(df)
 
-df = pd.read_csv('results/ch19.3.5_xpu_result.csv')
+df = pd.read_csv('results/ch12.3.5_xpu_result.csv')
 df.index = list(range(1, len(df) + 1))
 ipy.display(df)
 ```
@@ -284,7 +284,7 @@ sort_by = 'self_cpu_time_total'
 
 需要注意，profiler 本身存在额外开销。所以不要因为训练 10000 个 step，就把 10000 个 step 全部完整记录下来。我们通常只选择少量有代表性的 iteration 进行 profiling。
 
-## 19.3.6 Profiler 表到底怎么看
+## 12.3.6 Profiler 表到底怎么看
 
 Profiler 输出的列很多，但刚开始并不需要全部看懂。最重要的是区分 **Self Time** 和 **Total Time**。
 
@@ -312,7 +312,7 @@ $$
 
 还有一点需要注意：不要把 profiler 表里的百分比直接解释成这个模块理论上应该占这么多 FLOPs。Profiler 测的是实际执行时间，它还会受到 kernel 实现、memory access、launch overhead、输入 shape 和硬件利用率等因素影响。
 
-## 19.3.7 record_function：给训练循环划分区域
+## 12.3.7 record_function：给训练循环划分区域
 
 只看 operator 名称有时仍然不够。例如，`aten::mm` 可能来自 attention 投影，也可能来自 MLP。我们知道矩阵乘法很慢，却还不知道它属于训练代码的哪一部分。
 
@@ -348,7 +348,7 @@ event_list = profiler.key_averages()
 event_table = event_list.table(sort_by=sort_by, row_limit=15)
 ```
 
-![](results/ch19.3.7_trace_result.png)
+![](results/ch12.3.7_trace_result.png)
 
 这样，我们就可以同时看到两种粒度：
 
@@ -371,7 +371,7 @@ training_step
 
 对真正的 Transformer 训练代码，也可以继续把 forward 拆成 `attention`、`mlp`、`embedding` 等 region，而不是一开始就面对完整的 operator 列表。
 
-## 19.3.8 Timeline：CPU 和 GPU 到底谁在等谁
+## 12.3.8 Timeline：CPU 和 GPU 到底谁在等谁
 
 Operator table 适合回答谁累计最慢，但它会把时间聚合起来，因此丢失了执行顺序。而有些性能问题必须看 **Timeline** 才能发现。例如，GPU 为什么每隔一段时间就空下来？Host-to-Device copy 有没有和计算重叠？CPU 是否一直在等待同步？
 
@@ -406,11 +406,11 @@ with prof.profile(
 
 相比一张 operator 排名表，timeline 更像是在看程序真正发生了什么：
 
-![图 19.3.8 Profiler Timeline](figures/ch19.3-gpu-timeline.svg){width=80%}
+![图 12.3.8 Profiler Timeline](figures/ch12.3-gpu-timeline.svg){width=80%}
 
 真正需要关注的往往不是某一条 event 的名字，而是**空白区域和等待关系**。如果 GPU timeline 中间出现大段空白，就说明 GPU 在那段时间没有得到足够工作。问题可能根本不在 GPU kernel 本身，而在更上游的 CPU、DataLoader 或数据传输。
 
-## 19.3.9 常见的性能瓶颈长什么样
+## 12.3.9 常见的性能瓶颈长什么样
 
 有了 operator table 和 timeline 以后，可以把常见问题总结成几种模式。
 
@@ -460,11 +460,11 @@ GPU:     work ─────       work ─────
 
 因此，GPU 利用率不高并不能直接推出模型太小或者 GPU 不够忙。Profiler 的作用正是继续追问：**GPU 为什么会空下来？**
 
-## 19.3.10 本章小结
+## 12.3.10 本章小结
 
 实际排查性能问题时，可以按照下面的顺序逐层深入：
 
-![图 19.3.10 Profiler 分层分析](figures/ch19.3-profiling-steps.svg){height=750px}
+![图 12.3.10 Profiler 分层分析](figures/ch12.3-profiling-steps.svg){height=750px}
 
 这里最后一步非常重要。任何性能优化都应该回到最开始的 benchmark，比较优化前后的同一个指标，而不是因为代码看起来更高效就认为它真的更快。
 

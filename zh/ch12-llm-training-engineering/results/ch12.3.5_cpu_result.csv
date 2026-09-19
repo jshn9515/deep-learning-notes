@@ -1,4 +1,4 @@
-﻿Name,Self CPU %,Self CPU,CPU total %,CPU total,CPU time avg
+Name,Self CPU %,Self CPU,CPU total %,CPU total,CPU time avg
 Optimizer.step#AdamW.step,0.46%,2.154ms,2.70%,12.795ms,2.559ms
 Optimizer.step#AdamW.step,0.00%,0.000us,0.00%,0.000us,0.000us
 aten::_foreach_mul_,0.25%,1.202ms,0.69%,3.280ms,328.030us

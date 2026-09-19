@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-09-11
 date-modified: 2026-09-11
 open-graph:
-  title: ch19.8-triton
-  description: "19.8 Triton: When Do We Need to Write Our Own Kernel?"
-title: "19.8 Triton 入门：什么时候需要自己写 Kernel"
+  title: ch12.8-triton
+  description: "12.8 Triton: When Do We Need to Write Our Own Kernel?"
+title: "12.8 Triton 入门：什么时候需要自己写 Kernel"
 order: 8
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch19-llm-training-engineering/ch19.8-triton.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch12-llm-training-engineering/ch12.8-triton.ipynb){fig-align="left"}
 
 前面我们已经从 FLOPs、Memory 和 Arithmetic Intensity 的角度分析过算子的性能，也学习了怎样用 profiler 找到真正的瓶颈。到这里，一个自然的问题是：
 
@@ -46,7 +46,7 @@ device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
-## 19.8.1 为什么 PyTorch 代码不一定等于一个 kernel
+## 12.8.1 为什么 PyTorch 代码不一定等于一个 kernel
 
 在 PyTorch 里，我们经常会写这样的代码：
 
@@ -60,7 +60,7 @@ y = y.sigmoid()
 
 可以粗略理解成：
 
-![图 19.8.1.1 PyTorch Eager Expression](figures/ch19.8-tensor-op.svg)
+![图 12.8.1.1 PyTorch Eager Expression](figures/ch12.8-tensor-op.svg)
 
 问题不一定出在计算量。`sigmoid` 和 elementwise multiplication 本身都不算复杂，真正浪费的可能是：
 
@@ -71,7 +71,7 @@ y = y.sigmoid()
 
 如果这些操作能够在一个 kernel 内完成，理想情况下就可以变成：
 
-![图 19.8.1.2 Fused Kernel](figures/ch19.8-fused-kernel.svg){height=260px}
+![图 12.8.1.2 Fused Kernel](figures/ch12.8-fused-kernel.svg){height=260px}
 
 这就是 **fusion** 的基本直觉。
 
@@ -88,7 +88,7 @@ PyTorch 自己的 compiler 也可能完成 fusion，例如 `torch.compile` 可�
 
 Triton 更像是最后进一步控制 kernel 行为的工具，而不是所有性能问题的第一答案。
 
-## 19.8.2 Triton 的基本执行模型：一个 Program 处理一块数据
+## 12.8.2 Triton 的基本执行模型：一个 Program 处理一块数据
 
 ::: {.callout-note}
 我们这里假设大家了解基础的 GPU 和 CUDA 编程模型，例如 thread、warp、thread block、grid 等概念。如果不熟悉，可以先参考 [CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html)。
@@ -187,7 +187,7 @@ offsets = [512, 513, 514, ..., 767]
 因此，CUDA 和 Triton 大致的对应关系可以理解为：
 
 ::: {.list-table}
-表 19.8.2 CUDA 与 Triton 的对应关系表
+表 12.8.2 CUDA 与 Triton 的对应关系表
 
 - - CUDA
   - Triton
@@ -215,7 +215,7 @@ offsets = [512, 513, 514, ..., 767]
 
 > **先决定每个 program 负责的数据块，然后让大量 program 并行处理整个 tensor。**
 
-## 19.8.3 第一个 Triton Kernel：Vector Addition
+## 12.8.3 第一个 Triton Kernel：Vector Addition
 
 我们先从最简单的 vector addition 开始：
 
@@ -257,13 +257,13 @@ def add_triton_kernel(
 
 第一次看会觉得它比 `a + b` 复杂很多，但真正关键的操作只有几步：
 
-![图 19.8.3 Triton 的执行顺序](figures/ch19.8-triton-execution.svg){height=450px}
+![图 12.8.3 Triton 的执行顺序](figures/ch12.8-triton-execution.svg){height=450px}
 
 代码里的 `@triton.jit` 表示这个函数会由 Triton JIT compiler 编译成 GPU kernel；`a_ptr`、`b_ptr` 和 `output_ptr` 是指向输入/输出 tensor 数据的指针参数。`tl.load()` 根据这些指针和 offsets 读取一整个 block，计算完成后，再通过 `tl.store()` 写回结果。
 
 因此，Triton 代码虽然写起来像 Python，但 kernel 内部并不是普通 Python 在逐元素执行。
 
-## 19.8.4 mask 为什么几乎到处都会出现
+## 12.8.4 mask 为什么几乎到处都会出现
 
 上面的 kernel 还有一个非常重要的东西：
 
@@ -310,7 +310,7 @@ tl.store(y_ptr + offsets, y, mask=mask)
 
 因此，`mask` 并不是 Triton 代码里的装饰，而是在处理 block 边界时保证 memory access 正确的重要机制。
 
-## 19.8.5 Grid：到底要启动多少个 Program
+## 12.8.5 Grid：到底要启动多少个 Program
 
 写完 kernel 之后，还需要告诉 Triton：整个 tensor 需要启动多少个 program。
 
@@ -381,7 +381,7 @@ print('Correctness check passed.')
 Correctness check passed.
 ```
 
-## 19.8.6 从多个 Operator 到一个 Kernel：Fused SwiGLU
+## 12.8.6 从多个 Operator 到一个 Kernel：Fused SwiGLU
 
 Vector addition 可以帮助我们理解 Triton 的基本结构，但它本身通常没有必要自己实现。更有意义的场景，是把多个小 operator 融合起来。
 
@@ -442,17 +442,17 @@ def swiglu_triton(gate: Tensor, up: Tensor) -> Tensor:
 
 PyTorch eager expression 可以概念性地看成：
 
-![图 19.8.6.1 PyTorch Eager Expression](figures/ch19.8-swiglu-eager.svg){height=550px}
+![图 12.8.6.1 PyTorch Eager Expression](figures/ch12.8-swiglu-eager.svg){height=550px}
 
 而 Triton fused kernel 可以把中间结果保留在当前 program 的计算过程中：
 
-![图 19.8.6.2 Triton Fused Kernel](figures/ch19.8-swiglu-fused.svg){height=260px}
+![图 12.8.6.2 Triton Fused Kernel](figures/ch12.8-swiglu-fused.svg){height=260px}
 
 虽然我们并没有减少太多数学计算，但减少了 intermediate tensor 和 kernel boundary。这正是 Triton 的价值所在。
 
 不过，如果 `torch.compile` 已经能够把同样的 expression fuse 掉，那么手写 Triton 未必还会更快。因此，fusion opportunity 是写 Triton 的理由，但不是性能提升的保证。
 
-## 19.8.7 先验证 Correctness，再谈性能
+## 12.8.7 先验证 Correctness，再谈性能
 
 自己写 kernel 之后，第一件事不应该是 benchmark，而是和 reference implementation 对比结果。对于上面的 SwiGLU，我们可以用 PyTorch 作为 reference：
 
@@ -488,7 +488,7 @@ Correctness check passed.
 
 > **原来由 framework 帮我们处理的 shape、stride、dtype 和 edge case，现在都可能变成 kernel 作者自己的责任。**
 
-## 19.8.8 Benchmark：更快必须是测出来的
+## 12.8.8 Benchmark：更快必须是测出来的
 
 正确之后，才应该比较性能。
 
@@ -532,7 +532,7 @@ Triton: 3.3234 ms.
 
 另外，benchmark 不能只测试一个 shape。可能一个 kernel 在 `[4096, 4096]` 上表现很好，但不代表在 `[8, 4096]` 上仍然很好。LLM 中的 batch size、sequence length、hidden size 都可能改变 kernel 的工作规模，因此最终应该测试真实 workload 中常见的 shape 分布，而不是只选择一个 benchmark。
 
-## 19.8.9 为什么训练 Kernel 比 Forward Demo 更难
+## 12.8.9 为什么训练 Kernel 比 Forward Demo 更难
 
 到目前为止，我们只写了 forward kernel。但我们讨论的是 LLM training，因此这里有一个不能忽略的问题：
 
@@ -564,13 +564,13 @@ $$
 
 Triton 官方教程中也包含 LayerNorm、attention 等 forward + backward 更完整的例子。如果以后真的要实现训练 kernel，应该把 forward、backward、correctness 和 benchmark 当成同一个整体，而不是只看 forward。
 
-## 19.8.10 本章小结
+## 12.8.10 本章小结
 
 学完一个 Triton kernel 之后，很容易产生一种错觉：以后看到 PyTorch operator 就想自己重写。
 
 实际工程里，更合理的判断顺序是：
 
-![图 19.8.10 Triton Fusion 判断顺序](figures/ch19.8-summary.svg){height=550px}
+![图 12.8.10 Triton Fusion 判断顺序](figures/ch12.8-summary.svg){height=550px}
 
 比较适合 Triton 的场景通常包括：
 

@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-09-10
 date-modified: 2026-09-10
 open-graph:
-  title: ch19.4-mixed-precision
-  description: "19.4 Mixed Precision: FP32, FP16, BF16 and Loss Scaling"
-title: "19.4 Mixed Precision：FP32、FP16、BF16 与 Loss Scaling"
+  title: ch12.4-mixed-precision
+  description: "12.4 Mixed Precision: FP32, FP16, BF16 and Loss Scaling"
+title: "12.4 Mixed Precision：FP32、FP16、BF16 与 Loss Scaling"
 order: 4
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch19-llm-training-engineering/ch19.4-mixed-precision.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch12-llm-training-engineering/ch12.4-mixed-precision.ipynb){fig-align="left"}
 
 上一节我们用 profiler 回答了一个问题：
 
@@ -56,12 +56,12 @@ if device.type == 'cpu' and dnnlpy.IS_AVX2_VNNI_2:
 print('Using device:', device)
 ```
 
-## 19.4.1 浮点数不只是小数
+## 12.4.1 浮点数不只是小数
 
 神经网络里的参数、激活和梯度通常使用浮点数表示。一般来说，一个浮点数可以粗略拆成 sign、exponent 和 mantissa 三部分。它们对应的作用如下：
 
 ::: {.list-table}
-表 19.4.1 浮点数的三部分及其作用
+表 12.4.1 浮点数的三部分及其作用
 
 - - 部分
   - 作用
@@ -84,7 +84,7 @@ print('Using device:', device)
 FP64、FP32、FP16 和 BF16 的主要差异如下：
 
 ::: {.list-table}
-表 19.4.2 FP64、FP32、FP16 和 BF16 的主要差异
+表 12.4.2 FP64、FP32、FP16 和 BF16 的主要差异
 
 - - dtype
   - 总位数
@@ -146,7 +146,7 @@ ipy.display(df)
 
 > **BF16 不代表在所有方面都比 FP16 更精确。它主要是动态范围更大，而不是尾数更长。**
 
-## 19.4.2 为什么低精度可以更快
+## 12.4.2 为什么低精度可以更快
 
 低精度训练通常带来两个好处：更少的 memory traffic 和更高的矩阵乘法吞吐。
 
@@ -172,7 +172,7 @@ for dtype in [torch.float64, torch.float32, torch.float16, torch.bfloat16]:
 
 但是，这不意味着所有算子都应该强制使用 FP16 或 BF16。例如，对于 Softmax、Normalization 和部分 loss 计算，数值范围和累加精度更敏感，低精度可能导致数值不稳定。所以我们需要的是 mixed precision，而不是 low precision。
 
-## 19.4.3 Autocast：让算子自动选择精度
+## 12.4.3 Autocast：让算子自动选择精度
 
 一种看似直接的做法是：
 
@@ -260,7 +260,7 @@ print('Loss dtype:', loss.dtype)
 
 这里会看到 logits 是 FP16，而 loss 是 FP32。这正是 autocast 的意义。它不是让所有操作统一变成某一种 dtype，而是根据算子的数值特征做选择。
 
-## 19.4.4 Loss Scaling：先把梯度放大再反向传播
+## 12.4.4 Loss Scaling：先把梯度放大再反向传播
 
 训练时，前向传播只是第一步，后面还需要调用 `loss.backward()` 计算梯度。而在反向传播中，一些梯度可能非常小。
 
@@ -351,7 +351,7 @@ scaler.update()
 这几步分别做什么？
 
 ::: {.list-table}
-表 19.4.4 GradScaler 的主要方法
+表 12.4.4 GradScaler 的主要方法
 
 - - 代码
   - 作用
@@ -471,7 +471,7 @@ print('Loss:', loss.item())
 
 > **Mixed precision 是硬件相关的优化。不能脱离设备，单独讨论哪一种 dtype 一定更快。**
 
-## 19.4.5 Gradient Clipping 时要先 unscale
+## 12.4.5 Gradient Clipping 时要先 unscale
 
 训练 Transformer 时，有时会使用 gradient clipping：
 
@@ -541,7 +541,7 @@ print('Current scale:', scaler.get_scale())
 print('Gradient norm after clipping:', norm)
 ```
 
-## 19.4.6 Autocast 应该包住哪些代码
+## 12.4.6 Autocast 应该包住哪些代码
 
 一般来说，autocast 应该包住 `forward` 和 `loss_fn`，但不应该包住 `backward`。原因是 backward 会自动使用 forward 中对应算子所需的 dtype。因此，通常不需要手动给 backward 再开一个 autocast。
 
@@ -603,16 +603,16 @@ def train_step_fp16(
     return loss.detach()
 ```
 
-## 19.4.7 如何确认 Mixed Precision 真的有效
+## 12.4.7 如何确认 Mixed Precision 真的有效
 
 需要澄清的一点是，使用 autocast 并不意味着 mixed precision 一定带来了性能提升。不同模型、不同 GPU，以及不同算子的低精度支持程度都不同，因此最终还是需要通过实际测量确认。
 
 在典型的 AMP 训练中，模型通常仍然以 FP32 保存参数，而 autocast 主要控制 forward 中不同算子的计算精度。例如矩阵乘法、卷积等算子可以使用 FP16 / BF16，而某些对数值精度更敏感的算子仍然保持 FP32。因此，mixed precision 并不是简单地把训练过程中所有 FP32 tensor 都变成 FP16 / BF16。
 
-结合 19.1 的显存账本来看：
+结合 12.1 的显存账本来看：
 
 ::: {.list-table}
-表 19.4.7 Mixed Precision 对不同显存组成的影响
+表 12.4.7 Mixed Precision 对不同显存组成的影响
 
 - - 显存组成
   - 普通 autocast 下是否一定减半
@@ -687,7 +687,7 @@ print(f'Average step time: {average_step_time:.2f} ms.')
 
 不要直接使用第一次 iteration 的时间。第一次运行通常还包含 kernel 初始化、内存分配和缓存建立等额外开销，并不能代表稳定状态下的训练性能。
 
-## 19.4.8 本章小结
+## 12.4.8 本章小结
 
 这一节我们讨论了 LLM 训练中最常用的效率优化之一：**Mixed Precision**。
 
@@ -699,7 +699,7 @@ PyTorch 里的核心工具是 `torch.autocast` 和 `torch.GradScaler`。其中�
 - GradScaler 通过放大 loss，减少 FP16 梯度下溢；
 - BF16 通常不需要 `GradScaler`。
 
-![图 19.4.8 三种不同精度的 AMP 流程](figures/ch19.4-amp.svg){width=80%}
+![图 12.4.8 三种不同精度的 AMP 流程](figures/ch12.4-amp.svg){width=80%}
 
 最后还要记住：
 

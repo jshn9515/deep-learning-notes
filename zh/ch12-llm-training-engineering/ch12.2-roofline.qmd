@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-09-16
 date-modified: 2026-09-16
 open-graph:
-  title: ch19.2-roofline
-  description: "19.2 FLOPs, Memory, and Arithmetic Intensity: Why Compute Is Not the Whole Story"
-title: "19.2 FLOPs、Memory 与 Arithmetic Intensity：为什么不是只看计算量"
+  title: ch12.2-roofline
+  description: "12.2 FLOPs, Memory, and Arithmetic Intensity: Why Compute Is Not the Whole Story"
+title: "12.2 FLOPs、Memory 与 Arithmetic Intensity：为什么不是只看计算量"
 order: 2
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch19-llm-training-engineering/ch19.2-roofline.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch12-llm-training-engineering/ch12.2-roofline.ipynb){fig-align="left"}
 
 上一节我们把训练显存拆成了 parameters、gradients、optimizer states 和 activations。知道显存花在哪里以后，接下来还有一个很自然的问题：
 
@@ -17,7 +17,7 @@ order: 2
 
 一个常见的误区是：看到一个 operator 的计算量很大，就直接认为它一定很慢。但 GPU 执行一个算子时，不只是做加法和乘法。数据还要在 HBM、cache、shared memory 和 registers 之间移动：
 
-![图 19.2.0 数据搬运过程](figures/ch19.2-data-movement.svg){height=320px}
+![图 12.2.0 数据搬运过程](figures/ch12.2-data-movement.svg){height=320px}
 
 如果一个算子需要做大量计算，并且同一份数据可以被反复利用，那么它可能主要受 GPU 计算能力限制；反过来，如果一个算子只做很少的计算，却需要不断从 HBM 读取数据、再把结果写回 HBM，那么真正限制它的往往不是 FLOPs，而是 memory bandwidth。
 
@@ -43,7 +43,7 @@ dnnlpy.set_matplotlib_format('svg')
 print('PyTorch version:', torch.__version__)
 ```
 
-## 19.2.1 FLOPs 只告诉我们做了多少计算
+## 12.2.1 FLOPs 只告诉我们做了多少计算
 
 FLOP 是 **Floating-Point Operation**，表示一次浮点运算。例如 $a+b$ 可以看作 1 FLOP，而 $a\times b+c$ 通常可以按一次乘法和一次加法计算为 2 FLOPs。实际讨论神经网络时，我们经常用 FLOPs 表示整个算子的浮点运算总量。
 
@@ -85,7 +85,7 @@ $$
 
 但 GPU 不可能凭空完成这些计算。输入数据必须到达计算单元，结果也需要重新写回 memory。因此，只看 FLOPs 仍然是不够的，我们还需要第二个量：**Memory Traffic**。
 
-## 19.2.2 Memory Traffic：数据搬运本身也要时间
+## 12.2.2 Memory Traffic：数据搬运本身也要时间
 
 考虑一个最简单的 elementwise addition：
 
@@ -133,7 +133,7 @@ $$
 
 这是三个不同的问题。
 
-## 19.2.3 Arithmetic Intensity：每搬一个 Byte 做多少计算
+## 12.2.3 Arithmetic Intensity：每搬一个 Byte 做多少计算
 
 有了 FLOPs 和 memory traffic，我们就可以定义 **Arithmetic Intensity**：
 
@@ -169,7 +169,7 @@ $$
 
 因此，我们后面说某个算子“高 arithmetic intensity”或“低 arithmetic intensity”，更多是在描述典型实现下的性能特征，而不是一个永远不变的标签。
 
-## 19.2.4 Roofline Model：Compute-Bound 还是 Memory-Bound
+## 12.2.4 Roofline Model：Compute-Bound 还是 Memory-Bound
 
 Arithmetic intensity 最重要的用途，是把计算能力和 memory bandwidth 放进同一个模型里。
 
@@ -232,7 +232,7 @@ $$
 
 > **不是问 FLOPs 高不高，而是问这些 FLOPs 对应了多少数据搬运。**
 
-## 19.2.5 GEMM：为什么矩阵乘法通常能充分利用计算单元
+## 12.2.5 GEMM：为什么矩阵乘法通常能充分利用计算单元
 
 大模型里最重要的一类计算是 **General Matrix Multiply (GEMM)**。对于：
 
@@ -280,7 +280,7 @@ $$
 
 > **矩阵乘法的 FLOPs 很高，但它同时拥有很强的数据复用，所以计算量大并不等于效率低。**
 
-## 19.2.6 计算很少也可能不便宜
+## 12.2.6 计算很少也可能不便宜
 
 再看另一类 operator。
 
@@ -332,12 +332,12 @@ Optimizer 则更典型。以 AdamW 为例，一次参数更新需要访问：
 
 这也是为什么后面介绍 Triton 时，我们会反复看到 **kernel fusion**。
 
-## 19.2.7 Transformer 里的算子 Roofline 分析
+## 12.2.7 Transformer 里的算子 Roofline 分析
 
 现在可以把 Transformer 中常见的 operator 放到同一个视角下理解。
 
 ::: {.list-table}
-表 19.2.7 Transformer 常见算子 Roofline 分析
+表 12.2.7 Transformer 常见算子 Roofline 分析
 
 - - Operator
   - 典型计算特征
@@ -382,7 +382,7 @@ FlashAttention 的核心方向之一就是通过 tiling 和重新组织计算减
 
 > **在不改变数学结果的前提下减少 memory traffic。**
 
-## 19.2.8 Shape 与 Precision 都会改变实际效率
+## 12.2.8 Shape 与 Precision 都会改变实际效率
 
 即使是同一种算子，也不一定永远处在同一种性能状态。例如：
 
@@ -406,7 +406,7 @@ Precision 同样会改变 compute 与 memory 之间的平衡。以 BF16 为例�
 
 > **某个具体实现，在某个具体形状、精度和硬件条件上，更接近哪一种瓶颈。**
 
-## 19.2.9 理论 FLOPs 很重要，但最终要看 Performance
+## 12.2.9 理论 FLOPs 很重要，但最终要看 Performance
 
 需要注意的是，roofline 给的是一个**上界模型**。即使某个 GEMM 的 arithmetic intensity 足够高，理论上已经达到 compute-bound，也不代表它真的能够达到 $P_{\text{peak}}$。真实 kernel 还可能受到输入形状、设备等多种等因素影响。
 
@@ -422,7 +422,7 @@ $$
 
 所以理论分析更像是在告诉我们**应该先怀疑什么**，而不是直接给出最终结论。
 
-## 19.2.10 本章小结
+## 12.2.10 本章小结
 
 到这里，可以把这一节压缩成一个简单的性能分析顺序。
 

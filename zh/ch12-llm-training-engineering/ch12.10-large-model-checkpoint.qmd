@@ -3,13 +3,13 @@ author: jshn9515
 date: 2026-09-17
 date-modified: 2026-09-17
 open-graph:
-  title: ch19.10-large-model-checkpoint
-  description: "19.10 Large-Model Checkpointing: Restoring DDP and FSDP Training State"
-title: "19.10 大模型 Checkpoint：模型、优化器与分布式状态如何恢复"
+  title: ch12.10-large-model-checkpoint
+  description: "12.10 Large-Model Checkpointing: Restoring DDP and FSDP Training State"
+title: "12.10 大模型 Checkpoint：模型、优化器与分布式状态如何恢复"
 order: 10
 ---
 
-[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch19-llm-training-engineering/ch19.10-large-model-checkpoint.ipynb){fig-align="left"}
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch12-llm-training-engineering/ch12.10-large-model-checkpoint.ipynb){fig-align="left"}
 
 Chapter 2 里我们已经介绍过最基本的 checkpoint：保存 `model.state_dict()`、`optimizer.state_dict()`，然后在新的训练进程里重新构造对象并恢复状态。
 
@@ -56,7 +56,7 @@ device = dnnlpy.get_default_device()
 print('Using device:', device)
 ```
 
-## 19.10.1 回顾：单卡训练的 Checkpoint
+## 12.10.1 回顾：单卡训练的 Checkpoint
 
 一个比较完整的训练 checkpoint，至少可以分成几类状态。
 
@@ -233,7 +233,7 @@ print(checkpoint)
 
 DDP 主要属于前一种，而 FSDP 主要属于后一种。先理解 replicated 与 sharded 这一区别，后面再看分布式 checkpoint 的保存、加载和 resharding 就会清楚很多。
 
-## 19.10.2 DDP Checkpoint：模型是 Replicated 的
+## 12.10.2 DDP Checkpoint：模型是 Replicated 的
 
 DDP 的结构相对简单。假设 world size 为 4，每个 rank 都有一份完整模型：
 
@@ -314,11 +314,11 @@ def save_ddp_checkpoint(
 
 因此，如果目标只是恢复相同模型参数继续训练，rank 0 保存通常已经够用；如果目标是尽可能精确地恢复整个 distributed job，还需要额外处理这些 rank-local state。
 
-## 19.10.3 DDP Resume：恢复以后为什么还能保持一致
+## 12.10.3 DDP Resume：恢复以后为什么还能保持一致
 
 DDP 的恢复流程通常是：
 
-![图 19.10.3 DDP checkpoint 恢复流程](figures/ch19.10-ddp-resume.svg){height=550px}
+![图 12.10.3 DDP checkpoint 恢复流程](figures/ch12.10-ddp-resume.svg){height=550px}
 
 一种常见方式是在每个 rank 都读取同一个 checkpoint：
 
@@ -419,7 +419,7 @@ def load_ddp_checkpoint_v2(
 
 > **Replicated model state 很简单，rank-local runtime state 才是容易遗漏的地方。**
 
-## 19.10.4 为什么 FSDP Checkpoint 完全不同
+## 12.10.4 为什么 FSDP Checkpoint 完全不同
 
 FSDP2 的目标之一，就是让每个 rank 不再长期保存完整模型状态。
 
@@ -463,7 +463,7 @@ if rank == 0:
 
 对于 **full state dict**，保存时：
 
-![图 19.10.4 FSDP checkpoint gather](figures/ch19.10-full-gather-ckpt.svg){height=330px}
+![图 12.10.4 FSDP checkpoint gather](figures/ch12.10-full-gather-ckpt.svg){height=330px}
 
 最后得到的 checkpoint 更接近普通 `model.state_dict()`。
 
@@ -484,7 +484,7 @@ Rank 3 → P3 / O3
 
 这正是 PyTorch DCP 重点解决的问题。
 
-## 19.10.5 Distributed Checkpoint：不再把 Shard 当普通文件
+## 12.10.5 Distributed Checkpoint：不再把 Shard 当普通文件
 
 PyTorch 提供 `torch.distributed.checkpoint` API，通常简称 **DCP**。
 
@@ -494,7 +494,7 @@ DCP 的核心是让 checkpoint 系统理解：
 
 具体流程如下：
 
-![图 19.10.5 DCP checkpoint 保存和加载流程](figures/ch19.10-dcp.svg){height=430px}
+![图 12.10.5 DCP checkpoint 保存和加载流程](figures/ch12.10-dcp.svg){height=430px}
 
 其中：
 
@@ -522,7 +522,7 @@ model.layers.7.mlp.up_proj.weight
 
 这样的逻辑参数名称。
 
-## 19.10.7 Stateful：统一 Model 和 Optimizer 的分布式表示
+## 12.10.7 Stateful：统一 Model 和 Optimizer 的分布式表示
 
 FSDP 下直接处理 `state_dict` 会比较麻烦，因为会受到不同布局的影响。PyTorch 为此提供：
 
@@ -578,11 +578,11 @@ dcp.save(state_dict, checkpoint_id='checkpoints/step_50000')
 
 DCP 再根据 distributed state 生成各 rank 的 save plan，并协调写入 shard 和 metadata。
 
-## 19.10.8 DCP Save：每个 Rank 到底做了什么
+## 12.10.8 DCP Save：每个 Rank 到底做了什么
 
 把 `dcp.save()` 再拆细一点，大致可以理解成：
 
-![图 19.10.8 DCP 保存流程](figures/ch19.10-dcp-save.svg){height=580px}
+![图 12.10.8 DCP 保存流程](figures/ch12.10-dcp-save.svg){height=580px}
 
 `Planner` 并不负责真正写文件。它的职责是确定这个 rank 需要写哪些 logical tensor，以及这些 tensor 的哪些 chunk。真正 I/O 交给 `StorageWriter`。
 
@@ -606,7 +606,7 @@ torch.save(local_state, f'rank_{rank}.pt')
 
 因此，可以把 DCP checkpoint 理解为三部分信息：实际保存的参数数据 shards、描述完整逻辑 tensor 的 metadata，以及这些数据在保存时如何分布到各个 rank 上的 sharding metadata。正因为 checkpoint 中保留了这些逻辑和分片信息，加载时 DCP 才能根据当前的 world size 和并行布局重新映射数据，而不必严格复现保存 checkpoint 时的原始 sharding 方式。这也是后续 resharding 能够实现的基础。
 
-## 19.10.9 DCP Load-Time Resharding：从旧布局恢复到新布局
+## 12.10.9 DCP Load-Time Resharding：从旧布局恢复到新布局
 
 假设某个参数：
 
@@ -659,7 +659,7 @@ dcp.load(state_dict, checkpoint_id='checkpoints/step_50000')
 
 和 `dcp.save()` 一样，我们把 `dcp.load()` 拆开：
 
-![图 19.10.9 DCP 加载流程](figures/ch19.10-dcp-load.svg){height=620px}
+![图 12.10.9 DCP 加载流程](figures/ch12.10-dcp-load.svg){height=620px}
 
 把 `Planner` 和 `StorageReader` 显式写出来：
 
@@ -692,7 +692,7 @@ dcp.load(state_dict, planner=planner, storage_reader=reader)
 
 它不会自动决定新的训练策略。
 
-## 19.10.10 本章小结
+## 12.10.10 本章小结
 
 最后把 DDP 和 FSDP 放在一起看。
 
@@ -715,7 +715,7 @@ Rank 0 自己并没有完整的 model state。这时可以选择 gather 成 full
 可以把两者总结成：
 
 ::: {.list-table}
-表 19.10.10 DDP 和 FSDP checkpoint 对比
+表 12.10.10 DDP 和 FSDP checkpoint 对比
 
 - - 类型
   - DDP
