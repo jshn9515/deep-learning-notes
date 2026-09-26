@@ -31,9 +31,9 @@ $$
 
 RMSprop 相比 Adagrad 最核心的改进是什么？
 
-A. RMSprop 不再使用梯度，而只根据参数大小更新模型。
-B. RMSprop 把 Adagrad 的历史平方梯度完整累计改成平方梯度的指数滑动平均，使很久以前的梯度影响逐渐减弱。
-C. RMSprop 使用完整 Hessian 矩阵计算参数更新方向。
+A. RMSprop 不再使用梯度，而只根据参数大小更新模型。  
+B. RMSprop 把 Adagrad 的历史平方梯度完整累计改成平方梯度的指数滑动平均，使很久以前的梯度影响逐渐减弱。  
+C. RMSprop 使用完整 Hessian 矩阵计算参数更新方向。  
 D. RMSprop 给所有参数重新使用完全相同的固定学习率。
 
 ### 练习 3 | 填空题
@@ -44,9 +44,9 @@ Adam 同时维护两个主要状态。$m_t$ 是梯度的 ______ 估计，主要�
 
 关于 AdamW 的 weight decay，下列说法正确的是：
 
-A. AdamW 先把 $\lambda\theta$ 加入梯度，再让它参与一阶矩和二阶矩计算。
-B. AdamW 完全取消了 weight decay。
-C. AdamW 将 weight decay 与 Adam 的梯度更新解耦，直接对参数进行衰减，而一阶矩和二阶矩仍由原始梯度更新。
+A. AdamW 先把 $\lambda\theta$ 加入梯度，再让它参与一阶矩和二阶矩计算。  
+B. AdamW 完全取消了 weight decay。  
+C. AdamW 将 weight decay 与 Adam 的梯度更新解耦，直接对参数进行衰减，而一阶矩和二阶矩仍由原始梯度更新。  
 D. AdamW 的 weight decay 只会影响 bias，不影响权重矩阵。
 
 ### 练习 5 | 实践题

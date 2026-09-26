@@ -17,9 +17,9 @@ order: 8
 
 关于 `model.eval()` 和 `torch.no_grad()`，下列说法正确的是：
 
-A. `model.eval()` 会自动关闭 Autograd，因此验证时不再需要 `torch.no_grad()`。
-B. `torch.no_grad()` 会把模型中的 Dropout 和 BatchNorm 自动切换到评估模式。
-C. `model.eval()` 控制某些模块在训练和评估阶段的行为，而 `torch.no_grad()` 控制当前计算是否被 Autograd 记录。
+A. `model.eval()` 会自动关闭 Autograd，因此验证时不再需要 `torch.no_grad()`。  
+B. `torch.no_grad()` 会把模型中的 Dropout 和 BatchNorm 自动切换到评估模式。  
+C. `model.eval()` 控制某些模块在训练和评估阶段的行为，而 `torch.no_grad()` 控制当前计算是否被 Autograd 记录。  
 D. 两者作用完全相同，只是写法不同。
 
 ### 练习 3 | 填空题
@@ -38,9 +38,9 @@ optimizer.______()
 
 使用 Adam 优化器训练模型时，如果希望程序中断后尽可能从原来的训练状态继续，下面哪组内容最应该保存在 checkpoint 中？
 
-A. 只保存 `model.state_dict()`。
-B. 保存 `model.state_dict()`、`optimizer.state_dict()` 和当前训练进度，例如 epoch。
-C. 只保存 `optimizer.state_dict()`。
+A. 只保存 `model.state_dict()`。  
+B. 保存 `model.state_dict()`、`optimizer.state_dict()` 和当前训练进度，例如 epoch。  
+C. 只保存 `optimizer.state_dict()`。  
 D. 只保存训练集和每个 epoch 的 loss。
 
 ### 练习 5 | 实践题
