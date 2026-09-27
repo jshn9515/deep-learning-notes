@@ -15,7 +15,7 @@ order: 12
 
 $$
 \operatorname{Attention}(Q,K,V) =
-\operatorname{softmax} \left( \frac{QK^\top}{\underline{\hspace{2cm}}} \right)
+\operatorname{softmax} \left(\frac{QK^\top}{\underline{\hspace{2cm}}} \right)
 \underline{\hspace{2cm}}
 $$
 
@@ -34,7 +34,7 @@ D. Self-attention 只能让相邻 token 之间交换信息，不能直接建立�
 
 A. KV cache 会缓存过去 token 的 query、key 和 value，主要用于加速普通训练。  
 B. KV cache 只缓存 query，因为每一步生成时过去的 key 和 value 都需要重新计算。  
-C. KV cache 缓存过去 token 的 key 和 value，减少自回归生成中对历史 token 的重复计算，但会增加显存占用。  
+C. KV cache 缓存过去的 key 和 value，减少自回归生成中对历史 token 的重复计算，但会增加显存占用。  
 D. KV cache 会改变 attention 的数学定义，因此使用后模型输出不再等价于原始 attention。
 
 5\. 补全下面的 Hugging Face Transformers 代码，使其加载一个 Decoder-only 语言模型并进行自回归生成：
