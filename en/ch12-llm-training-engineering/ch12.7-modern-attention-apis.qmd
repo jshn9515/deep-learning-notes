@@ -31,10 +31,10 @@ F.scaled_dot_product_attention(query, key, value)
 
 Around SDPA, PyTorch also provides:
 
-- `torch.nn.attention`；
-- `SDPBackend`；
-- `sdpa_kernel`；
-- `FlexAttention`。
+- `torch.nn.attention`;
+- `SDPBackend`;
+- `sdpa_kernel`;
+- `FlexAttention`.
 
 Beyond PyTorch, the efficient attention ecosystem also includes:
 

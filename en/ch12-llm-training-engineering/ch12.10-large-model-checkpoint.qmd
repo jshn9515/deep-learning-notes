@@ -78,11 +78,11 @@ For AdamW, this includes moving averages for each parameter, along with learning
 
 The third is **training control state**, such as:
 
-- Global step；
-- Current epoch；
-- Tokens seen；
-- Learning rate scheduler；
-- Gradient scaler。
+- Global step;
+- Current epoch;
+- Tokens seen;
+- Learning rate scheduler;
+- Gradient scaler.
 
 The fourth is **random state and data state**. With dropout, random sampling, or shuffling, RNG state and data position at restart affect the next data seen and random masks generated.
 
