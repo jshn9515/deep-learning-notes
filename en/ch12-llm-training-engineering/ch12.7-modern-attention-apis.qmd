@@ -1,0 +1,639 @@
+---
+author: jshn9515
+date: 2026-09-12
+date-modified: 2026-09-12
+open-graph:
+  title: ch12.7-modern-attention-apis
+  description: "12.7 Modern Attention APIs and Hugging Face Kernels"
+title: "12.7 Modern Attention APIs and Hugging Face Kernels"
+order: 7
+---
+
+[![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jshn9515/dnnl-notebooks/blob/main/zh/ch12-llm-training-engineering/ch12.7-modern-attention-apis.ipynb){fig-align="left"}
+
+Chapter 10 covered the principles of FlashAttention in detail:
+
+- Why does standard attention generate substantial HBM traffic?
+- How does tiled computation avoid constructing the full attention matrix?
+- Why does online softmax preserve correctness?
+
+We will therefore move from explaining FlashAttention to a more practical question:
+
+> **Which API should we call when implementing attention in PyTorch and Hugging Face today?**
+
+Modern deep learning frameworks usually do not require users to call a specific version of a FlashAttention kernel directly. More commonly, users call a unified attention API, and the framework automatically selects a suitable kernel based on the inputs and hardware.
+
+In PyTorch, this unified entry point is mainly SDPA:
+
+```python
+F.scaled_dot_product_attention(query, key, value)
+```
+
+Around SDPA, PyTorch also provides:
+
+- `torch.nn.attention`；
+- `SDPBackend`；
+- `sdpa_kernel`；
+- `FlexAttention`。
+
+Beyond PyTorch, the efficient attention ecosystem also includes:
+
+- Meta's `xFormers` library;
+- Hugging Face's `kernels` library.
+
+Our goal is to establish a guide for choosing an implementation, rather than compare every kernel's internals:
+
+- For ordinary causal attention, prefer SDPA;
+- To control the backend, use `sdpa_kernel` + `SDPBackend`;
+- For custom masks, biases, or attention variants, use FlexAttention;
+- If a project already depends on xFormers or needs its `AttentionBias`, continue using `xFormers`;
+- When using Transformers and wanting to load community kernels dynamically, use Hugging Face `kernels`.
+
+```{python}
+from functools import partial
+
+import dnnlpy
+import IPython.display as ipy
+import kernels
+import torch
+import torch.accelerator as accl
+import torch.nn as nn
+import torch.nn.attention as attn
+import torch.nn.attention.flex_attention as flex_attn
+import torch.nn.functional as F
+import transformers
+import xformers
+import xformers.ops as xops
+from torch import Tensor
+from torch.nn.attention import SDPBackend
+from transformers import AutoModelForCausalLM
+
+ipy.clear_output()
+print('PyTorch version:', torch.__version__)
+print('Transformers version:', transformers.__version__)
+print('xFormers version:', xformers.__version__)
+```
+
+```{python}
+device = dnnlpy.get_default_device()
+print('Using device:', device)
+```
+
+## 12.7.1 SDPA: PyTorch's Unified Attention Entry Point
+
+Scaled dot-product attention has the mathematical form:
+
+$$
+\operatorname{Attention}(Q,K,V) =
+\operatorname{softmax} \left( \frac{QK^\top}{\sqrt{d_h}} + M \right)V
+$$
+
+Here, $M$ can represent a causal mask, padding mask, or another bias.
+
+In PyTorch, we can call:
+
+```python
+F.scaled_dot_product_attention(query, key, value)
+```
+
+First, an example verifies SDPA's input and output shapes.
+
+```{python}
+batch_size = 16
+num_heads = 4
+seq_len = 16
+head_dim = 8
+
+query = torch.randn(batch_size, num_heads, seq_len, head_dim)
+key = torch.randn_like(query)
+value = torch.randn_like(query)
+
+output = F.scaled_dot_product_attention(query, key, value)
+
+print('Input shape:', query.shape)
+print('Output shape:', output.shape)
+```
+
+For GPT's causal self-attention, we usually write:
+
+```python
+F.scaled_dot_product_attention(query, key, value, is_causal=True)
+```
+
+```{python}
+output = F.scaled_dot_product_attention(query, key, value, is_causal=True)
+print('Causal attention output shape:', output.shape)
+```
+
+The key point is:
+
+> **SDPA is an API entry point, rather than the name of a fixed kernel.**
+
+The same SDPA code may use different backends on different hardware or with different inputs. Calling SDPA therefore does not necessarily mean calling FlashAttention. More accurately, we describe the attention we need, and PyTorch decides how to execute it.
+
+## 12.7.2 Why SDPA Is a Better Default Than Handwritten Attention
+
+Handwritten attention often looks like:
+
+```python
+scores = query @ key.transpose(-2, -1)
+scores = scores / math.sqrt(head_dim)
+scores = scores.masked_fill(mask == 0, -inf)
+probs = scores.softmax(dim=-1)
+output = probs @ value
+```
+
+This is useful for teaching, but using it directly in training explicitly creates scores and probs tensors of size $(B, H, T, T)$. SDPA instead gives the framework the entire attention operation at a higher level:
+
+```text
+Q, K, V
+-> SDPA dispatcher
+-> Select an available backend
+-> Output
+```
+
+This has several benefits. SDPA can internally use fused kernels to avoid explicitly constructing the full attention matrix, saving memory and bandwidth. Its backends can evolve with PyTorch updates without users manually maintaining third-party kernels. It also provides CPU and GPU fallbacks, avoiding a tight dependency on a specific third-party kernel. For actual attention implementations, we should therefore prefer replacing handwritten attention with SDPA.
+
+An easily overlooked detail is that SDPA applies dropout according to `dropout_p` and does not automatically read the module's `training` state, because it is a function. We should therefore explicitly write:
+
+```python
+dropout_p = self.dropout if self.training else 0.0
+```
+
+rather than continue passing the training dropout probability during inference.
+
+## 12.7.3 torch.nn.attention: A Namespace for Controlling SDPA
+
+`torch.nn.attention` provides controls and extensions around SDPA, including:
+
+- `sdpa_kernel`: a context manager that controls which backends SDPA may select;
+- `SDPBackend`: an enumeration representing the SDPA backends supported by the current PyTorch version;
+- `FlexAttention`: an API for describing custom attention variants.
+
+A common import is:
+
+```python
+from torch.nn.attention import SDPBackend, sdpa_kernel
+```
+
+Ordinary model code usually does not need to fix the backend. Letting PyTorch select automatically often improves portability across devices and versions.
+
+### 12.7.3.1 SDPBackend: Available SDPA Backends
+
+`SDPBackend` is an enum-like class representing SDPA backends. Common members include:
+
+```text
+MATH
+FLASH_ATTENTION
+EFFICIENT_ATTENTION
+CUDNN_ATTENTION
+```
+
+These members correspond to different algorithms. Broadly:
+
+::: {.list-table}
+Table 12.7.3.1 SDPA backends and their algorithms
+
+- - Backend
+  - Corresponding algorithm
+
+- - `MATH`
+  - Ordinary PyTorch / C++ mathematical implementation, with the broadest compatibility
+
+- - `FLASH_ATTENTION`
+  - FlashAttention-style algorithms, such as FA3 and FA4
+
+- - `EFFICIENT_ATTENTION`
+  - Memory-efficient attention from xFormers
+
+- - `CUDNN_ATTENTION`
+  - Attention backend provided by NVIDIA cuDNN
+:::
+
+These names describe backend categories, not support on every device. CPUs usually support only MATH, while CUDA GPUs may support Flash, Efficient, or cuDNN. Actual availability depends on dtype, shape, mask, and hardware.
+
+### 12.7.3.2 Selecting Backends with sdpa_kernel
+
+`sdpa_kernel` is a context manager controlling which backends SDPA may select.
+
+For example, force the mathematical backend:
+
+```{python}
+with attn.sdpa_kernel(SDPBackend.MATH):
+    output = F.scaled_dot_product_attention(query, key, value, is_causal=True)
+
+print('Attention output shape:', output.shape)
+```
+
+We can also provide several candidate backends:
+
+```{python}
+with attn.sdpa_kernel(
+    [
+        SDPBackend.MATH,
+        SDPBackend.FLASH_ATTENTION,
+        SDPBackend.EFFICIENT_ATTENTION,
+        SDPBackend.CUDNN_ATTENTION,
+    ]
+):
+    output = F.scaled_dot_product_attention(query, key, value, is_causal=True)
+
+print('Attention output shape:', output.shape)
+```
+
+This allows these backends, with PyTorch selecting the best available one based on the inputs and hardware. With `set_priority=True`, available backends are selected in the supplied order. If the inputs do not meet the requirements, the program may raise an error or explain why a backend cannot be used.
+
+The following is therefore more appropriate for benchmarking than general model code:
+
+```python
+with sdpa_kernel(SDPBackend.FLASH_ATTENTION):
+    F.scaled_dot_product_attention(query, key, value, is_causal=True)
+```
+
+For ordinary training, it is usually preferable to omit sdpa_kernel and let PyTorch's dispatcher select automatically.
+
+### 12.7.3.3 Comparing SDPA Backends Correctly
+
+We should not compare attention backends by running them once and timing them with `time.time()`. GPU kernels usually execute asynchronously, and the first run may include initialization and compilation overhead.
+
+A more reasonable benchmark procedure is:
+
+- Warm up first to ensure the kernels have been compiled;
+- Call `synchronize()` before timing to ensure earlier kernels have finished;
+- Execute the kernel repeatedly;
+- Call `synchronize()` again to ensure all kernels have finished;
+- Calculate the average time.
+
+```{python}
+def benchmark_sdpa(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    attn_backend: SDPBackend,
+    num_warmup: int = 5,
+    num_steps: int = 20,
+) -> float:
+    with attn.sdpa_kernel(attn_backend):
+        for _ in range(num_warmup):
+            F.scaled_dot_product_attention(query, key, value, is_causal=True)
+
+        accl.synchronize()  # Make sure all warmup kernels are finished
+
+        start = torch.Event(enable_timing=True)
+        end = torch.Event(enable_timing=True)
+
+        start.record()
+
+        for _ in range(num_steps):
+            F.scaled_dot_product_attention(query, key, value, is_causal=True)
+
+        end.record()
+        end.synchronize()
+
+    return start.elapsed_time(end) / num_steps
+```
+
+Next, create several large tensors and measure the average execution time of different backends.
+
+```{python}
+#| eval: false
+batch_size = 64
+num_heads = 32
+seq_len = 1024
+head_dim = 64
+
+query = torch.randn(
+    batch_size,
+    num_heads,
+    seq_len,
+    head_dim,
+    dtype=torch.bfloat16,
+    device=device,
+)
+key = torch.randn_like(query)
+value = torch.randn_like(query)
+
+for backend in [
+    SDPBackend.MATH,
+    SDPBackend.FLASH_ATTENTION,
+    SDPBackend.EFFICIENT_ATTENTION,
+    SDPBackend.CUDNN_ATTENTION,
+]:
+    try:
+        avg_time = benchmark_sdpa(query, key, value, backend=backend)
+        print(f'Backend: {backend.name} | Average time: {avg_time:.2f} ms.')
+    except RuntimeError as err:
+        print(f'Backend: {backend.name}, Error: {err}.')
+```
+
+```code
+Backend: MATH | Average time: 438.57 ms.
+Backend: FLASH_ATTENTION | Average time: 7.17 ms.
+Backend: EFFICIENT_ATTENTION | Average time: 11.58 ms.
+Backend: CUDNN_ATTENTION | Average time: 7.64 ms.
+```
+
+For training, measuring the forward pass alone is insufficient. Also measure forward + backward, peak memory, and complete training step time. A faster kernel forward pass does not guarantee a faster training step.
+
+## 12.7.4 FlexAttention: When SDPA Masks Are Not Flexible Enough
+
+FlexAttention [@dong2024FlexAttention] was introduced in PyTorch 2.5 to let users describe custom attention semantics with Python functions and have PyTorch compile them into efficient fused kernels.
+
+::: {.callout-tip}
+- PyTorch 2.5: introduced FlexAttention with CUDA support;
+- PyTorch 2.6: added x86 CPU support;
+- PyTorch 2.7: further refined the FlexAttention API;
+- PyTorch 2.9: added XPU support;
+- PyTorch 2.13: added MPS support.
+:::
+
+SDPA suits common attention semantics, such as:
+
+- Causal mask: GPT's autoregressive causal attention;
+- Padding mask: padding in variable-length sequences;
+- Ordinary attention bias: for example, ALiBi.
+
+Modern models may require more complex attention patterns:
+
+- Sliding Window Attention: a local-window mask;
+- Document Masking: a document-level mask;
+- Prefix Language Model: a prefix language model mask;
+- Local + Global Attention: combined local and global attention;
+- Block Sparse Attention: attention with block sparsity.
+
+Writing a separate CUDA or Triton kernel for each variant would be expensive to maintain.
+
+FlexAttention therefore aims to:
+
+> **Let users describe score or mask modifications with ordinary Python functions, then have PyTorch compile them into efficient fused kernels.**
+
+Its core API is located in:
+
+```python
+torch.nn.attention.flex_attention
+```
+
+Two common FlexAttention concepts are `score_mod` and `mask_mod`.
+
+`score_mod` modifies attention scores before softmax. For example, it can add a relative-position bias:
+
+```python
+def score_mod(
+    score: Tensor,
+    batch_idx: IntTensor,
+    head_idx: IntTensor,
+    q_idx: IntTensor,
+    kv_idx: IntTensor,
+) -> Tensor: ...
+```
+
+`mask_mod` returns whether a query-key position is allowed to participate in attention:
+
+```python
+def causal_mask(
+    batch: Tensor,
+    head_idx: IntTensor,
+    q_idx: IntTensor,
+    kv_idx: IntTensor,
+) -> BoolTensor: ...
+```
+
+Let us demonstrate with a small example. First, define a causal mask:
+
+```{python}
+def causal_mask(
+    batch: Tensor, head_idx: Tensor, q_idx: Tensor, kv_idx: Tensor
+) -> Tensor:
+    return q_idx >= kv_idx
+```
+
+Then use `create_block_mask()` to create a block-sparse mask representation:
+
+```{python}
+batch_size = 16
+num_heads = 4
+q_len = 128
+kv_len = 128
+head_dim = 32
+
+query = torch.randn(
+    batch_size,
+    num_heads,
+    q_len,
+    head_dim,
+    dtype=torch.bfloat16,
+    device=device,
+)
+key = torch.randn_like(query)
+value = torch.randn_like(query)
+
+block_mask = flex_attn.create_block_mask(
+    causal_mask,
+    B=batch_size,
+    H=num_heads,
+    Q_LEN=q_len,
+    KV_LEN=kv_len,
+    device=device,
+)
+opts = {'BACKEND': 'AUTO'}  # Add more options if needed
+flex_attention = partial(flex_attn.flex_attention, kernel_options=opts)
+flex_attention = torch.compile(flex_attention, dynamic=False)
+
+output = flex_attention(query, key, value, block_mask=block_mask)
+print('FlexAttention output shape:', output.shape)
+```
+
+In practice, FlexAttention is usually combined with `torch.compile` to produce an efficient implementation for the current attention variant. This is particularly suitable when attention semantics are specialized but we still want fused kernels.
+
+The FlexAttention API and support are evolving rapidly. Refer to the latest PyTorch documentation.
+
+## 12.7.5 xFormers: An Important Efficient Operator Library Before Native PyTorch SDPA
+
+xFormers [@xFormers] is a PyTorch extension library maintained by Meta, providing composable Transformer components and optimized operators. Unlike SDPA, it is a third-party library rather than part of official PyTorch.
+
+Its most common API is:
+
+```python
+xformers.ops.memory_efficient_attention
+```
+
+The typical input layout is:
+
+$$
+(B, T, H, d_h)
+$$
+
+This differs from SDPA's common layout:
+
+$$
+(B, H, T, d_h)
+$$
+
+so take particular care when using it.
+
+A simplified example is:
+
+```{python}
+#| eval: false
+output = xops.memory_efficient_attention(
+    query, key, value, attn_bias=xops.LowerTriangularMask()
+)
+print('xFormers output shape:', output.shape)
+```
+
+```code
+xFormers output shape: torch.Size([16, 4, 128, 32])
+```
+
+An important feature of xFormers is its Attention Bias abstractions, such as:
+
+- LowerTriangularMask
+- LowerTriangularFromBottomRightMask
+- LowerTriangularMaskWithTensorBias
+- BlockDiagonalMask
+- BlockDiagonalCausalMask
+
+These biases can avoid explicitly constructing a full dense mask.
+
+Before official PyTorch SDPA, xFormers was a major efficient attention operator library. As PyTorch has improved FlexAttention and SDPA and provided the `EFFICIENT_ATTENTION` backend, the need for xFormers has decreased. It is now used more for cases not fully covered by PyTorch or requiring finer control, such as specialized attention biases, paged attention, long contexts, and decoding-related operators.
+
+## 12.7.6 Hugging Face kernels: Loading Kernels Dynamically from the Hub
+
+Hugging Face's `kernels` library [@Kernels] addresses a somewhat different problem from SDPA.
+
+SDPA is PyTorch's unified internal attention API, while `kernels` is a system for kernel distribution, version management, and dynamic loading. Operators can be published as a category of repositories on the Hugging Face Hub. They are usually precompiled, allowing users to load an implementation compatible with their environment through `kernels` and avoid local compilation and dependency conflicts.
+
+The basic form is:
+
+```python
+module = kernels.get_kernel('kernels-community/flash-attn3', version=1)
+```
+
+Then retrieve the desired function from the returned module.
+
+Hugging Face Transformers also supports specifying an attention kernel when loading a model:
+
+```{python}
+#| eval: false
+model = AutoModelForCausalLM.from_pretrained(
+    'Qwen/Qwen3-0.6B',
+    attn_implementation='kernels-community/flash-attn3',
+    device_map='auto',
+)
+ipy.clear_output()
+```
+
+The `attn_implementation` parameter specifies the desired kernel. Transformers attempts to download and load it from the Hugging Face Hub, or uses the local cache if available.
+
+Beyond `attn_implementation`, Transformers provides the global `use_kernels` switch. When set to `True`, it attempts to load matching kernels for every supported layer, not just attention.
+
+```{python}
+#| eval: false
+model = AutoModelForCausalLM.from_pretrained(
+    'Qwen/Qwen3-0.6B',
+    attn_implementation='kernels-community/flash-attn3',
+    device_map='auto',
+    use_kernels=True,
+)
+ipy.clear_output()
+```
+
+This lets kernels be released independently of Transformers, offer different implementations for different hardware, and have their versions pinned, reducing local compilation and dependency conflicts. Loading kernels also executes arbitrary code, so only trusted sources should be used. Loading third-party kernels when needed requires explicitly setting `allow_all_kernels=True`.
+
+## 12.7.7 Choosing Among These Options
+
+Start with the following decision sequence.
+
+For an ordinary GPT implemented from scratch, prefer:
+
+```python
+import torch.nn.functional as F
+
+F.scaled_dot_product_attention(query, key, value, is_causal=True)
+```
+
+and let PyTorch select the backend automatically.
+
+To inspect or compare SDPA backends, use:
+
+```python
+from torch.nn.attention import SDPBackend, sdpa_kernel
+
+with sdpa_kernel(SDPBackend.FLASH_ATTENTION):
+    F.scaled_dot_product_attention(query, key, value, is_causal=True)
+```
+
+and force the backend only within benchmark or debugging regions.
+
+For complex attention variants, such as sliding windows, document masks, soft-capping, or block-sparse patterns, consider FlexAttention:
+
+```python
+from torch.nn.attention.flex_attention import flex_attention
+
+flex_attention = torch.compile(flex_attention, dynamic=False)
+flex_attention(query, key, value, block_mask=...)
+```
+
+If the project already depends on xFormers or needs its `AttentionBias` abstraction, continue using xFormers:
+
+```python
+import xformers.ops as xops
+
+xops.memory_efficient_attention(query, key, value, attn_bias=...)
+```
+
+To load kernels dynamically from the Hugging Face Hub or pin their versions, use Hugging Face `kernels`:
+
+```python
+import kernels
+
+module = kernels.get_kernel('kernels-community/flash-attn3', version=1)
+module.flash_attention(query, key, value)
+```
+
+Above all, do not assume that an implementation must be fastest based only on its name. Measure complete training step time, tokens per second, peak memory, numerical stability, and hardware compatibility.
+
+## 12.7.8 Chapter Summary
+
+This section mapped the modern attention operator ecosystem.
+
+For PyTorch, the most important entry point is:
+
+```python
+torch.nn.functional.scaled_dot_product_attention
+```
+
+SDPA describes attention semantics, and PyTorch automatically selects the best backend based on inputs and hardware.
+
+To control the backend, use `SDPBackend` and `sdpa_kernel`. Common backends include:
+
+```text
+MATH
+FLASH_ATTENTION
+EFFICIENT_ATTENTION
+CUDNN_ATTENTION
+```
+
+For complex attention variants, use FlexAttention to describe custom rules through `score_mod` and `mask_mod`, then let PyTorch and Triton compile them.
+
+xFormers remains an important optimized operator library. Although PyTorch SDPA and FlexAttention cover many of its features, it still offers rich `AttentionBias` abstractions, particularly useful for existing dependencies, the diffusers ecosystem, and structured `AttentionBias` requirements.
+
+Hugging Face `kernels` addresses distribution, version management, and dynamic loading. It lets Transformers specify a kernel when loading a model and download precompiled implementations from the Hub, avoiding local compilation and dependency conflicts.
+
+The guide can be condensed to:
+
+- For ordinary attention, prefer SDPA;
+- To control the backend, use `SDPBackend` + `sdpa_kernel`;
+- For custom masks, biases, or attention variants, use FlexAttention;
+- If a project already depends on xFormers or needs its `AttentionBias`, continue using `xFormers`;
+- When using Transformers and wanting to load community kernels dynamically, use Hugging Face `kernels`.
+
+For most GPT implementations from scratch, the most reasonable starting point is still:
+
+```python
+F.scaled_dot_product_attention(...)
+```
+
+The next section moves down to GPU kernels, introducing Triton's execution model and when writing our own fused kernel is worthwhile. Modern attention APIs help us reuse mature high-performance implementations first, while Triton answers:
+
+> **How can we gain finer control over the GPU when existing operators and compilers still cannot eliminate a bottleneck?**
