@@ -27,9 +27,9 @@ config:
 
 flowchart TD
     A["program_id"]
-    B["计算当前 block 的 offsets"]
+    B["Compute block offsets"]
     C["tl.load()"]
-    D["执行计算"]
+    D["Compute"]
     E["tl.store()"]
 
     A --> B --> C --> D --> E

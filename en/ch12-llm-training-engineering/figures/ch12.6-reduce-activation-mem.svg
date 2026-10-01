@@ -119,11 +119,11 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">降低
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Less
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Activation
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> activation
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 显存
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> memory
                   </tspan>
                 </tspan>
               </text>
@@ -172,9 +172,9 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">减小一次处理的
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Use
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> micro-batch
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> a smaller micro-batch
                   </tspan>
                 </tspan>
               </text>
@@ -189,15 +189,15 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">降低
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Reduce
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> batch
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> batch-dimension
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 维度带来的
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">activation
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">activations
                   </tspan>
                 </tspan>
               </text>
@@ -212,13 +212,13 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">减少
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Save
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> forward
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> fewer forward
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">长时间保存的中间结果
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">intermediates
                   </tspan>
                 </tspan>
               </text>
@@ -233,15 +233,15 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">降低单个
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Reduce
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> micro-batch
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> per-micro-batch
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 内部的
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">activation
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">activations
                   </tspan>
                 </tspan>
               </text>

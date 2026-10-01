@@ -112,13 +112,13 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">计算当前
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Compute
                   </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> block
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 的
-                  </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> offsets
+                  </tspan>
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
                 </tspan>
               </text>
@@ -148,7 +148,7 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">执行计算
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Compute
                   </tspan>
                 </tspan>
               </text>

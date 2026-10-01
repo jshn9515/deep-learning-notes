@@ -119,11 +119,11 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">所有
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">All
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Rank
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> ranks
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 启动
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> start
                   </tspan>
                 </tspan>
               </text>
@@ -138,11 +138,11 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">初始化
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Initialize
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Process
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> process
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Group
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> group
                   </tspan>
                 </tspan>
               </text>
@@ -157,7 +157,7 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">重新构造相同模型
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Rebuild same model
                   </tspan>
                 </tspan>
               </text>
@@ -172,11 +172,11 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">加载同一个
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Load
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Model
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> the
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Checkpoint
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> same model checkpoint
                   </tspan>
                 </tspan>
               </text>
@@ -208,9 +208,9 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">恢复
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Restore
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Optimizer
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> optimizer
                   </tspan>
                 </tspan>
               </text>
@@ -225,7 +225,7 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">继续训练
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Resume
                   </tspan>
                 </tspan>
               </text>

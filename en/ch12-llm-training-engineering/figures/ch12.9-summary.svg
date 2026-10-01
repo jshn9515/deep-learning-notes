@@ -175,7 +175,7 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">完整训练状态能放进单卡吗？
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Full training state fits 1 GPU?
                   </tspan>
                 </tspan>
               </text>
@@ -190,7 +190,7 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">主要问题是训练吞吐量吗？
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Is throughput the main issue?
                   </tspan>
                 </tspan>
               </text>
@@ -220,7 +220,7 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">单卡训练可能已经足够
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Single GPU may suffice
                   </tspan>
                 </tspan>
               </text>
@@ -235,13 +235,13 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">主要是哪部分
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Which
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Model
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> model
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> State
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> state
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 太大？
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> is too large?
                   </tspan>
                 </tspan>
               </text>
@@ -292,11 +292,11 @@
               <rect class="background" style="stroke: none"/>
               <text y="-10.1" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Parameters
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Shard
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 也需要
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> parameters
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Shard
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> too
                   </tspan>
                 </tspan>
               </text>

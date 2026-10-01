@@ -29,11 +29,11 @@ config:
 ---
 
 flowchart TD
-    A["代码慢吗？"]
-    B["Profiler 证明瓶颈在哪里了吗？"]
-    C["已有高性能 library / operator 能解决吗？"]
-    D["torch.compile 能自动 fusion 吗？"]
-    E["这个热点是否足够重要、足够稳定？"]
-    F["Custom Triton kernel 是否有明确优化空间？"]
+    A["Code slow?"]
+    B["Did profiling locate the bottleneck?"]
+    C["Can an optimized library / operator solve it?"]
+    D["Can torch.compile fuse it?"]
+    E["Is the hotspot important and stable?"]
+    F["Is a custom Triton kernel worthwhile?"]
 
     A --> B --> C --> D --> E --> F

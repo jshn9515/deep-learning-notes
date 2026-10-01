@@ -29,14 +29,14 @@ config:
 ---
 
 flowchart TD
-    A[完整训练状态能放进单卡吗？] -->| Yes | B[主要问题是训练吞吐量吗？]
+    A[Full training state fits 1 GPU?] -->| Yes | B[Is throughput the main issue?]
     B -->| Yes | C[DDP]
-    B -->| No  | D[单卡训练可能已经足够]
+    B -->| No  | D[Single GPU may suffice]
 
-    A -->| No | E[主要是哪部分 Model State 太大？]
+    A -->| No | E[Which model state is too large?]
     E --> F[Optimizer States]
     E --> G[Optimizer + Gradients]
-    E --> H[Parameters 也需要 Shard]
+    E --> H[Shard parameters too]
 
     F --> Z1[ZeRO-1]
     G --> Z2[ZeRO-2]

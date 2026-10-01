@@ -29,12 +29,12 @@ config:
 ---
 
 flowchart TD
-    A[所有 Rank 启动]
-    B[初始化 Process Group]
-    C[重新构造相同模型]
-    D[加载同一个 Model Checkpoint]
+    A[All ranks start]
+    B[Initialize process group]
+    C[Rebuild same model]
+    D[Load the same model checkpoint]
     E[DDP Wrap]
-    F[恢复 Optimizer]
-    G[继续训练]
+    F[Restore optimizer]
+    G[Resume]
 
     A --> B --> C --> D --> E --> F --> G

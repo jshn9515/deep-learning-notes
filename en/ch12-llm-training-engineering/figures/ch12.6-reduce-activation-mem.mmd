@@ -26,13 +26,13 @@ config:
 ---
 
 flowchart TD
-    M[降低 Activation 显存]
+    M[Less activation memory]
 
     M --> GA[Gradient Accumulation]
     M --> AC[Activation Checkpointing]
 
-    GA --> GA1[减小一次处理的 micro-batch]
-    GA1 --> GA2[降低 batch 维度带来的 activation]
+    GA --> GA1[Use a smaller micro-batch]
+    GA1 --> GA2[Reduce batch-dimension activations]
 
-    AC --> AC1[减少 forward 长时间保存的中间结果]
-    AC1 --> AC2[降低单个 micro-batch 内部的 activation]
+    AC --> AC1[Save fewer forward intermediates]
+    AC1 --> AC2[Reduce per-micro-batch activations]

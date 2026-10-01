@@ -26,14 +26,14 @@ config:
 ---
 
 flowchart TD
-    A["1. 固定 workload"]
-    B["2. warmup 后测<br/>step time / tokens per second"]
-    C["3. CUDA workload 用 synchronize<br/>或 CUDA Event 正确计时"]
-    D["4. torch.profiler 找最耗时的<br/>CPU / CUDA operator"]
-    E["5. record_function 标记<br/>forward / backward / optimizer 等区域"]
-    F["6. timeline 检查 CPU、GPU、Memcpy<br/>和同步关系"]
-    G["7. 只对真正的瓶颈做优化"]
-    H["8. 用同一个 benchmark 重新测量"]
+    A["1. Fix workload"]
+    B["2. Warm up, then<br/>measure step time / tokens/s"]
+    C["3. Time CUDA with<br/>synchronize or CUDA Events"]
+    D["4. Find costly ops with<br/>torch.profiler (CPU/CUDA)"]
+    E["5. Mark forward /<br/>backward / optimizer with record_function"]
+    F["6. Inspect timeline:<br/>CPU/GPU/Memcpy and synchronization"]
+    G["7. Tune only real bottlenecks"]
+    H["8. Re-measure with the same benchmark"]
 
     A --> B --> C --> D --> E --> F --> G --> H
-    H -. "继续分析" .-> D
+    H -. "Re-analyze" .-> D

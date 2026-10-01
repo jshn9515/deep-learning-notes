@@ -127,7 +127,7 @@
               <rect class="background" style="" x="-34.002838134765625" y="-0.5454542636871338" width="68.00567626953125" height="21.727272033691406"/>
               <text y="-10.1" text-anchor="middle" style="">
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em" text-anchor="middle">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">继续分析
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">Re-analyze
                   </tspan>
                 </tspan>
               </text>
@@ -146,7 +146,7 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">1.
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 固定
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Fix
                   </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> workload
                   </tspan>
@@ -165,25 +165,25 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">2.
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> warmup
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Warm
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 后测
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> up, then
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">step
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">measure
+                  </tspan>
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> step
                   </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> time
                   </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> /
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> tokens
-                  </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> per
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">second
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">tokens/s
                   </tspan>
                 </tspan>
               </text>
@@ -200,11 +200,11 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">3.
                   </tspan>
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Time
+                  </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> CUDA
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> workload
-                  </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 用
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> with
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
@@ -212,13 +212,13 @@
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">或
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">or
                   </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> CUDA
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Event
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Events
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 正确计时
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
                 </tspan>
               </text>
@@ -235,19 +235,19 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">4.
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> torch.profiler
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Find
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 找最耗时的
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> costly ops with
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">CPU
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">torch.profiler
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> /
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> (CPU/CUDA)
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> CUDA
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> operator
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
                 </tspan>
               </text>
@@ -264,25 +264,25 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">5.
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> record_function
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Mark
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 标记
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> forward /
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">forward
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">backward
                   </tspan>
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> /
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> backward
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> optimizer
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> /
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">optimizer
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">with
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 等区域
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> record_function
                   </tspan>
                 </tspan>
               </text>
@@ -299,17 +299,17 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">6.
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> timeline
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Inspect
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 检查
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> timeline:
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">CPU、GPU、Memcpy
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">CPU/GPU/Memcpy
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="2.1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">和同步关系
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">and synchronization
                   </tspan>
                 </tspan>
               </text>
@@ -326,7 +326,7 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">7.
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 只对真正的瓶颈做优化
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Tune only real bottlenecks
                   </tspan>
                 </tspan>
               </text>
@@ -343,13 +343,13 @@
                 <tspan class="text-outer-tspan row" x="0" y="-0.1em" dy="1.1em">
                   <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">8.
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> 用同一个
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> Re-measure
                   </tspan>
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> benchmark
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal"> with
                   </tspan>
                 </tspan>
                 <tspan class="text-outer-tspan row" x="0" y="1em" dy="1.1em">
-                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">重新测量
+                  <tspan font-style="normal" class="text-inner-tspan" font-weight="normal">the same benchmark
                   </tspan>
                 </tspan>
               </text>
