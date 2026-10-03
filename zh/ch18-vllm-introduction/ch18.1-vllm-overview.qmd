@@ -217,8 +217,8 @@ response = client.chat.completions.create(
     messages=[
         {
             'role': 'user',
-            'content': 'What should I build first in Minecraft survival mode? ' \
-                'Explain in one paragraph.',
+            'content': 'What should I build first in Minecraft survival mode? '
+            'Explain in one paragraph.',
         },
     ],
     temperature=0.7,
