@@ -138,3 +138,5 @@ website:
           contents:
             - section: "Chapter 11: Implementing GPT from Scratch: From the Transformer Decoder to GPT-2"
               contents: "en/ch11-gpt2-from-scratch/*.qmd"
+            - section: "Chapter 12: LLM Training Engineering: Memory, Compute, and Parallel Training"
+              contents: "en/ch12-llm-training-engineering/*.qmd"

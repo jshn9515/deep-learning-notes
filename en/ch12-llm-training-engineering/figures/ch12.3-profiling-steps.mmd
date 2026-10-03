@@ -1,0 +1,39 @@
+---
+config:
+  startOnLoad: false
+  theme: base
+  htmlLabels: false
+  fontFamily: Arial, Microsoft YaHei, Noto Serif CJK SC, sans-serif
+  themeVariables:
+    fontSize: 16px
+    primaryColor: "#e9f2fc"
+    primaryBorderColor: "#296bb7"
+    primaryTextColor: "#333333"
+    lineColor: "#0b0b0b"
+
+  themeCSS: |
+    .node text,
+    .nodeLabel,
+    .label text {
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    .node rect,
+    .flowchart-link {
+      stroke-width: 1px;
+    }
+---
+
+flowchart TD
+    A["1. Fix workload"]
+    B["2. Warm up, then<br/>measure step time / tokens/s"]
+    C["3. Time CUDA with<br/>synchronize or CUDA Events"]
+    D["4. Find costly ops with<br/>torch.profiler (CPU/CUDA)"]
+    E["5. Mark forward /<br/>backward / optimizer with record_function"]
+    F["6. Inspect timeline:<br/>CPU/GPU/Memcpy and synchronization"]
+    G["7. Tune only real bottlenecks"]
+    H["8. Re-measure with the same benchmark"]
+
+    A --> B --> C --> D --> E --> F --> G --> H
+    H -. "Re-analyze" .-> D
