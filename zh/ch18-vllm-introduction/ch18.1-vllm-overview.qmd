@@ -92,7 +92,7 @@ conversations = [
 
 outputs = llm.chat(
     messages=conversations,
-    sampling_params=SamplingParams(temperature=0.7, max_tokens=64),
+    sampling_params=vllm.SamplingParams(temperature=0.7, max_tokens=64),
     chat_template_kwargs={'enable_thinking': False},
     use_tqdm=False,
 )
