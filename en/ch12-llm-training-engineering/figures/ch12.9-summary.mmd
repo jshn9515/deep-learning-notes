@@ -1,0 +1,43 @@
+---
+config:
+  startOnLoad: false
+  theme: base
+  htmlLabels: false
+  fontFamily: Arial, Microsoft YaHei, Noto Serif CJK SC, sans-serif
+  themeVariables:
+    fontSize: 20px
+    primaryColor: "#e9f2fc"
+    primaryBorderColor: "#296bb7"
+    primaryTextColor: "#333333"
+    lineColor: "#0b0b0b"
+
+  flowchart:
+    wrappingWidth: 300
+
+  themeCSS: |
+    .node text,
+    .nodeLabel,
+    .label text {
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    .node rect,
+    .flowchart-link {
+      stroke-width: 1px;
+    }
+---
+
+flowchart TD
+    A[Full training state fits 1 GPU?] -->| Yes | B[Is throughput the main issue?]
+    B -->| Yes | C[DDP]
+    B -->| No  | D[Single GPU may suffice]
+
+    A -->| No | E[Which model state is too large?]
+    E --> F[Optimizer States]
+    E --> G[Optimizer + Gradients]
+    E --> H[Shard parameters too]
+
+    F --> Z1[ZeRO-1]
+    G --> Z2[ZeRO-2]
+    H --> Z3[ZeRO-3 / FSDP]
