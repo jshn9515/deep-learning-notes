@@ -119,4 +119,3 @@
 ## Chapter 18: vLLM：从 LLM 推理到高性能推理框架
 
 - 18.1 从 generate() 到 vLLM：为什么推理需要一个 Engine
-- 18.2 EngineCore 与 Request：请求如何进入推理引擎
