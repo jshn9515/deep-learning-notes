@@ -1,5 +1,5 @@
 ---
-title: "Part 7：LLM 后训练：从预训练模型到助手"
+title: "Part 8：LLM Serving：现代推理引擎与高性能服务"
 author: jshn9515
 date: 2026-09-20
 date-modified: today
@@ -8,13 +8,13 @@ comments: false
 
 listing:
   contents:
-    - "../ch17-llm-finetuning/*.qmd"
+    - "../ch18-vllm-introduction/*.qmd"
   sort: title asc
   type: table
   fields: [title, author, date]
   date-format: iso
 
 open-graph:
-  title: part7-llm-post-training
-  description: "Part 7: LLM Post-Training"
+  title: part8-llm-serving
+  description: "Part 8: LLM Serving"
 ---

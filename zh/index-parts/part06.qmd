@@ -1,5 +1,5 @@
 ---
-title: "Part 7：LLM 后训练：从预训练模型到助手"
+title: "Part 6：LLM 应用：评测、性能与推理系统"
 author: jshn9515
 date: 2026-09-20
 date-modified: today
@@ -8,13 +8,13 @@ comments: false
 
 listing:
   contents:
-    - "../ch17-llm-finetuning/*.qmd"
+    - "../ch16-llm-inference/*.qmd"
   sort: title asc
   type: table
   fields: [title, author, date]
   date-format: iso
 
 open-graph:
-  title: part7-llm-post-training
-  description: "Part 7: LLM Post-Training"
+  title: part6-llm-application
+  description: "Part 6: LLM Application"
 ---
