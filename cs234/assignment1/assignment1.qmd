@@ -159,7 +159,7 @@ $$
 $$
 \begin{align}
 |(B^\pi V)(s)-(B^\pi V')(s)|
-&= \gamma\left|\sum_{s'\in S}p(s'\mid s,\pi(s))left(V(s')-V'(s'))\right| \\
+&= \gamma\left|\sum_{s'\in S}p(s'\mid s,\pi(s))(V(s')-V'(s'))\right| \\
 &\le \gamma\sum_{s'\in S}p(s'\mid s,\pi(s))|V(s')-V'(s')| \\
 &\le \gamma\sum_{s'\in S}p(s'\mid s,\pi(s))\|V-V'\|_\infty \\
 &= \gamma\|V-V'\|_\infty
