@@ -11,7 +11,7 @@ order: 1
 
 这是 Stanford CS234 Reinforcement Learning 的 Assignment 1，整理强化学习中的核心概念、数学推导与算法实践。内容涵盖有效时域（effective horizon）对最优策略的影响、奖励投机（reward hacking）、贝尔曼算子（Bellman operator）的性质与性能界，以及 RiverSwim 环境中的策略分析与数值实验。全篇 writeup 按照原作业题号展开，结合理论推导、具体示例和代码计算，重点理解不同问题背后的强化学习原理。
 
-RiverSwim 部分的数值结果基于 `riverswim.py`，实现了值迭代（Value Iteration, VI）和策略迭代（Policy Iteration, PI）算法。测试文件是 `test_riverswim.py`，可通过运行 `test_riverswim.py` 来验证算法的正确性。
+RiverSwim 部分的数值结果基于 `riverswim.py`，实现了值迭代（Value Iteration, VI）和策略迭代（Policy Iteration, PI）算法。测试文件是 `test_riverswim.py`，可通过 `python test_riverswim.py` 命令来验证算法的正确性。
 
 ## 1. 有效时域的影响 (8 pts)
 
