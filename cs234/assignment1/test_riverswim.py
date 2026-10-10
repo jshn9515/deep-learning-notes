@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 from riverswim import RiverCurrent, RiverSwimEnvr, RiverSwimResult
@@ -36,4 +37,4 @@ class TestRiverSwim(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(testRunner=unittest.TextTestRunner(stream=sys.stdout))
