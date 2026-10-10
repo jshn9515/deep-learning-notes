@@ -789,6 +789,6 @@ def value_iteration(self, gamma: float, tol: float = 1e-3) -> RiverSwimResult:
 合理性验证：
 
 ```{python}
-!python test_riverswim.py
+%run test_riverswim.py
 ```
 :::
