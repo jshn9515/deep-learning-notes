@@ -1,0 +1,40 @@
+---
+config:
+  startOnLoad: false
+  theme: base
+  htmlLabels: false
+  fontFamily: Arial, Microsoft YaHei, Noto Serif CJK SC, sans-serif
+  themeVariables:
+    fontSize: 16px
+    primaryColor: "#e9f2fc"
+    primaryBorderColor: "#296bb7"
+    primaryTextColor: "#333333"
+    lineColor: "#0b0b0b"
+
+  flowchart:
+    wrappingWidth: 300
+
+  themeCSS: |
+    .node text,
+    .nodeLabel,
+    .label text {
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    .node rect,
+    .flowchart-link {
+      stroke-width: 1px;
+    }
+---
+
+flowchart TD
+    A[All ranks start]
+    B[Initialize process group]
+    C[Rebuild same model]
+    D[Load the same model checkpoint]
+    E[DDP Wrap]
+    F[Restore optimizer]
+    G[Resume]
+
+    A --> B --> C --> D --> E --> F --> G
