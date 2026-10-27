@@ -224,6 +224,7 @@ datasets/
 
 # Quarto
 _site/
+_docs/
 _jupyter/
 _typst/
 _extensions/
