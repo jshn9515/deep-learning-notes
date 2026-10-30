@@ -101,7 +101,7 @@ def snapshot(request: pytest.FixtureRequest) -> SnapShot:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope='package')
 def ts_state_dict() -> tuple[dict[str, Tensor], dict[str, Any]]:
     """Fixture to load the state dict and config for TorchScript tests."""
     ts_path = FIXTURES_PATH / 'ts_tests'
