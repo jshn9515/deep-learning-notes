@@ -4,20 +4,22 @@
 # pyright: reportOptionalMemberAccess=false
 # pyright: reportAttributeAccessIssue=false
 
-# TODO: Remove this when the minimum supported Python version is 3.14.
-# See <PEP 649> and <PEP 749> for more details.
-from __future__ import annotations
-
+import importlib.util
 import struct
 from binascii import b2a_base64
 from functools import partial
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
+if importlib.util.find_spec('IPython') is None:
+    raise ModuleNotFoundError(
+        'IPython is required for dnnlpy.pylabtools. '
+        'Please install it with `pip install ipython`.'
+    )
+
+from IPython.core.getipython import get_ipython
+from IPython.core.interactiveshell import InteractiveShell
 from matplotlib.figure import Figure
-
-if TYPE_CHECKING:
-    from IPython.core.interactiveshell import InteractiveShell
 
 type FigureFormat = Literal['png', 'retina', 'highdpi', 'jpg', 'jpeg', 'svg', 'pdf']
 
@@ -26,19 +28,9 @@ __all__ = ['set_matplotlib_format']
 
 def _get_ipython_shell() -> InteractiveShell:
     """Return the active IPython shell for inline figure configuration."""
-    try:
-        from IPython.core.getipython import get_ipython
-    except ImportError as err:
-        raise ImportError(
-            'set_matplotlib_format() function requires IPython. '
-            'Install it with `pip install ipython` if you want to use this function.'
-        ) from err
-
     shell = get_ipython()
     if shell is None:
-        raise RuntimeError(
-            'set_matplotlib_format() function must be called from an IPython environment.'
-        )
+        raise RuntimeError('Function must be called from an IPython environment.')
     return shell
 
 
