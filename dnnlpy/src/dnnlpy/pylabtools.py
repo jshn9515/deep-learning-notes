@@ -38,18 +38,17 @@ def set_matplotlib_format(fmt: FigureFormat, dpi_ratio: int = 3) -> None:
     """Select figure formats for the inline backend.
 
     Args:
-        fmt (Literal['png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf']):
-            One figure format to enable: {'png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf'}.
-        dpi_ratio (int, default: 3):
-            The dpi ratio to use for 'highdpi' format. Default is 3, which means
-            3 times the normal dpi. Only used when fmt is 'highdpi'.
+        fmt (FigureFormat): The figure format to enable. Available formats are: {'png',
+            'retina', 'highdpi', 'jpeg', 'svg', 'pdf'}.
+        dpi_ratio (int, optional): The dpi ratio to use for 'highdpi' format. Defaults
+            to 3, which means 3 times the normal dpi. Only used when fmt is 'highdpi'.
     """
     shell = _get_ipython_shell()
     set_figure_format(shell, fmt, dpi_ratio)
 
 
-def read_png_header(data: bytes) -> tuple[int, int]:
-    """read the (width, height) from a png header."""
+def _read_png_header(data: bytes) -> tuple[int, int]:
+    """Read the ``(width, height)`` from a png header."""
     ihdr = data.index(b'IHDR')
     return struct.unpack('>ii', data[ihdr + 4 : ihdr + 12])
 
@@ -90,11 +89,11 @@ def print_figure(
 
 
 def highdpi_figure(fig: Figure, dpi_ratio: int = 3, base64: bool = False) -> Any:
-    """format a figure as a high-dpi png."""
+    """Format a figure as a high-dpi PNG image."""
     pngdata = print_figure(fig, fmt='highdpi', dpi_ratio=dpi_ratio)
     if pngdata is None:
         return
-    width, height = read_png_header(pngdata)
+    width, height = _read_png_header(pngdata)
     metadata = {'width': width // dpi_ratio, 'height': height // dpi_ratio}
     if base64:
         pngdata = b2a_base64(pngdata, newline=False).decode('ascii')
@@ -102,16 +101,14 @@ def highdpi_figure(fig: Figure, dpi_ratio: int = 3, base64: bool = False) -> Any
 
 
 def set_figure_format(shell: InteractiveShell, fmt: str, dpi_ratio: int = 3) -> None:
-    """Set figure format for the inline backend.
+    """Set matplotlib figure format for the inline backend.
 
     Args:
-        shell (InteractiveShell):
-            The main IPython instance.
-        fmt (str):
-            One figure format to enable: {'png', 'retina', 'highdpi', 'jpeg', 'svg', 'pdf'}.
-        dpi_ratio (int, default: 3):
-            The dpi ratio to use for 'highdpi' format. Default is 3, which means
-            3 times the normal dpi. Only used when fmt is 'highdpi'.
+        shell (InteractiveShell): The main IPython instance.
+        fmt (str): The figure format to enable. Available formats are: {'png', 'retina',
+            'highdpi', 'jpeg', 'svg', 'pdf'}.
+        dpi_ratio (int, optional): The dpi ratio to use for 'highdpi' format. Defaults
+            to 3, which means 3 times the normal dpi. Only used when fmt is 'highdpi'.
     """
     svg_formatter = shell.display_formatter.formatters['image/svg+xml']
     png_formatter = shell.display_formatter.formatters['image/png']
