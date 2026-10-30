@@ -4,6 +4,7 @@
 
 The package structure is similar to PyTorch, but keeps a clear boundary between reusable neural network building blocks and complete model implementations:
 
+- `dnnlpy.cs221` contains implementations and utilities for the CS221 assignments.
 - `dnnlpy.cs224n` contains implementations and utilities for the CS224N assignments.
 - `dnnlpy.cs336` contains implementations and utilities for the CS336 assignments.
 - `dnnlpy.models` contains higher-level model architectures or model-specific components, such as NumPy MLP, MiniGPT, and other complete model implementations.
