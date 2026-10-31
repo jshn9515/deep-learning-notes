@@ -60,6 +60,9 @@ test = ["pytest>=9.2.0,<9.3.0", "tiktoken>=0.14.0,<0.15.0"]
 [project.urls]
 Homepage = "https://github.com/jshn9515/deep-learning-notes"
 
+[project.scripts]
+dnnlpy-cs221-a4-train = "dnnlpy.cli.cs221.assignment4.train:main"
+
 [tool.uv]
 torch-backend = "cpu"
 
