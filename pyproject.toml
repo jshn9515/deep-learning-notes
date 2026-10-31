@@ -15,7 +15,7 @@ description = "A collection of notes and code examples for deep learning concept
 authors = [{ name = "jshn9515", email = "jshn9510@gmail.com" }]
 readme = "README.md"
 license = "CC-BY-NC-4.0"
-requires-python = ">=3.14,<3.15"
+requires-python = ">=3.15,<3.16"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
