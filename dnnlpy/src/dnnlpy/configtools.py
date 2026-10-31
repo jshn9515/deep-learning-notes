@@ -1,3 +1,5 @@
+__lazy_modules__ = ['torch', 'torch.accelerator']
+
 import os
 import sys
 from functools import cache
