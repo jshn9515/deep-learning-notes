@@ -43,7 +43,7 @@ dependencies = [
 docs = [
     "furo==2025.12.19",
     "sphinx>=9.2.0,<9.3.0",
-    "sphinx-autoapi>=3.8.0,<3.9.0",
+    "sphinx-autoapi>=3.9.0,<3.10.0",
 ]
 notebook = [
     "ipython[matplotlib]>=9.15.0",
