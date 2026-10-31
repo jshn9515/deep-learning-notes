@@ -40,6 +40,3 @@ def is_avx2_vnni_2() -> bool:
         and cap.get('avx_ne_convert', False)
         and not cap.get('avx512_f', False)
     )
-
-
-IS_AVX2_VNNI_2 = is_avx2_vnni_2()
