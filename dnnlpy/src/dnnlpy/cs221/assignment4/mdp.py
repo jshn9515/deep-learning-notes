@@ -310,6 +310,10 @@ class GymMDP(MDP[np.ndarray, int]):
         else:
             return original_reward
 
+    def close(self) -> None:
+        """Close the Gymnasium environment."""
+        self.env.close()
+
 
 class ContinuousGymMDP(GymMDP):
     """Gymnasium MDP whose state is the continuous observation array."""
