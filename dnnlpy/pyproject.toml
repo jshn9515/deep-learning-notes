@@ -27,7 +27,7 @@ dependencies = [
     # Hugging Face and tokenization
     "accelerate>=1.15.0,<1.16.0",
     "datasets[audio,torch,vision]>=5.1.0,<5.2.0",
-    "kernels[torch]>=0.17.0,<0.18.0",
+    "kernels[torch]>=0.18.0,<0.19.0",
     "tokenizers>=0.23.0,<0.24.0",
     "transformers[torch,vision,kernels]>=5.22.0,<5.23.0",
 
