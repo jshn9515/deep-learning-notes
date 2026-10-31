@@ -1,11 +1,13 @@
 import random
 from abc import ABC, abstractmethod
-from typing import Any, NamedTuple, override
+from typing import Literal, NamedTuple, TypedDict, Unpack, override
 
 import gymnasium as gym
 import numpy as np
 
 from . import utils
+
+type RenderMode = Literal['human', 'rgb_array']
 
 __all__ = [
     'MDP',
@@ -186,6 +188,18 @@ class NumberLineMDP(MDP[int, int]):
         return self.indexer.from_index(index)
 
 
+class GymMDPKwargs(TypedDict, total=False):
+    """A dictionary for storing custom keyword arguments."""
+
+    min_position: float
+    max_position: float
+    max_speed: float
+    goal_position: float
+    goal_velocity: float
+    force: float
+    gravity: float
+
+
 class GymMDP(MDP[np.ndarray, int]):
     r"""Base class for MDPs wrapping Gymnasium environments with discrete action spaces.
 
@@ -194,31 +208,34 @@ class GymMDP(MDP[np.ndarray, int]):
 
     Args:
         env (str): Gymnasium environment ID, such as 'MountainCar-v0'.
-        max_speed (float, optional): Maximum speed passed to the environment. Only
-            supported by 'CustomMountainCar-v0'. Defaults to ``None``.
         discount (float, optional): Discount factor :math:`\gamma` for future rewards.
             Defaults to 0.99.
         time_limit (int, optional): Maximum number of steps per episode. If ``None``,
             uses the environment's default time limit.
         seed (int, optional): Seed for the random number generator. If ``None``, the
             random number generator will be initialized randomly. Defaults to ``None``.
+        **custom_kwargs (dict[str, Any]): Additional keyword arguments to pass to the
+            environment. Only supported by 'CustomMountainCar-v0'.
     """
 
     def __init__(
         self,
         env: str,
-        max_speed: float | None = None,
         discount: float = 0.99,
         time_limit: int | None = None,
+        render_mode: RenderMode | None = None,
         seed: int | None = None,
+        **custom_kwargs: Unpack[GymMDPKwargs],
     ):
         """Initialize the ``GymMDP`` with the given parameters."""
-        self.max_speed = max_speed
-
-        if self.max_speed is not None:
-            self.env = gym.make(env, max_speed=self.max_speed)
+        if custom_kwargs:
+            if env != 'CustomMountainCar-v0':
+                raise AssertionError(
+                    f'{custom_kwargs} is only supported for `CustomMountainCar-v0`.',
+                )
+            self.env = gym.make(env, render_mode=render_mode, **custom_kwargs)
         else:
-            self.env = gym.make(env)
+            self.env = gym.make(env, render_mode=render_mode)
 
         if not isinstance(self.env, gym.wrappers.TimeLimit):
             raise TypeError('GymMDP only supports environments wrapped in TimeLimit.')
@@ -237,6 +254,7 @@ class GymMDP(MDP[np.ndarray, int]):
         self._actions = list(range(self.env.action_space.n))
         self._discount = discount
         self._time_limit = self.env._max_episode_steps
+        self.custom_kwargs = custom_kwargs
         self.seed = seed
         self.rng = np.random.default_rng(seed)
 
@@ -314,14 +332,21 @@ class ContinuousGymMDP(GymMDP):
 
 
 class DiscreteGymMDP(GymMDP):
-    """Gymnasium MDP with each observation dimension mapped to a bin.
+    r"""Gymnasium MDP with each observation dimension mapped to a bin.
 
     Args:
         env (str): Gymnasium environment ID.
         bins (int | list[int], optional): Bin edges per observation dimension.
         low (list[float], optional): Lower observation bounds.
         high (list[float], optional): Upper observation bounds.
-        **kwargs: Additional :class:`GymMDP` arguments.
+        discount (float, optional): Discount factor :math:`\gamma` for future rewards.
+            Defaults to 0.99.
+        time_limit (int, optional): Maximum number of steps per episode. If ``None``,
+            uses the environment's default time limit.
+        seed (int, optional): Seed for the random number generator. If ``None``, the
+            random number generator will be initialized randomly. Defaults to ``None``.
+        **custom_kwargs (dict[str, Any]): Additional keyword arguments to pass to the
+            environment. Only supported by 'CustomMountainCar-v0'.
     """
 
     def __init__(
@@ -330,9 +355,21 @@ class DiscreteGymMDP(GymMDP):
         bins: int | list[int] = 10,
         low: list[float] | None = None,
         high: list[float] | None = None,
-        **kwargs: Any,
+        discount: float = 0.99,
+        time_limit: int | None = None,
+        render_mode: RenderMode | None = None,
+        seed: int | None = None,
+        **custom_kwargs: Unpack[GymMDPKwargs],
     ):
-        super().__init__(env, **kwargs)
+        super().__init__(
+            env,
+            discount=discount,
+            time_limit=time_limit,
+            render_mode=render_mode,
+            seed=seed,
+            **custom_kwargs,
+        )
+
         if not isinstance(self.env.observation_space, gym.spaces.Box):
             raise TypeError(
                 'DiscreteGymMDP only supports environments with Box observation spaces.'
