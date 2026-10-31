@@ -1,0 +1,31 @@
+/* Increase the font size */
+html {
+    font-size: 17px;
+}
+
+/* Increase the font size of function signatures */
+dl.py > dt.sig {
+    font-size: 17px;
+}
+
+/* Increase the font size of admonition bodies */
+.admonition > p,
+.admonition > .admonition-body,
+.admonition > ul,
+.admonition > ol {
+    font-size: 17px;
+}
+
+.admonition > .admonition-title {
+    font-size: 17px !important;
+}
+
+/* Push the table of contents to the right */
+.toc-drawer {
+    margin-left: auto;
+}
+
+/* Only show top-level TOC entries */
+.toc-tree > ul > li > ul > li > ul > li > ul {
+    display: none;
+}
