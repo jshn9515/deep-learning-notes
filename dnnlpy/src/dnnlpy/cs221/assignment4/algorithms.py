@@ -332,7 +332,7 @@ class ModelBasedMonteCarlo[StateT, ActionT](RLAlgorithm[StateT, ActionT]):
 
         if self.num_iters < 2e4:  # Always explore
             epsilon = 1.0
-        elif 2e4 <= self.num_iters < 1e6:  # Use the default eps
+        elif 2e4 <= self.num_iters <= 1e6:  # Use the default eps
             epsilon = self.epsilon
         else:  # >1e6
             epsilon = self.epsilon / math.log(self.num_iters - 1e6 + 1)  # decay
@@ -477,7 +477,7 @@ class TabularQLearning[StateT, ActionT](RLAlgorithm[StateT, ActionT]):
 
         if self.num_iters < 2e4:  # Always explore
             epsilon = 1.0
-        elif 2e4 <= self.num_iters < 1e5:  # Use the default eps
+        elif 2e4 <= self.num_iters <= 1e5:  # Use the default eps
             epsilon = self.epsilon
         else:  # >1e5
             epsilon = self.epsilon / math.log(self.num_iters - 1e5 + 1)  # decay
@@ -625,7 +625,7 @@ class FunctionApproxQLearning[StateT, ActionT](RLAlgorithm[StateT, ActionT]):
 
         if self.num_iters < 2e4:  # Always explore
             epsilon = 1.0
-        elif 2e4 <= self.num_iters < 1e5:  # Use the default eps
+        elif 2e4 <= self.num_iters <= 1e5:  # Use the default eps
             epsilon = self.epsilon
         else:  # >1e5
             epsilon = self.epsilon / math.log(self.num_iters - 1e5 + 1)  # decay
@@ -774,7 +774,7 @@ class ConstrainedQLearning(FunctionApproxQLearning[np.ndarray, int]):
 
         if self.num_iters < 2e4:  # Always explore
             epsilon = 1.0
-        elif 2e4 <= self.num_iters < 1e5:  # Use the default eps
+        elif 2e4 <= self.num_iters <= 1e5:  # Use the default eps
             epsilon = self.epsilon
         else:  # >1e5
             epsilon = self.epsilon / math.log(self.num_iters - 1e5 + 1)  # decay
