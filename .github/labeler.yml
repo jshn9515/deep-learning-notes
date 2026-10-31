@@ -1,6 +1,8 @@
 ci:
   - changed-files:
-      - any-glob-to-any-file: '.github/**'
+      - any-glob-to-any-file: 
+        - '.github/renovate.json'
+        - '.github/workflows/**'
 
 dnnlpy:
   - changed-files:
