@@ -5,14 +5,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import torch.nn as nn
 
-GIB = 1024**3
-MIB = 1024**2
 
 __all__ = [
     'bytes_to_gib',
     'bytes_to_mib',
     'count_params',
 ]
+
+GIB = 1024**3
+MIB = 1024**2
 
 
 def count_params(module: nn.Module) -> int:
