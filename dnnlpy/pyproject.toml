@@ -25,7 +25,9 @@ dependencies = [
     "torchmetrics>=1.9.0,<1.10.0",
 
     # Hugging Face and tokenization
+    "accelerate>=1.15.0,<1.16.0",
     "datasets[audio,torch,vision]>=5.1.0,<5.2.0",
+    "kernels[torch]>=0.17.0,<0.18.0",
     "tokenizers>=0.23.0,<0.24.0",
     "transformers[torch,vision,kernels]>=5.22.0,<5.23.0",
 
@@ -53,7 +55,6 @@ notebook = [
 rl = [
     "gymnasium[array-api,classic-control,torch]>=1.4.0,<1.5.0",
     "pygame-ce>=2.5.0,<2.6.0",
-    "torchrl[video]>=0.14.0,<0.15.0",
 ]
 test = ["pytest>=9.2.0,<9.3.0", "tiktoken>=0.14.0,<0.15.0"]
 
