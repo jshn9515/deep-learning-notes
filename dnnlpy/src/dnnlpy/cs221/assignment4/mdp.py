@@ -330,6 +330,8 @@ class ContinuousGymMDP(GymMDP):
         """Takes action in the current state and returns :class:`MDPTransition`."""
         state = self.state
         next_state, reward, terminated, truncated, _ = self.env.step(action)
+        self.state = next_state
+
         reward = self.reward(next_state, float(reward))
         terminal = terminated or truncated
         return MDPTransition(state, action, reward, next_state, terminal)
@@ -409,13 +411,15 @@ class DiscreteGymMDP(GymMDP):
         """Takes action in the current state and returns :class:`MDPTransition`."""
         state = utils.discretize(self.state, self.bins)
         next_state, reward, terminated, truncated, _ = self.env.step(action)
+        self.state = next_state
+
         reward = self.reward(next_state, float(reward))
         next_state = utils.discretize(next_state, self.bins)
         terminal = terminated or truncated
         return MDPTransition(state, action, reward, next_state, terminal)
 
     def state_to_index(self, state: np.ndarray) -> int:
-        """Returns the index of the continuous state."""
+        """Returns the flat index of the discretized state."""
         return self.indexer.to_index(state)
 
     def index_to_state(self, index: int) -> tuple[int, ...]:
