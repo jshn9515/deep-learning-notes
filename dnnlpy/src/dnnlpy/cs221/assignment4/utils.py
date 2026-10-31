@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import math
 import time
 from abc import ABC, abstractmethod
@@ -19,6 +20,8 @@ __all__ = [
     'polynomial_feature_extractor',
     'simulate',
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class Indexer[StateT](ABC):
@@ -138,9 +141,8 @@ class BinnedStateIndexer(Indexer[np.ndarray]):
 
     @override
     def to_index(self, state: np.ndarray) -> int:
-        """Returns the state index of the continuous observation :attr:`x`."""
-        multi_index = discretize(state, self.bins)
-        index = np.ravel_multi_index(multi_index, self.state_shapes, mode='clip')
+        """Returns the flat index of an already discretized state."""
+        index = np.ravel_multi_index(state, self.state_shapes)
         return int(index)
 
     @override
@@ -264,12 +266,12 @@ def _render_mdp[StateT, ActionT](mdp: MDP[StateT, ActionT]):
 
 def simulate[StateT, ActionT](
     mdp: MDP[StateT, ActionT],
-    algo: RLAlgorithm[StateT, ActionT],
-    num_trials: int = 10,
+    rl: RLAlgorithm[StateT, ActionT],
+    num_episodes: int = 100,
     train: bool = True,
-    verbose: bool = False,
+    verbose: bool = True,
     demo: bool = False,
-) -> list[float]:
+) -> np.ndarray:
     """Runs a simulation of the given MDP and RL algorithm for a specified number of trials.
 
     On each trial, the RL algorithm interacts with the MDP according to its dynamics, and
@@ -279,21 +281,21 @@ def simulate[StateT, ActionT](
 
     Args:
         mdp (MDP): The Markov Decision Process to simulate.
-        algo (RLAlgorithm): The reinforcement learning algorithm to be simulated.
-        num_trials (int, optional): The number of trials to run. Defaults to 10.
+        rl (RLAlgorithm): The reinforcement learning algorithm to be simulated.
+        num_episodes (int, optional): The number of episodes to run. Defaults to 100.
         train (bool, optional): Whether to allow the RL algorithm to learn from feedback.
             Defaults to ``True``.
         verbose (bool, optional): Whether to print progress information during the simulation.
-            Defaults to ``False``.
+            Defaults to ``True``.
         demo (bool, optional): Whether to render the MDP environment during the simulation.
             Defaults to ``False``.
 
     Returns:
-        list[float]: A list of discounted rewards obtained from each trial.
+        np.ndarray: A 1D array containing the discounted rewards obtained from each trial.
     """
     total_rewards: list[float] = []  # The discounted rewards we get on each trial
 
-    for trial in range(num_trials):
+    for episode in range(num_episodes):
         state = mdp.start_state
 
         if demo:
@@ -301,18 +303,18 @@ def simulate[StateT, ActionT](
 
         total_discount = 1
         total_reward = 0
-        trial_length = 0
+        episode_length = 0
 
         for _ in range(mdp.time_limit):
             if demo:
                 time.sleep(0.05)
 
-            action = algo.get_action(state, explore=train)
+            action = rl.get_action(state, explore=train)
             transition = mdp.transition(action)
-            trial_length += 1
+            episode_length += 1
 
             if train:
-                algo.step(transition)
+                rl.step(transition)
 
             total_reward += total_discount * transition.reward
             total_discount *= mdp.discount
@@ -321,11 +323,13 @@ def simulate[StateT, ActionT](
             if transition.terminal:
                 break  # We have reached a terminal state
 
-        if verbose and trial % 100 == 0:
-            print(
-                f'Episode {trial} | total_reward: {total_reward}, length: {trial_length})'
+        if verbose and episode % 100 == 0:
+            n = len(str(num_episodes))
+            logger.info(
+                f'Episode {episode:{n}} | reward: {total_reward:.4f}, '
+                f'length: {episode_length:d}'
             )
 
         total_rewards.append(total_reward)
 
-    return total_rewards
+    return np.array(total_rewards)
