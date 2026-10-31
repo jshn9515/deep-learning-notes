@@ -143,7 +143,6 @@ def make_rl(
         mdp.discount,
         mdp.num_states,
         mdp.state_to_index,
-        mdp.index_to_state,
         calc_val_iter_every=calc_val_iter_every,
         epsilon=epsilon,
         seed=seed,

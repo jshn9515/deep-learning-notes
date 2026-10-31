@@ -265,8 +265,6 @@ class ModelBasedMonteCarlo[StateT, ActionT](RLAlgorithm[StateT, ActionT]):
         num_states (int): Total number of discrete states available.
         state_to_index (Callable[[StateT], int]): Function mapping states to contiguous
             indices ``[0, num_states)``.
-        index_to_state (Callable[[int], StateT], optional): The inverse of
-            ``state_to_index``. Defaults to the identity function.
         calc_val_iter_every (int, optional): Run value iteration every this many steps.
             Defaults to 10000.
         epsilon (float, optional): The epsilon value indicating how frequently the policy
@@ -280,7 +278,6 @@ class ModelBasedMonteCarlo[StateT, ActionT](RLAlgorithm[StateT, ActionT]):
         discount: float,
         num_states: int,
         state_to_index: Callable[[StateT], int],
-        index_to_state: Callable[[int], StateT] = lambda idx: idx,
         calc_val_iter_every: int = 10000,
         epsilon: float = 0.2,
         seed: int | None = None,
@@ -290,7 +287,6 @@ class ModelBasedMonteCarlo[StateT, ActionT](RLAlgorithm[StateT, ActionT]):
         self.discount = discount
         self.num_states = num_states
         self.state_to_index = state_to_index
-        self.index_to_state = index_to_state
         self.calc_val_iter_every = calc_val_iter_every
         self.epsilon = epsilon
         self.rng = random.Random(seed)
