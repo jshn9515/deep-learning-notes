@@ -1,12 +1,9 @@
-import torch
+"""dnnlpy: A utility library for deep learning notes, providing common functions and tools
+to support the main content of the deep learning notes collection.
+"""
 
-from . import (
-    cs336 as cs336,
-    models as models,
-    nn as nn,
-    optim as optim,
-    tokenizers as tokenizers,
-)
+from functools import cache
+
 from .configtools import (
     get_data_dir as get_data_dir,
     get_data_path as get_data_path,
@@ -26,13 +23,16 @@ from .utils import (
 )
 
 
+@cache
 def is_avx2_vnni_2() -> bool:
     """Check if the current CPU supports AVX2, VNNI, and related features.
 
     See https://github.com/pytorch/pytorch/issues/148861 for more details.
     Code ported from https://github.com/intel/torch-xpu-ops/pull/4341.
     """
-    cap = torch.cpu.get_capabilities()
+    from torch.cpu import get_capabilities
+
+    cap = get_capabilities()
     return (
         cap.get('avx2', False)
         and cap.get('avx_vnni', False)
