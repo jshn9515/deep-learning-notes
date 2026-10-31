@@ -2,6 +2,12 @@
 to support the main content of the deep learning notes collection.
 """
 
+__lazy_modules__ = [
+    'dnnlpy.configtools',
+    'dnnlpy.pylabtools',
+    'dnnlpy.trainingtools',
+]
+
 from functools import cache
 
 from .configtools import (
