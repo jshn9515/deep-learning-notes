@@ -1,0 +1,39 @@
+---
+config:
+  startOnLoad: false
+  theme: base
+  htmlLabels: false
+  fontFamily: Arial, Microsoft YaHei, Noto Serif CJK SC, sans-serif
+  themeVariables:
+    fontSize: 16px
+    primaryColor: "#e9f2fc"
+    primaryBorderColor: "#296bb7"
+    primaryTextColor: "#333333"
+    lineColor: "#0b0b0b"
+
+  flowchart:
+    wrappingWidth: 300
+
+  themeCSS: |
+    .node text,
+    .nodeLabel,
+    .label text {
+      font-weight: 400;
+      font-style: normal;
+    }
+
+    .node rect,
+    .flowchart-link {
+      stroke-width: 1px;
+    }
+---
+
+flowchart TD
+    A["Code slow?"]
+    B["Did profiling locate the bottleneck?"]
+    C["Can an optimized library / operator solve it?"]
+    D["Can torch.compile fuse it?"]
+    E["Is the hotspot important and stable?"]
+    F["Is a custom Triton kernel worthwhile?"]
+
+    A --> B --> C --> D --> E --> F
